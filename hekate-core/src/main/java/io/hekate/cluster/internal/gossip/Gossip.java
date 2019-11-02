@@ -37,7 +37,7 @@ import static java.util.Collections.unmodifiableMap;
 import static java.util.Collections.unmodifiableSet;
 
 public class Gossip extends GossipBase {
-    private final long version;
+    private final long epoch;
 
     private final Map<ClusterNodeId, GossipNodeState> members;
 
@@ -52,7 +52,7 @@ public class Gossip extends GossipBase {
     private Boolean convergenceCache;
 
     public Gossip() {
-        version = 0;
+        epoch = 0;
         maxJoinOrder = 0;
         members = Collections.emptyMap();
         seen = emptySet();
@@ -60,7 +60,7 @@ public class Gossip extends GossipBase {
     }
 
     public Gossip(
-        long version,
+        long epoch,
         Map<ClusterNodeId, GossipNodeState> members,
         Set<ClusterNodeId> removed,
         Set<ClusterNodeId> seen,
@@ -70,7 +70,7 @@ public class Gossip extends GossipBase {
         assert removed != null : "Removed set is null.";
         assert seen != null : "Seen set is null.";
 
-        this.version = version;
+        this.epoch = epoch;
         this.members = members;
         this.removed = removed;
         this.seen = seen;
@@ -86,7 +86,7 @@ public class Gossip extends GossipBase {
             return this;
         }
 
-        return new Gossip(version, members, removed, seen, maxJoinOrder);
+        return new Gossip(epoch, members, removed, seen, maxJoinOrder);
     }
 
     public GossipNodeState member(ClusterNodeId id) {
@@ -113,8 +113,8 @@ public class Gossip extends GossipBase {
     }
 
     @Override
-    public long version() {
-        return version;
+    public long epoch() {
+        return epoch;
     }
 
     @Override
@@ -135,7 +135,7 @@ public class Gossip extends GossipBase {
         Map<ClusterNodeId, GossipNodeState> thisMembers = members();
         Map<ClusterNodeId, GossipNodeState> otherMembers = other.members();
 
-        Set<ClusterNodeId> removed = version() > other.version() ? removed() : other.removed();
+        Set<ClusterNodeId> removed = epoch() > other.epoch() ? removed() : other.removed();
 
         // Members.
         Map<ClusterNodeId, GossipNodeState> newMembers = new HashMap<>();
@@ -183,8 +183,8 @@ public class Gossip extends GossipBase {
             }
         }
 
-        // Version.
-        long newVersion = Math.max(version(), other.version());
+        // Epoch.
+        long newEpoch = Math.max(epoch(), other.epoch());
 
         // Seen.
         Set<ClusterNodeId> newSeen = new HashSet<>();
@@ -206,7 +206,7 @@ public class Gossip extends GossipBase {
         // Max join order.
         int newMaxJoinOrder = Integer.max(maxJoinOrder(), other.maxJoinOrder());
 
-        return new Gossip(newVersion, unmodifiableMap(newMembers), removed, unmodifiableSet(newSeen), newMaxJoinOrder);
+        return new Gossip(newEpoch, unmodifiableMap(newMembers), removed, unmodifiableSet(newSeen), newMaxJoinOrder);
     }
 
     public Gossip update(ClusterNodeId localNodeId, GossipNodeState modified) {
@@ -234,7 +234,7 @@ public class Gossip extends GossipBase {
             newMembers.put(n.id(), n)
         );
 
-        return new Gossip(version, unmodifiableMap(newMembers), removed, unmodifiableSet(newSeen), maxJoinOrder);
+        return new Gossip(epoch, unmodifiableMap(newMembers), removed, unmodifiableSet(newSeen), maxJoinOrder);
     }
 
     public Gossip purge(ClusterNodeId localNodeId, Set<ClusterNodeId> removed) {
@@ -268,7 +268,7 @@ public class Gossip extends GossipBase {
         newRemoved = unmodifiableSet(newRemoved);
         newMembers = unmodifiableMap(newMembers);
 
-        return new Gossip(version + 1, newMembers, newRemoved, newSeen, maxJoinOrder);
+        return new Gossip(epoch + 1, newMembers, newRemoved, newSeen, maxJoinOrder);
     }
 
     @Override
@@ -286,7 +286,7 @@ public class Gossip extends GossipBase {
 
             newSeen.add(localNodeId);
 
-            return new Gossip(version, members, removed, unmodifiableSet(newSeen), maxJoinOrder);
+            return new Gossip(epoch, members, removed, unmodifiableSet(newSeen), maxJoinOrder);
         }
     }
 
@@ -302,7 +302,7 @@ public class Gossip extends GossipBase {
 
             mergedSeen.addAll(newSeen);
 
-            return new Gossip(version, members, removed, unmodifiableSet(mergedSeen), maxJoinOrder);
+            return new Gossip(epoch, members, removed, unmodifiableSet(mergedSeen), maxJoinOrder);
         }
     }
 
@@ -335,7 +335,7 @@ public class Gossip extends GossipBase {
 
         newSeen.add(localNodeId);
 
-        return new Gossip(version, members, removed, unmodifiableSet(newSeen), maxJoinOrder);
+        return new Gossip(epoch, members, removed, unmodifiableSet(newSeen), maxJoinOrder);
     }
 
     public boolean isConvergent() {
@@ -451,7 +451,7 @@ public class Gossip extends GossipBase {
             toStringCache = str = getClass().getSimpleName()
                 + "[members-size=" + members.size()
                 + ", seen-size=" + seen.size()
-                + ", ver=" + version
+                + ", epoch=" + epoch
                 + ", max-order=" + maxJoinOrder
                 + ", members=" + members.values()
                 + ", seen=" + seen

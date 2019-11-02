@@ -34,7 +34,7 @@ public class GossipTest extends HekateTestBase {
     public void testEmpty() {
         Gossip gossip = new Gossip();
 
-        assertEquals(0, gossip.version());
+        assertEquals(0, gossip.epoch());
         assertEquals(0, gossip.maxJoinOrder());
         assertTrue(gossip.allSuspected().isEmpty());
         assertTrue(gossip.members().isEmpty());
@@ -701,21 +701,21 @@ public class GossipTest extends HekateTestBase {
             .seen(s2.id())
             .seen(s3.id());
 
-        long v1 = g1.version();
+        long epoch1 = g1.epoch();
 
         g1 = g1.purge(s1.id(), toSet(s2.id()));
 
-        assertEquals(v1 + 1, g1.version());
+        assertEquals(epoch1 + 1, g1.epoch());
         assertEquals(2, g1.members().size());
         assertFalse(g1.hasMember(s2.id()));
         assertFalse(g1.hasSeen(s2.id()));
         assertTrue(g1.removed().contains(s2.id()));
 
-        long v2 = g1.version();
+        long epoch2 = g1.epoch();
 
         g1 = g1.purge(s1.id(), toSet(s3.id()));
 
-        assertEquals(v2 + 1, g1.version());
+        assertEquals(epoch2 + 1, g1.epoch());
         assertEquals(1, g1.members().size());
         assertFalse(g1.hasMember(s3.id()));
         assertFalse(g1.hasSeen(s3.id()));

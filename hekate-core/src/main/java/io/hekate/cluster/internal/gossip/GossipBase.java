@@ -31,7 +31,7 @@ public abstract class GossipBase {
 
     public abstract Set<ClusterNodeId> seen();
 
-    public abstract long version();
+    public abstract long epoch();
 
     public abstract Set<ClusterNodeId> removed();
 
@@ -52,8 +52,6 @@ public abstract class GossipBase {
     }
 
     public GossipPrecedence compare(GossipBase other) {
-        assert other != null : "Other gossip digest is null.";
-
         return compareVersions(this, other);
     }
 
@@ -66,18 +64,18 @@ public abstract class GossipBase {
         allIds.addAll(members1.keySet());
         allIds.addAll(members2.keySet());
 
-        long ver1 = g1.version();
-        long ver2 = g2.version();
+        long epoch1 = g1.epoch();
+        long epoch2 = g2.epoch();
 
         Set<ClusterNodeId> removed;
 
         GossipPrecedence precedence;
 
-        if (ver1 == ver2) {
+        if (epoch1 == epoch2) {
             precedence = SAME;
 
             removed = g1.removed();
-        } else if (ver1 > ver2) {
+        } else if (epoch1 > epoch2) {
             precedence = AFTER;
 
             removed = g1.removed();

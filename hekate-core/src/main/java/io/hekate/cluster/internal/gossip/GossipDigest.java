@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class GossipDigest extends GossipBase {
-    private final long version;
+    private final long epoch;
 
     private final Map<ClusterNodeId, GossipNodeInfo> members;
 
@@ -31,13 +31,17 @@ public class GossipDigest extends GossipBase {
 
     private final Set<ClusterNodeId> seen;
 
-    public GossipDigest(long version, Map<ClusterNodeId, GossipNodeInfo> members, Set<ClusterNodeId> removed,
-        Set<ClusterNodeId> seen) {
+    public GossipDigest(
+        long epoch,
+        Map<ClusterNodeId, GossipNodeInfo> members,
+        Set<ClusterNodeId> removed,
+        Set<ClusterNodeId> seen
+    ) {
         assert members != null : "Members map is null.";
         assert removed != null : "Removed set is null.";
         assert seen != null : "Seen set is null.";
 
-        this.version = version;
+        this.epoch = epoch;
         this.members = members;
         this.removed = removed;
         this.seen = seen;
@@ -65,7 +69,7 @@ public class GossipDigest extends GossipBase {
             membersInfo = Collections.unmodifiableMap(membersInfo);
         }
 
-        this.version = gossip.version();
+        this.epoch = gossip.epoch();
         this.members = membersInfo;
         this.removed = gossip.removed();
         this.seen = gossip.seen();
@@ -82,8 +86,8 @@ public class GossipDigest extends GossipBase {
     }
 
     @Override
-    public long version() {
-        return version;
+    public long epoch() {
+        return epoch;
     }
 
     @Override
@@ -96,7 +100,7 @@ public class GossipDigest extends GossipBase {
         return getClass().getSimpleName()
             + "[members-size=" + members.size()
             + ", seen-size=" + seen.size()
-            + ", ver=" + version
+            + ", epoch=" + epoch
             + ", members=" + members.values()
             + ", seen=" + seen
             + ", removed=" + removed

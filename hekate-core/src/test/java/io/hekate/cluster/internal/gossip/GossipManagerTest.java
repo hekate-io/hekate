@@ -775,7 +775,7 @@ public class GossipManagerTest extends HekateTestBase {
 
         say("OMG! He is dead! ...lets get rid of his body.");
 
-        gossipTillSameVersion(m1, m3);
+        gossipTillSameState(m1, m3);
 
         g1 = m1.localGossip();
 
@@ -804,7 +804,7 @@ public class GossipManagerTest extends HekateTestBase {
         // Should detect failures only once.
         assertFalse(m3.checkAliveness());
 
-        gossipTillSameVersion(m1, m3);
+        gossipTillSameState(m1, m3);
 
         g1 = m1.localGossip();
 
@@ -950,7 +950,7 @@ public class GossipManagerTest extends HekateTestBase {
 
                 Update gossip = mgr.processJoinAccept(reply);
 
-                processGossipConversation(first, mgr, gossip);
+                processGossip(first, mgr, gossip);
             }
         }
 
@@ -963,13 +963,13 @@ public class GossipManagerTest extends HekateTestBase {
         return nodes;
     }
 
-    private void gossipTillSameVersion(GossipManager... nodes) {
+    private void gossipTillSameState(GossipManager... nodes) {
         assertNotNull(nodes);
 
-        gossipTillSameVersion(Arrays.asList(nodes));
+        gossipTillSameState(Arrays.asList(nodes));
     }
 
-    private void gossipTillSameVersion(List<GossipManager> nodes) {
+    private void gossipTillSameState(List<GossipManager> nodes) {
         assertTrue(nodes.size() > 1);
 
         Map<ClusterNodeId, GossipManager> nodesById = nodes.stream().collect(Collectors.toMap(GossipManager::id, m -> m));
@@ -992,19 +992,19 @@ public class GossipManagerTest extends HekateTestBase {
 
                 assertNotNull("Unexpected gossip target.", to);
 
-                processGossipConversation(to, mgr, gossip);
+                processGossip(to, mgr, gossip);
             }
-        } while (!isSameGossipVersion(nodes));
+        } while (!isSameGossipState(nodes));
     }
 
     private void gossipTillConvergence(List<GossipManager> nodes) {
         while (!isConvergence(nodes)) {
-            gossipTillSameVersion(nodes);
+            gossipTillSameState(nodes);
         }
     }
 
     private boolean isConvergence(List<GossipManager> nodes) {
-        if (!isSameGossipVersion(nodes)) {
+        if (!isSameGossipState(nodes)) {
             return false;
         }
 
@@ -1017,7 +1017,7 @@ public class GossipManagerTest extends HekateTestBase {
         return true;
     }
 
-    private void processGossipConversation(GossipManager m1, GossipManager m2, UpdateBase gossip) {
+    private void processGossip(GossipManager m1, GossipManager m2, UpdateBase gossip) {
         while (gossip != null) {
             if (gossip.to().equals(m1.address())) {
                 gossip = m1.processUpdate(gossip);
@@ -1027,7 +1027,7 @@ public class GossipManagerTest extends HekateTestBase {
         }
     }
 
-    private boolean isSameGossipVersion(List<GossipManager> managers) {
+    private boolean isSameGossipState(List<GossipManager> managers) {
         Gossip gossip = managers.get(0).localGossip();
 
         for (GossipManager mgr : managers) {
