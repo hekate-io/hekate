@@ -98,6 +98,10 @@ public class ClusterServiceSplitBrainTest extends HekateNodeParamTestBase {
 
     @Test
     public void testTerminateWhenOtherNodeLeaves() throws Exception {
+        // Disable failure check because of the 'leaving' node can detect failure of the 'node'
+        // while the 'node' is being terminated by the split-brain policy.
+        disableNodeFailurePostCheck();
+
         SplitBrainDetectorMock detector = new SplitBrainDetectorMock(true);
 
         HekateTestNode node = createNode(c -> {
