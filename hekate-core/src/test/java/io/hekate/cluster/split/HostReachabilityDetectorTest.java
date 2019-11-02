@@ -21,6 +21,7 @@ import io.hekate.core.report.DefaultConfigReporter;
 import java.net.InetAddress;
 import org.junit.Test;
 
+import static io.hekate.core.internal.util.Utils.NL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -45,10 +46,10 @@ public class HostReachabilityDetectorTest extends HekateTestBase {
         HostReachabilityDetector detector = new HostReachabilityDetector(InetAddress.getLocalHost().getHostAddress(), 2000);
 
         assertEquals(
-            "\n"
-                + "  host-reachability:\n"
-                + "    host: " + detector.host() + "\n"
-                + "    timeout: " + detector.timeout() + "\n",
+            NL
+                + "  host-reachability:" + NL
+                + "    host: " + detector.host() + NL
+                + "    timeout: " + detector.timeout() + NL,
             DefaultConfigReporter.report(detector)
         );
     }

@@ -31,6 +31,8 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.hekate.core.internal.util.Utils.NL;
+
 class ClusterEventLogger implements ClusterEventListener {
     private static final Comparator<ClusterNode> NODES_BY_ADDRESS = (o1, o2) -> {
         InetSocketAddress a1 = o1.socket();
@@ -95,8 +97,6 @@ class ClusterEventLogger implements ClusterEventListener {
         List<ClusterNode> removed,
         List<ClusterNode> failed
     ) {
-        String nl = System.lineSeparator();
-
         List<ClusterNode> allNodes = new ArrayList<>(topology.nodes());
 
         if (removed != null) {
@@ -104,11 +104,11 @@ class ClusterEventLogger implements ClusterEventListener {
         }
 
         StringBuilder buf = new StringBuilder(256)
-            .append(nl)
+            .append(NL)
             .append("*** ").append(eventType)
             .append(" [size=").append(topology.size())
             .append(", version=").append(topology.version())
-            .append("] {").append(nl);
+            .append("] {").append(NL);
 
         allNodes.stream().sorted(NODES_BY_ADDRESS).forEach(n -> {
             buf.append("      ");
@@ -125,7 +125,7 @@ class ClusterEventLogger implements ClusterEventListener {
                 buf.append("           ");
             }
 
-            buf.append('[').append(ToString.formatProperties(n)).append(']').append(nl);
+            buf.append('[').append(ToString.formatProperties(n)).append(']').append(NL);
         });
 
         buf.append("    }");

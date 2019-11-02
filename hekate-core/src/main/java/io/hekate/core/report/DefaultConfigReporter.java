@@ -1,5 +1,7 @@
 package io.hekate.core.report;
 
+import static io.hekate.core.internal.util.Utils.NL;
+
 /**
  * Default implementation of {@link ConfigReporter interface}.
  *
@@ -8,9 +10,6 @@ package io.hekate.core.report;
  * </p>
  */
 public class DefaultConfigReporter implements ConfigReporter {
-    /** New line separator. */
-    private static final String NL = System.lineSeparator();
-
     /** Indentation offset. */
     private static final String INDENT_STEP = "  ";
 

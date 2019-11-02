@@ -17,6 +17,7 @@
 package io.hekate.core.internal.util;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Collection;
@@ -28,8 +29,11 @@ import java.util.stream.Collectors;
  * Common utilities.
  */
 public final class Utils {
+    /** Shortcut for {@link System#lineSeparator()}. */
+    public static final String NL = System.lineSeparator();
+
     /** {@link Charset} for UTF-8. */
-    public static final Charset UTF_8 = Charset.forName("UTF-8");
+    public static final Charset UTF_8 = StandardCharsets.UTF_8;
 
     /** Magic bytes that should be appended to the first packet of a network connection. */
     public static final int MAGIC_BYTES = 19800124;

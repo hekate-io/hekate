@@ -31,6 +31,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+import static io.hekate.core.internal.util.Utils.NL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -96,12 +97,12 @@ public class JdbcSeedNodeProviderTest extends PersistentSeedNodeProviderTestBase
         JdbcSeedNodeProvider provider = createProvider();
 
         assertEquals(
-            "\n"
-                + "  jdbc:\n"
-                + "    datasource: " + provider.dataSource() + "\n"
-                + "    insert-sql: " + provider.insertSql() + "\n"
-                + "    cleanup-interval: " + provider.cleanupInterval() + "\n"
-                + "    query-timeout: " + provider.queryTimeout() + "\n",
+            NL
+                + "  jdbc:" + NL
+                + "    datasource: " + provider.dataSource() + NL
+                + "    insert-sql: " + provider.insertSql() + NL
+                + "    cleanup-interval: " + provider.cleanupInterval() + NL
+                + "    query-timeout: " + provider.queryTimeout() + NL,
             DefaultConfigReporter.report(provider)
         );
     }

@@ -34,6 +34,7 @@ import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static io.hekate.core.internal.util.Utils.NL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -96,13 +97,13 @@ public class MulticastSeedNodeProviderTest extends SeedNodeProviderTestBase<Mult
         MulticastSeedNodeProvider provider = createProvider();
 
         assertEquals(
-            "\n"
-                + "  multicast:\n"
-                + "    group: " + provider.group() + "\n"
-                + "    ttl: " + provider.ttl() + "\n"
-                + "    interval: " + provider.interval() + "\n"
-                + "    wait-time: " + provider.waitTime() + "\n"
-                + "    loopback-disabled: " + provider.isLoopBackDisabled() + "\n",
+            NL
+                + "  multicast:" + NL
+                + "    group: " + provider.group() + NL
+                + "    ttl: " + provider.ttl() + NL
+                + "    interval: " + provider.interval() + NL
+                + "    wait-time: " + provider.waitTime() + NL
+                + "    loopback-disabled: " + provider.isLoopBackDisabled() + NL,
             DefaultConfigReporter.report(provider)
         );
     }

@@ -49,6 +49,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+import static io.hekate.core.internal.util.Utils.NL;
 import static org.jclouds.ContextBuilder.newBuilder;
 import static org.jclouds.compute.options.TemplateOptions.Builder.userMetadata;
 import static org.junit.Assert.assertEquals;
@@ -103,10 +104,10 @@ public class CloudSeedNodeProviderTest extends HekateTestBase {
         CloudSeedNodeProvider provider = provider();
 
         assertEquals(
-            "\n"
-                + "  cloud:\n"
-                + "    provider: " + provider.provider() + "\n"
-                + "    properties: " + provider.properties() + "\n",
+            NL
+                + "  cloud:" + NL
+                + "    provider: " + provider.provider() + NL
+                + "    properties: " + provider.properties() + NL,
             DefaultConfigReporter.report(provider)
         );
     }

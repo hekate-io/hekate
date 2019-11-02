@@ -16,6 +16,8 @@
 
 package io.hekate.messaging;
 
+import static io.hekate.core.internal.util.Utils.NL;
+
 /**
  * Signals that response message couldn't be received due to an error on a remote node.
  *
@@ -48,8 +50,8 @@ public class MessagingRemoteException extends MessagingException {
     }
 
     private static String format(String message, String remoteStackTrace) {
-        return message + System.lineSeparator()
-            + "[--- Remote stack trace start ---]" + System.lineSeparator()
+        return message + NL
+            + "[--- Remote stack trace start ---]" + NL
             + remoteStackTrace
             + "[--- Remote stack trace end ---]";
     }

@@ -26,6 +26,7 @@ import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static io.hekate.core.internal.util.Utils.NL;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 
@@ -77,11 +78,11 @@ public class EtcdSeedNodeProviderTest extends PersistentSeedNodeProviderTestBase
         EtcdSeedNodeProvider provider = createProvider();
 
         assertEquals(
-            "\n"
-                + "  etcd:\n"
-                + "    endpoints: " + provider.endpoints() + "\n"
-                + "    base-path: " + provider.basePath() + "\n"
-                + "    cleanup-interval: " + provider.cleanupInterval() + "\n",
+            NL
+                + "  etcd:" + NL
+                + "    endpoints: " + provider.endpoints() + NL
+                + "    base-path: " + provider.basePath() + NL
+                + "    cleanup-interval: " + provider.cleanupInterval() + NL,
             DefaultConfigReporter.report(provider)
         );
     }

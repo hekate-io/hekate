@@ -27,6 +27,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static io.hekate.core.internal.util.Utils.NL;
 import static org.junit.Assert.assertEquals;
 
 public class ZooKeeperSeedNodeProviderTest extends PersistentSeedNodeProviderTestBase<ZooKeeperSeedNodeProvider> {
@@ -60,13 +61,13 @@ public class ZooKeeperSeedNodeProviderTest extends PersistentSeedNodeProviderTes
         ZooKeeperSeedNodeProvider provider = createProvider();
 
         assertEquals(
-            "\n"
-                + "  zookeeper:\n"
-                + "    connection-string: " + provider.connectionString() + "\n"
-                + "    base-path: " + provider.basePath() + "\n"
-                + "    connect-timeout: " + provider.connectTimeout() + "\n"
-                + "    session-timeout: " + provider.sessionTimeout() + "\n"
-                + "    cleanup-interval: " + provider.cleanupInterval() + "\n",
+            NL
+                + "  zookeeper:" + NL
+                + "    connection-string: " + provider.connectionString() + NL
+                + "    base-path: " + provider.basePath() + NL
+                + "    connect-timeout: " + provider.connectTimeout() + NL
+                + "    session-timeout: " + provider.sessionTimeout() + NL
+                + "    cleanup-interval: " + provider.cleanupInterval() + NL,
             DefaultConfigReporter.report(provider)
         );
     }

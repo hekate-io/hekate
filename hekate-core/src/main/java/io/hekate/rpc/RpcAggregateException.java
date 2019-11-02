@@ -20,6 +20,8 @@ import io.hekate.cluster.ClusterNode;
 import io.hekate.core.internal.util.ArgAssert;
 import java.util.Map;
 
+import static io.hekate.core.internal.util.Utils.NL;
+
 /**
  * Signals that there was a failure while performing an RPC {@link RpcAggregate aggregation} request.
  *
@@ -35,7 +37,7 @@ public class RpcAggregateException extends RpcException {
 
     private static final String PADDING = "    ";
 
-    private static final String NEW_LINE = System.lineSeparator() + PADDING + "#";
+    private static final String NEW_LINE = NL + PADDING + "#";
 
     private final Map<ClusterNode, Throwable> errors;
 
