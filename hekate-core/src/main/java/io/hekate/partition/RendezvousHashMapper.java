@@ -21,7 +21,6 @@ import io.hekate.cluster.ClusterTopology;
 import io.hekate.cluster.ClusterTopologySupport;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.Murmur3;
-import io.hekate.core.internal.util.Utils;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.net.InetAddress;
@@ -44,7 +43,7 @@ import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater
  * <a href="https://en.wikipedia.org/wiki/Rendezvous_hashing" target="_blank">Rendezvous</a> (aka Highest Random Weight) hashing algorithm
  * for partition mapping.
  */
-public final class RendezvousHashMapper implements PartitionMapper {
+public final class RendezvousHashMapper extends PartitionMapperBase {
     /**
      * Builder for {@link RendezvousHashMapper}.
      *
@@ -144,43 +143,20 @@ public final class RendezvousHashMapper implements PartitionMapper {
         }
     }
 
-    private static class Snapshot implements PartitionMapper {
-        private final int backupSize;
-
+    private static class Snapshot extends PartitionMapperBase {
         @ToStringIgnore
         private final ClusterTopology topology;
 
         @ToStringIgnore
         private final AtomicReferenceArray<Partition> partitions;
 
-        @ToStringIgnore
-        private final int maxPid;
+        public Snapshot(int partitions, int backupSize, ClusterTopology topology) {
+            super(partitions, backupSize);
 
-        public Snapshot(int size, int backupSize, ClusterTopology topology) {
-            assert size > 0 : "Partitions size is less than or equals to zero [size=" + size + ']';
-            assert Utils.isPowerOfTwo(size) : "Partitions size must be a power of two [size=" + size + ']';
             assert topology != null : "Topology is null.";
 
-            this.backupSize = backupSize < 0 ? Integer.MAX_VALUE : backupSize;
             this.topology = topology;
-            this.partitions = new AtomicReferenceArray<>(size);
-            this.maxPid = size - 1;
-        }
-
-        @Override
-        public Partition map(Object key) {
-            ArgAssert.notNull(key, "Key");
-
-            return mapInt(key.hashCode());
-        }
-
-        @Override
-        public Partition mapInt(int key) {
-            int hash = (hash = key) ^ hash >>> 16;
-
-            int pid = maxPid & hash;
-
-            return partition(pid);
+            this.partitions = new AtomicReferenceArray<>(partitions);
         }
 
         @Override
@@ -200,7 +176,7 @@ public final class RendezvousHashMapper implements PartitionMapper {
                     ClusterNode primary = hashes[0].node();
 
                     // Find backup nodes.
-                    int maxBackups = Math.min(backupSize, hashes.length - 1);
+                    int maxBackups = Math.min(backupNodes(), hashes.length - 1);
 
                     List<ClusterNode> backup;
 
@@ -252,16 +228,6 @@ public final class RendezvousHashMapper implements PartitionMapper {
         }
 
         @Override
-        public int partitions() {
-            return partitions.length();
-        }
-
-        @Override
-        public int backupNodes() {
-            return backupSize;
-        }
-
-        @Override
         public ClusterTopology topology() {
             return topology;
         }
@@ -277,8 +243,13 @@ public final class RendezvousHashMapper implements PartitionMapper {
         }
 
         @Override
+        public PartitionMapper copy(ClusterTopologySupport cluster) throws UnsupportedOperationException {
+            throw new UnsupportedOperationException("Snapshot doesn't support copying.");
+        }
+
+        @Override
         public String toString() {
-            return ToString.format(PartitionMapper.class, this);
+            return ToString.format(RendezvousHashMapper.class, this);
         }
     }
 
@@ -291,10 +262,6 @@ public final class RendezvousHashMapper implements PartitionMapper {
         "snapshot"
     );
 
-    private final int size;
-
-    private final int backupSize;
-
     @ToStringIgnore
     private final ClusterTopologySupport cluster;
 
@@ -302,13 +269,11 @@ public final class RendezvousHashMapper implements PartitionMapper {
     @SuppressWarnings("unused") // <-- Updated via AtomicReferenceFieldUpdater.
     private volatile Snapshot snapshot;
 
-    RendezvousHashMapper(int size, int backupSize, ClusterTopologySupport cluster) {
-        ArgAssert.positive(size, "size");
-        ArgAssert.powerOfTwo(size, "size");
-        ArgAssert.notNull(cluster, "cluster");
+    RendezvousHashMapper(int partitions, int backupSize, ClusterTopologySupport cluster) {
+        super(partitions, backupSize);
 
-        this.size = size;
-        this.backupSize = backupSize;
+        ArgAssert.notNull(cluster, "Cluster");
+
         this.cluster = cluster;
     }
 
@@ -322,7 +287,7 @@ public final class RendezvousHashMapper implements PartitionMapper {
      * @see Builder#build()
      */
     public static Builder of(ClusterTopologySupport cluster) {
-        ArgAssert.notNull(cluster, "cluster");
+        ArgAssert.notNull(cluster, "Cluster");
 
         return new Builder(cluster);
     }
@@ -340,16 +305,9 @@ public final class RendezvousHashMapper implements PartitionMapper {
         return new RendezvousHashMapper(partitions, backupNodes, cluster);
     }
 
-    /**
-     * Returns a copy of this mapper that will use the specified cluster topology and will inherit all other configuration options from this
-     * instance.
-     *
-     * @param cluster Cluster topology.
-     *
-     * @return New mapper.
-     */
+    @Override
     public RendezvousHashMapper copy(ClusterTopologySupport cluster) {
-        return new RendezvousHashMapper(size, backupSize, cluster);
+        return new RendezvousHashMapper(partitions(), backupNodes(), cluster);
     }
 
     @Override
@@ -363,18 +321,8 @@ public final class RendezvousHashMapper implements PartitionMapper {
     }
 
     @Override
-    public int partitions() {
-        return size;
-    }
-
-    @Override
     public Partition partition(int id) {
         return snapshot().partition(id);
-    }
-
-    @Override
-    public int backupNodes() {
-        return backupSize;
     }
 
     @Override
@@ -392,7 +340,7 @@ public final class RendezvousHashMapper implements PartitionMapper {
             if (localSnapshot != null && localSnapshot.topology().version() >= topology.version()) {
                 return localSnapshot;
             } else {
-                Snapshot newSnapshot = new Snapshot(size, backupSize, topology);
+                Snapshot newSnapshot = new Snapshot(partitions(), backupNodes(), topology);
 
                 if (SNAPSHOT.compareAndSet(this, localSnapshot, newSnapshot)) {
                     return newSnapshot;

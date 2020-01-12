@@ -17,6 +17,7 @@
 package io.hekate.partition;
 
 import io.hekate.cluster.ClusterTopology;
+import io.hekate.cluster.ClusterTopologySupport;
 
 /**
  * Partition mapper.
@@ -116,4 +117,20 @@ public interface PartitionMapper {
      * @see #snapshot()
      */
     boolean isSnapshot();
+
+    /**
+     * Returns a copy of this mapper that will use the specified cluster topology and will inherit the mapping logic and all the
+     * configuration options from this instance.
+     *
+     * <p>
+     * Note that copying is not supported on snapshots (see {@link #isSnapshot()}).
+     * </p>
+     *
+     * @param cluster Cluster topology.
+     *
+     * @return New mapper.
+     *
+     * @throws UnsupportedOperationException if this partition mapper doesn't support copying.
+     */
+    PartitionMapper copy(ClusterTopologySupport cluster) throws UnsupportedOperationException;
 }

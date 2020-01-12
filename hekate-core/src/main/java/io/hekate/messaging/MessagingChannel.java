@@ -36,6 +36,7 @@ import io.hekate.messaging.operation.Subscribe;
 import io.hekate.messaging.operation.SubscribeCallback;
 import io.hekate.messaging.operation.SubscribeFuture;
 import io.hekate.partition.PartitionMapper;
+import io.hekate.partition.RendezvousHashMapper;
 import java.util.List;
 import java.util.concurrent.Executor;
 
@@ -181,16 +182,27 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
     PartitionMapper partitions();
 
     /**
-     * Returns a copy of this channel that will use a {@link PartitionMapper} with the specified options.
+     * Returns a copy of this channel that will use a {@link RendezvousHashMapper} with the specified options.
      *
-     * @param partitions Total amount of partitions that should be managed by the channel's partition mapper.
-     * @param backupNodes Amount of backup nodes that should be assigned to each partition by the the channel's partition mapper.
+     * @param partitions See {@link RendezvousHashMapper.Builder#withPartitions(int)}.
+     * @param backupNodes See {@link RendezvousHashMapper.Builder#withBackupNodes(int)}.
      *
      * @return Channel wrapper.
      *
      * @see #partitions()
      */
     MessagingChannel<T> withPartitions(int partitions, int backupNodes);
+
+    /**
+     * Returns a copy of this channel that will use the specified {@link PartitionMapper}.
+     *
+     * @param mapper Partition mapper.
+     *
+     * @return Channel wrapper.
+     *
+     * @see #partitions()
+     */
+    MessagingChannel<T> withPartitions(PartitionMapper mapper);
 
     /**
      * Returns a copy of this channel that will use the specified load balancer and will inherit all other options from this instance.

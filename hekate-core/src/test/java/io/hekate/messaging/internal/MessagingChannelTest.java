@@ -30,12 +30,16 @@ import io.hekate.messaging.loadbalance.UnknownRouteException;
 import io.hekate.network.NetworkClient;
 import io.hekate.network.NetworkConnector;
 import io.hekate.network.NetworkService;
+import io.hekate.partition.DefaultPartition;
+import io.hekate.partition.UpdatablePartitionMapper;
 import io.hekate.test.NetworkClientCallbackMock;
 import java.net.InetSocketAddress;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Exchanger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
@@ -395,5 +399,65 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
 
         assertEquals(3, sender4.cluster().topology().size());
         assertFalse(sender4.cluster().topology().contains(fakeNode));
+    }
+
+    @Test
+    public void testCustomPartitionMapper() throws Exception {
+        List<TestChannel> channels = createAndJoinChannels(3, c ->
+            c.setReceiver(msg -> msg.reply(msg.channel().cluster().topology().localNode().id().toString()))
+        );
+
+        MessagingChannel<String> originalSender = channels.get(0).channel();
+
+        UpdatablePartitionMapper mapper = new UpdatablePartitionMapper(128, 2);
+
+        MessagingChannel<String> sender = originalSender.withPartitions(mapper);
+
+        assertSame(mapper, sender.partitions());
+
+        ClusterNode[] nodes = channels.stream()
+            .map(it -> it.node().localNode())
+            .toArray(ClusterNode[]::new);
+
+        ClusterTopology topology = sender.cluster().topology();
+
+        // First node is primary
+        // ----------------------------------------------------------------------
+        ClusterNode primary1 = nodes[0];
+        List<ClusterNode> backup1 = Arrays.asList(nodes[1], nodes[2]);
+
+        mapper.update(topology, old -> new DefaultPartition(old.id(), primary1, backup1, topology));
+
+        for (int i = 0; i < 100; i++) {
+            String affinity = UUID.randomUUID().toString();
+
+            assertEquals(primary1.id().toString(), sender.request(affinity, "test"));
+        }
+
+        // Second node is primary.
+        // ----------------------------------------------------------------------
+        ClusterNode primary2 = nodes[1];
+        List<ClusterNode> backup2 = Arrays.asList(nodes[0], nodes[2]);
+
+        mapper.update(topology, old -> new DefaultPartition(old.id(), primary2, backup2, topology));
+
+        for (int i = 0; i < 100; i++) {
+            String affinity = UUID.randomUUID().toString();
+
+            assertEquals(primary2.id().toString(), sender.request(affinity, "test"));
+        }
+
+        // Third node is primary.
+        // ----------------------------------------------------------------------
+        ClusterNode primary3 = nodes[1];
+        List<ClusterNode> backup3 = Arrays.asList(nodes[0], nodes[1]);
+
+        mapper.update(topology, old -> new DefaultPartition(old.id(), primary3, backup3, topology));
+
+        for (int i = 0; i < 100; i++) {
+            String affinity = UUID.randomUUID().toString();
+
+            assertEquals(primary3.id().toString(), sender.request(affinity, "test"));
+        }
     }
 }

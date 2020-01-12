@@ -18,6 +18,8 @@ package io.hekate.partition;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterTopology;
+import io.hekate.core.internal.util.ArgAssert;
+import io.hekate.core.internal.util.Utils;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.ArrayList;
@@ -27,44 +29,55 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.unmodifiableList;
 
-class DefaultPartition implements Partition {
+/**
+ * Default implementation of {@link PartitionMapper} interface.
+ */
+public class DefaultPartition implements Partition {
+    /** See {@link #id()}. */
     private final int id;
 
+    /** See {@link #primaryNode()}. */
     private final ClusterNode primary;
 
+    /** See {@link #backupNodes()}. */
     private final List<ClusterNode> backup;
 
+    /** See {@link #nodes()}. */
     @ToStringIgnore
     private final List<ClusterNode> nodes;
 
+    /** See {@link #topology()}. */
     @ToStringIgnore
     private final ClusterTopology topology;
 
+    /**
+     * Constructs a new instance.
+     *
+     * @param id See {@link #id()}.
+     * @param primary See {@link #primaryNode()}.
+     * @param backup See {@link #backupNodes()}.
+     * @param topology See {@link #topology()}.
+     */
     public DefaultPartition(int id, ClusterNode primary, List<ClusterNode> backup, ClusterTopology topology) {
-        assert backup != null : "Backup nodes list is null.";
-        assert topology != null : "Topology is null.";
+        ArgAssert.notNull(topology, "Topology");
 
         this.id = id;
         this.primary = primary;
-        this.backup = backup;
+        this.backup = Utils.nullSafeImmutableCopy(backup);
         this.topology = topology;
 
-        List<ClusterNode> nodes;
+        this.nodes = combine(this.primary, this.backup);
+    }
 
-        if (primary == null) {
-            nodes = emptyList();
-        } else if (backup.isEmpty()) {
-            nodes = singletonList(primary);
-        } else {
-            nodes = new ArrayList<>(backup.size() + 1);
-
-            nodes.add(primary);
-            nodes.addAll(backup);
-
-            nodes = unmodifiableList(nodes);
-        }
-
-        this.nodes = nodes;
+    /**
+     * Returns a new instance that represents an empty partition.
+     *
+     * @param id Partition identifier.
+     *
+     * @return Empty partition.
+     */
+    public static DefaultPartition empty(int id) {
+        return new DefaultPartition(id, null, null, ClusterTopology.empty());
     }
 
     @Override
@@ -90,6 +103,23 @@ class DefaultPartition implements Partition {
     @Override
     public ClusterTopology topology() {
         return topology;
+    }
+
+    private static List<ClusterNode> combine(ClusterNode primary, List<ClusterNode> backup) {
+        if (primary == null) {
+            ArgAssert.check(backup == null || backup.isEmpty(), "Backup nodes can't be specified when primary node is null.");
+
+            return emptyList();
+        } else if (backup == null || backup.isEmpty()) {
+            return singletonList(primary);
+        } else {
+            List<ClusterNode> nodes = new ArrayList<>(backup.size() + 1);
+
+            nodes.add(primary);
+            nodes.addAll(backup);
+
+            return unmodifiableList(nodes);
+        }
     }
 
     @Override

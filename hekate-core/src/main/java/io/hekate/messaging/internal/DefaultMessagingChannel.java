@@ -39,14 +39,14 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
     @ToStringIgnore
     private final ClusterView cluster;
 
-    private final RendezvousHashMapper partitions;
+    private final PartitionMapper partitions;
 
     private final LoadBalancer<T> balancer;
 
     public DefaultMessagingChannel(
         MessagingGateway<T> gateway,
         ClusterView cluster,
-        RendezvousHashMapper partitions,
+        PartitionMapper partitions,
         LoadBalancer<T> balancer
     ) {
         assert gateway != null : "Gateway is null.";
@@ -130,19 +130,31 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
             return this;
         }
 
-        RendezvousHashMapper newPartitions = RendezvousHashMapper.of(cluster, partitions, backupNodes);
+        RendezvousHashMapper mapper = RendezvousHashMapper.of(cluster, partitions, backupNodes);
 
         return new DefaultMessagingChannel<>(
             gateway,
             cluster,
-            newPartitions,
+            mapper,
+            balancer
+        );
+    }
+
+    @Override
+    public MessagingChannel<T> withPartitions(PartitionMapper mapper) {
+        ArgAssert.notNull(mapper, "Mapper");
+
+        return new DefaultMessagingChannel<>(
+            gateway,
+            cluster,
+            mapper,
             balancer
         );
     }
 
     @Override
     public DefaultMessagingChannel<T> withLoadBalancer(LoadBalancer<T> balancer) {
-        ArgAssert.notNull(balancer, "balancer");
+        ArgAssert.notNull(balancer, "Load balancer");
 
         return new DefaultMessagingChannel<>(
             gateway,
@@ -162,7 +174,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
         ArgAssert.notNull(filter, "Filter");
 
         ClusterView newCluster = cluster.filterAll(filter);
-        RendezvousHashMapper newPartitions = partitions.copy(newCluster);
+        PartitionMapper newPartitions = partitions.copy(newCluster);
 
         return new DefaultMessagingChannel<>(
             gateway,
@@ -182,7 +194,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
         ArgAssert.notNull(cluster, "Cluster");
 
         ClusterView newCluster = cluster.filter(MessagingMetaData.hasReceiver(gateway.name()));
-        RendezvousHashMapper newPartitions = partitions.copy(newCluster);
+        PartitionMapper newPartitions = partitions.copy(newCluster);
 
         return new DefaultMessagingChannel<>(
             gateway,

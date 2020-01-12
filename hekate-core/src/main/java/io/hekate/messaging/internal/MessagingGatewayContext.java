@@ -346,8 +346,10 @@ class MessagingGatewayContext<T> {
         }
     }
 
-    private MessageOperationAttempt<T> route(MessageOperation<T> op, Optional<FailedAttempt> prevFailure) throws HekateException,
-        ClientSelectionRejectedException {
+    private MessageOperationAttempt<T> route(
+        MessageOperation<T> op,
+        Optional<FailedAttempt> prevFailure
+    ) throws HekateException, ClientSelectionRejectedException {
         // Perform routing in a loop to circumvent concurrent cluster topology changes.
         while (true) {
             PartitionMapper mapperSnapshot = op.opts().partitions().snapshot();

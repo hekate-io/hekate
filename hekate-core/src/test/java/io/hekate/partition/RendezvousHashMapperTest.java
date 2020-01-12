@@ -87,7 +87,7 @@ public class RendezvousHashMapperTest extends HekateNodeTestBase {
         assertTrue(snapshot.map("key").backupNodes().isEmpty());
         assertSame(snapshot, snapshot.snapshot());
         assertEquals(topology, snapshot.topology());
-        assertEquals(ToString.format(PartitionMapper.class, snapshot), snapshot.toString());
+        assertEquals(ToString.format(RendezvousHashMapper.class, snapshot), snapshot.toString());
 
         Partition partition = mapper.map(Integer.MIN_VALUE);
 
