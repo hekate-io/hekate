@@ -30,7 +30,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-public class CoordinationBroadcastCallbackAdaptorTest extends HekateTestBase {
+public class CoordinationBroadcastAdaptorTest extends HekateTestBase {
     @Test
     public void testOnResponses() throws Exception {
         repeat(3, i -> {
@@ -38,7 +38,7 @@ public class CoordinationBroadcastCallbackAdaptorTest extends HekateTestBase {
 
             CoordinationBroadcastCallback callback = mock(CoordinationBroadcastCallback.class);
 
-            BroadcastCallbackAdaptor adaptor = new BroadcastCallbackAdaptor(membersSize, callback);
+            CoordinationBroadcastAdaptor adaptor = new CoordinationBroadcastAdaptor(membersSize, callback);
 
             ArgumentCaptor<Map<CoordinationMember, Object>> captor = newResultCaptor();
 
@@ -68,7 +68,7 @@ public class CoordinationBroadcastCallbackAdaptorTest extends HekateTestBase {
     public void testOnCancel() throws Exception {
         CoordinationBroadcastCallback callback = mock(CoordinationBroadcastCallback.class);
 
-        BroadcastCallbackAdaptor adaptor = new BroadcastCallbackAdaptor(3, callback);
+        CoordinationBroadcastAdaptor adaptor = new CoordinationBroadcastAdaptor(3, callback);
 
         ArgumentCaptor<Map<CoordinationMember, Object>> captor = newResultCaptor();
 
@@ -92,7 +92,7 @@ public class CoordinationBroadcastCallbackAdaptorTest extends HekateTestBase {
     public void testOnCancelPartial() throws Exception {
         CoordinationBroadcastCallback callback = mock(CoordinationBroadcastCallback.class);
 
-        BroadcastCallbackAdaptor adaptor = new BroadcastCallbackAdaptor(3, callback);
+        CoordinationBroadcastAdaptor adaptor = new CoordinationBroadcastAdaptor(3, callback);
 
         ArgumentCaptor<Map<CoordinationMember, Object>> captor = newResultCaptor();
 

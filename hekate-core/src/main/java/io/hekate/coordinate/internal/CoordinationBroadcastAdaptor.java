@@ -23,7 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-class BroadcastCallbackAdaptor implements CoordinationRequestCallback {
+class CoordinationBroadcastAdaptor implements CoordinationRequestCallback {
     /** Expected number of responses. */
     private final int expected;
 
@@ -36,7 +36,7 @@ class BroadcastCallbackAdaptor implements CoordinationRequestCallback {
     /** Callback to notify when completed. */
     private final CoordinationBroadcastCallback callback;
 
-    public BroadcastCallbackAdaptor(int expectedResponses, CoordinationBroadcastCallback callback) {
+    public CoordinationBroadcastAdaptor(int expectedResponses, CoordinationBroadcastCallback callback) {
         this.expected = expectedResponses;
         this.callback = callback;
         this.responses = new HashMap<>(expectedResponses, 1.0f);

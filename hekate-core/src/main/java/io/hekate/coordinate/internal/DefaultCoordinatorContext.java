@@ -36,9 +36,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,12 +46,49 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableList;
 
 class DefaultCoordinatorContext implements CoordinatorContext {
+    /**
+     * Coordination context status.
+     */
+    private enum Status {
+        /** New context. */
+        NEW(false, false),
+
+        /** See {@link #doPrepare()}. */
+        PREPARED(false, false),
+
+        /** See {@link #doComplete()}. */
+        COMPLETED(true, false),
+
+        /** See {@link #cancel()}. */
+        CANCELLED(true, true);
+
+        private final boolean done;
+
+        private final boolean cancelled;
+
+        Status(boolean done, boolean cancelled) {
+            this.done = done;
+            this.cancelled = cancelled;
+        }
+
+        public boolean isDone() {
+            return done;
+        }
+
+        public boolean isCancelled() {
+            return cancelled;
+        }
+    }
+
     private static final Logger log = LoggerFactory.getLogger(DefaultCoordinatorContext.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
 
     /** Coordinator node. */
     private final CoordinationMember coordinator;
+
+    /** Epoch of this coordination. */
+    private final CoordinationEpoch epoch;
 
     /** Topology of this coordination. */
     private final ClusterTopology topology;
@@ -75,19 +111,18 @@ class DefaultCoordinatorContext implements CoordinatorContext {
 
     /** Local node. */
     @ToStringIgnore
-    private final CoordinationMember localMember;
+    private final DefaultCoordinationMember localMember;
 
     /** All members by their cluster IDs. */
     @ToStringIgnore
     private final Map<ClusterNodeId, DefaultCoordinationMember> membersById;
 
-    /** Future of this coordination. */
-    @ToStringIgnore
-    private final CompletableFuture<Void> future = new CompletableFuture<>();
+    /** Status of this coordination. */
+    private final AtomicReference<Status> status = new AtomicReference<>(Status.NEW);
 
-    /** Is this context prepared (see {@link #ensurePrepared()}). */
+    /** Action to be executed upon successful completion of this coordination. */
     @ToStringIgnore
-    private boolean prepared;
+    private final Runnable onComplete;
 
     /** See {@link #setAttachment(Object)}. */
     @ToStringIgnore
@@ -96,35 +131,35 @@ class DefaultCoordinatorContext implements CoordinatorContext {
     public DefaultCoordinatorContext(
         String name,
         HekateSupport hekate,
+        CoordinationEpoch epoch,
         ClusterTopology topology,
         MessagingChannel<CoordinationProtocol> channel,
         ExecutorService async,
         CoordinationHandler handler,
         Runnable onComplete
     ) {
-        assert hekate != null : "Hekate is null.";
         assert name != null : "Process name is null.";
+        assert hekate != null : "Hekate is null.";
+        assert epoch != null : "Epoch is null.";
         assert topology != null : "Topology is null.";
         assert handler != null : "Coordination handler is null.";
+        assert onComplete != null : "Completion callback is null.";
 
         this.name = name;
         this.hekate = hekate;
+        this.epoch = epoch;
         this.topology = topology;
         this.handler = handler;
-
-        future.thenRun(onComplete);
+        this.onComplete = onComplete;
 
         membersById = new HashMap<>(topology.size(), 1.0f);
 
         topology.nodes().forEach(node -> {
-            // First node is the coordinator.
-            boolean coordinator = membersById.isEmpty();
-
             DefaultCoordinationMember member = new DefaultCoordinationMember(
                 name,
                 node,
+                epoch,
                 topology,
-                coordinator,
                 channel,
                 async
             );
@@ -134,14 +169,28 @@ class DefaultCoordinatorContext implements CoordinatorContext {
 
         this.members = unmodifiableList(new ArrayList<>(membersById.values()));
 
-        Optional<CoordinationMember> localMemberOpt = members.stream().filter(m -> m.node().isLocal()).findFirst();
-        Optional<CoordinationMember> coordinatorOpt = members.stream().filter(CoordinationMember::isCoordinator).findFirst();
+        this.localMember = membersById.values().stream()
+            .filter(m -> m.node().isLocal())
+            .findFirst()
+            .orElseThrow(() ->
+                new IllegalArgumentException("No local node in the coordination topology [topology=" + topology + ", epoch=" + epoch + ']')
+            );
 
-        assert localMemberOpt.isPresent() : "Failed to find local node in the coordination topology [topology=" + topology + ']';
-        assert coordinatorOpt.isPresent() : "Failed to find coordinator node in the coordination topology [topology=" + topology + ']';
+        this.coordinator = members.stream()
+            .filter(CoordinationMember::isCoordinator)
+            .findFirst()
+            .orElseThrow(() ->
+                new IllegalArgumentException("No coordinator in the coordination topology [topology=" + topology + ", epoch=" + epoch + ']')
+            );
+    }
 
-        localMember = localMemberOpt.get();
-        coordinator = coordinatorOpt.get();
+    public CoordinationEpoch epoch() {
+        return epoch;
+    }
+
+    @Override
+    public Hekate hekate() {
+        return hekate.hekate();
     }
 
     @Override
@@ -150,21 +199,21 @@ class DefaultCoordinatorContext implements CoordinatorContext {
             log.debug("Broadcasting [request={}, context={}]", request, this);
         }
 
-        BroadcastCallbackAdaptor callbackAdaptor = new BroadcastCallbackAdaptor(members.size(), callback);
+        CoordinationBroadcastAdaptor adaptor = new CoordinationBroadcastAdaptor(members.size(), callback);
 
         members.forEach(member ->
-            member.request(request, callbackAdaptor)
+            member.request(request, adaptor)
         );
     }
 
     @Override
     public boolean isDone() {
-        return future.isDone();
+        return status.get().isDone();
     }
 
     @Override
     public boolean isCancelled() {
-        return future.isCancelled();
+        return status.get().isCancelled();
     }
 
     @Override
@@ -211,13 +260,18 @@ class DefaultCoordinatorContext implements CoordinatorContext {
 
     @Override
     public void complete() {
-        if (!future.isDone()) {
+        if (!isDone()) {
             // Broadcast 'complete' message to remote members.
             broadcastCompleteToRemotes(ignore -> {
-                if (!future.isDone()) {
-                    // Complete this context once we've got confirmations from all remote members.
-                    doComplete();
-                }
+                // Send 'complete' message to self.
+                // --------------------------------------------------------------------------------------------------
+                // We need to do it as the last step, because otherwise the local context may switch to the COMPLETED
+                // state before it gets all confirmations from the remote members.
+                // In such case, it will stop trying to resend messages (f.e. in case of a temporary network error)
+                // and therefore some of the remote members will never become COMPLETED.
+                localMember.sendComplete((response, from) -> {
+                    // No-op.
+                });
             });
         }
     }
@@ -232,54 +286,40 @@ class DefaultCoordinatorContext implements CoordinatorContext {
         this.attachment = attachment;
     }
 
-    public void tryCoordinate() {
-        if (!future.isDone()) {
-            if (isCoordinator()) {
-                if (DEBUG) {
-                    log.debug("Preparing to coordinate [context={}]", this);
-                }
-
-                // Broadcast 'prepare' message to all members.
-                broadcastPrepare(ignore -> {
-                    // Coordinate once we've got 'prepare' confirmations from all members.
-                    if (!future.isDone()) {
-                        if (DEBUG) {
-                            log.debug("Coordinating [context={}]", this);
-                        }
-
-                        handler.coordinate(this);
-                    }
-                });
-            } else {
-                if (DEBUG) {
-                    log.debug("Local node is not a coordinator [context={}]", this);
-                }
+    public void coordinate() {
+        if (!isDone()) {
+            if (DEBUG) {
+                log.debug("Preparing to coordinate [context={}]", this);
             }
+
+            // Broadcast 'prepare' message to all members.
+            broadcastPrepare(ignore -> {
+                // Coordinate once we've got 'prepare' confirmations from all members.
+                if (!isDone()) {
+                    if (DEBUG) {
+                        log.debug("Coordinating [context={}]", this);
+                    }
+
+                    handler.coordinate(this);
+                }
+            });
         }
     }
 
     public void processMessage(Message<CoordinationProtocol> msg) {
         CoordinationProtocol.RequestBase request = msg.payload(CoordinationProtocol.RequestBase.class);
 
-        boolean reject = false;
-
-        if (!topology.hash().equals(request.topology())) {
-            reject = true;
-
+        if (!epoch.equals(request.epoch())) {
             if (DEBUG) {
                 log.debug("Rejected coordination request (topology mismatch) [message={}, context={}]", request, this);
             }
-        } else if (future.isDone()) {
-            // Never reject 'prepare' and 'complete' requests even if local coordination is completed.
-            // Such requests could be resubmitted because of network failures and we should always try to send back a confirmation.
-            reject = request.type() != CoordinationProtocol.Type.PREPARE && request.type() != CoordinationProtocol.Type.COMPLETE;
 
+            msg.reply(CoordinationProtocol.Reject.INSTANCE);
+        } else if (isDone()) {
             if (DEBUG) {
                 log.debug("Rejected coordination request (context cancelled) [message={}, context={}]", request, this);
             }
-        }
 
-        if (reject) {
             msg.reply(CoordinationProtocol.Reject.INSTANCE);
         } else {
             switch (request.type()) {
@@ -288,7 +328,7 @@ class DefaultCoordinatorContext implements CoordinatorContext {
                         log.debug("Processing prepare request [message={}, context={}]", request, this);
                     }
 
-                    ensurePrepared();
+                    doPrepare();
 
                     msg.reply(CoordinationProtocol.Confirm.INSTANCE);
 
@@ -325,33 +365,42 @@ class DefaultCoordinatorContext implements CoordinatorContext {
         }
     }
 
-    public void cancel() {
-        if (future.cancel(false)) {
+    public boolean cancel() {
+        if (status.compareAndSet(Status.PREPARED, Status.CANCELLED)) {
             if (DEBUG) {
-                log.debug("Cancelled [context={}]", this);
+                log.debug("Cancelling [context={}]", this);
             }
 
             membersById.values().forEach(DefaultCoordinationMember::dispose);
+
+            return true;
+        } else {
+            return false;
         }
     }
 
     public void postCancel() {
-        if (prepared && future.isCancelled()) {
+        if (isCancelled()) {
             if (DEBUG) {
-                log.debug("Post-cancelled [context={}]", this);
+                log.debug("Post-cancelling [context={}]", this);
             }
 
             handler.cancel(this);
         }
     }
 
-    @Override
-    public Hekate hekate() {
-        return hekate.hekate();
+    private void doPrepare() {
+        if (status.compareAndSet(Status.NEW, Status.PREPARED)) {
+            if (DEBUG) {
+                log.debug("Preparing [context={}]", this);
+            }
+
+            handler.prepare(this);
+        }
     }
 
     private void doComplete() {
-        if (future.complete(null)) {
+        if (status.compareAndSet(Status.PREPARED, Status.COMPLETED)) {
             if (DEBUG) {
                 log.debug("Completed [context={}]", this);
             }
@@ -360,15 +409,17 @@ class DefaultCoordinatorContext implements CoordinatorContext {
                 handler.complete(this);
             } finally {
                 membersById.values().forEach(DefaultCoordinationMember::dispose);
+
+                onComplete.run();
             }
         }
     }
 
     private void broadcastPrepare(CoordinationBroadcastCallback callback) {
-        BroadcastCallbackAdaptor callbackAdaptor = new BroadcastCallbackAdaptor(membersById.size(), callback);
+        CoordinationBroadcastAdaptor adaptor = new CoordinationBroadcastAdaptor(membersById.size(), callback);
 
         membersById.forEach((id, member) ->
-            member.sendPrepare(callbackAdaptor)
+            member.sendPrepare(adaptor)
         );
     }
 
@@ -380,23 +431,11 @@ class DefaultCoordinatorContext implements CoordinatorContext {
         if (remotes.isEmpty()) {
             callback.onResponses(emptyMap());
         } else {
-            BroadcastCallbackAdaptor callbackAdaptor = new BroadcastCallbackAdaptor(remotes.size(), callback);
+            CoordinationBroadcastAdaptor adaptor = new CoordinationBroadcastAdaptor(remotes.size(), callback);
 
             remotes.forEach(member ->
-                member.sendComplete(callbackAdaptor)
+                member.sendComplete(adaptor)
             );
-        }
-    }
-
-    private void ensurePrepared() {
-        if (!prepared) {
-            if (DEBUG) {
-                log.debug("Preparing [context={}]", this);
-            }
-
-            prepared = true;
-
-            handler.prepare(this);
         }
     }
 
