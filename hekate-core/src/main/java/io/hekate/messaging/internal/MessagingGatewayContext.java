@@ -432,97 +432,103 @@ class MessagingGatewayContext<T> {
         ClusterTopology topology,
         MessagingClient<T> client
     ) {
-        MessageOperationCallback<T> callback = (attempt, rsp, err) -> {
-            // Signal that network connection is not idle.
-            attempt.client().touch();
+        return new MessageOperationAttempt<>(
+            client,
+            topology,
+            operation,
+            prevFailure,
+            (attempt, rsp, err) -> {
+                // Signal that network connection is not idle.
+                attempt.client().touch();
 
-            // Do not process completed operations.
-            if (attempt.operation().isDone()) {
-                return false;
-            }
+                // Do not process completed operations.
+                if (attempt.operation().isDone()) {
+                    return false;
+                }
 
-            // Check if reply is an application-level error.
-            if (err == null) {
-                err = tryConvertToError(rsp, attempt.receiver());
-            }
+                // Check if reply is an application-level error.
+                if (err == null) {
+                    err = tryConvertToError(rsp, attempt.receiver());
+                }
 
-            // Nullify response if it was converted to an error.
-            ResponsePart<T> effectiveRsp = err == null ? rsp : null;
+                // Nullify response if it was converted to an error.
+                ResponsePart<T> effectiveRsp = err == null ? rsp : null;
 
-            boolean completed = false;
+                boolean completed;
 
-            if (shouldComplete(attempt, effectiveRsp, err)) {
-                /////////////////////////////////////////////////////////////
-                // Complete the operation.
-                /////////////////////////////////////////////////////////////
-                // Note that it is up to the operation to decide on whether it is really complete or not.
-                completed = attempt.operation().complete(err, effectiveRsp);
-            } else {
-                /////////////////////////////////////////////////////////////
-                // Retry.
-                /////////////////////////////////////////////////////////////
-                if (!attempt.operation().isDone()) {
+                if (shouldComplete(attempt, effectiveRsp, err)) {
+                    /////////////////////////////////////////////////////////////
+                    // Complete the operation.
+                    /////////////////////////////////////////////////////////////
+                    // Note that it is up to the operation to decide on whether it is really complete or not.
+                    completed = attempt.operation().complete(err, effectiveRsp);
+                } else {
+                    /////////////////////////////////////////////////////////////
+                    // Retry.
+                    /////////////////////////////////////////////////////////////
                     // Complete the current attempt (successful retry actions will result in a new attempt).
                     completed = true;
 
-                    RetryErrorPredicate policy;
+                    if (!attempt.operation().isDone()) {
+                        RetryErrorPredicate policy;
 
-                    // Check whether it was a real error or response was rejected by the user application logic.
-                    if (err == null) {
-                        err = new RejectedResponseException("Response rejected by the application logic", effectiveRsp.payload());
+                        // Check whether it was a real error or response was rejected by the user application logic.
+                        if (err == null) {
+                            err = new RejectedResponseException("Response rejected by the application logic", effectiveRsp.payload());
 
-                        // Always retry.
-                        policy = RetryErrorPredicate.acceptAll();
-                    } else {
-                        // Use operation's policy.
-                        policy = attempt.operation().retryErrorPolicy();
-                    }
+                            // Always retry.
+                            policy = RetryErrorPredicate.acceptAll();
+                        } else {
+                            // Use operation's policy.
+                            policy = attempt.operation().retryErrorPolicy();
+                        }
 
-                    // Retry callback.
-                    RetryCallback onRetry = new RetryCallback() {
-                        @Override
-                        public void retry(RetryRoutingPolicy routing, Optional<FailedAttempt> failure) {
-                            switch (routing) {
-                                case RETRY_SAME_NODE: {
-                                    attempt.nextAttempt(failure).submit();
+                        // Retry callback.
+                        RetryCallback onRetry = new RetryCallback() {
+                            @Override
+                            public void retry(RetryRoutingPolicy routing, Optional<FailedAttempt> failure) {
+                                if (!attempt.operation().isDone()) {
+                                    switch (routing) {
+                                        case RETRY_SAME_NODE: {
+                                            attempt.nextAttempt(failure).submit();
 
-                                    break;
-                                }
-                                case PREFER_SAME_NODE: {
-                                    if (isKnownNode(attempt.receiver())) {
-                                        attempt.nextAttempt(failure).submit();
-                                    } else {
-                                        routeAndSubmit(attempt.operation(), failure);
+                                            break;
+                                        }
+                                        case PREFER_SAME_NODE: {
+                                            if (isKnownNode(attempt.receiver())) {
+                                                attempt.nextAttempt(failure).submit();
+                                            } else {
+                                                routeAndSubmit(attempt.operation(), failure);
+                                            }
+
+                                            break;
+                                        }
+                                        case RE_ROUTE: {
+                                            routeAndSubmit(attempt.operation(), failure);
+
+                                            break;
+                                        }
+                                        default: {
+                                            throw new IllegalArgumentException("Unexpected routing policy: " + routing);
+                                        }
                                     }
-
-                                    break;
-                                }
-                                case RE_ROUTE: {
-                                    routeAndSubmit(attempt.operation(), failure);
-
-                                    break;
-                                }
-                                default: {
-                                    throw new IllegalArgumentException("Unexpected routing policy: " + routing);
                                 }
                             }
-                        }
 
-                        @Override
-                        public void fail(Throwable cause) {
-                            notifyOnErrorAsync(attempt.operation(), cause);
-                        }
-                    };
+                            @Override
+                            public void fail(Throwable cause) {
+                                notifyOnErrorAsync(attempt.operation(), cause);
+                            }
+                        };
 
-                    // Retry.
-                    retryAsync(attempt, policy, err, onRetry);
+                        // Retry.
+                        retryAsync(attempt, policy, err, onRetry);
+                    }
                 }
+
+                return completed;
             }
-
-            return completed;
-        };
-
-        return new MessageOperationAttempt<>(client, topology, operation, prevFailure, callback);
+        );
     }
 
     private void retryAsync(MessageOperationAttempt<T> attempt, RetryErrorPredicate policy, Throwable cause, RetryCallback callback) {
