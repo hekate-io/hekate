@@ -259,24 +259,6 @@ class DefaultCoordinatorContext implements CoordinatorContext {
     }
 
     @Override
-    public void complete() {
-        if (!isDone()) {
-            // Broadcast 'complete' message to remote members.
-            broadcastCompleteToRemotes(ignore -> {
-                // Send 'complete' message to self.
-                // --------------------------------------------------------------------------------------------------
-                // We need to do it as the last step, because otherwise the local context may switch to the COMPLETED
-                // state before it gets all confirmations from the remote members.
-                // In such case, it will stop trying to resend messages (f.e. in case of a temporary network error)
-                // and therefore some of the remote members will never become COMPLETED.
-                localMember.sendComplete((response, from) -> {
-                    // No-op.
-                });
-            });
-        }
-    }
-
-    @Override
     public Object getAttachment() {
         return attachment;
     }
@@ -365,27 +347,35 @@ class DefaultCoordinatorContext implements CoordinatorContext {
         }
     }
 
-    public boolean cancel() {
+    @Override
+    public void complete() {
+        if (!isDone()) {
+            // Broadcast 'complete' message to remote members.
+            broadcastCompleteToRemotes(ignore -> {
+                // Send 'complete' message to self.
+                // --------------------------------------------------------------------------------------------------
+                // We need to do it as the last step, because otherwise the local context may switch to the COMPLETED
+                // state before it gets all confirmations from the remote members.
+                // In such case, it will stop trying to resend messages (f.e. in case of a temporary network error)
+                // and therefore some of the remote members will never become COMPLETED.
+                localMember.sendComplete((response, from) -> {
+                    // No-op.
+                });
+            });
+        }
+    }
+
+    public void cancel() {
         if (status.compareAndSet(Status.PREPARED, Status.CANCELLED)) {
             if (DEBUG) {
                 log.debug("Cancelling [context={}]", this);
             }
 
-            membersById.values().forEach(DefaultCoordinationMember::dispose);
-
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    public void postCancel() {
-        if (isCancelled()) {
-            if (DEBUG) {
-                log.debug("Post-cancelling [context={}]", this);
+            try {
+                handler.cancel(this);
+            } finally {
+                membersById.values().forEach(DefaultCoordinationMember::dispose);
             }
-
-            handler.cancel(this);
         }
     }
 

@@ -244,7 +244,6 @@ class DefaultCoordinationProcess implements CoordinationProcess {
                     reject(msg);
                 }
             });
-
         } else {
             ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             // Other Messages.
@@ -307,12 +306,12 @@ class DefaultCoordinationProcess implements CoordinationProcess {
 
         DefaultCoordinatorContext localCtx = this.ctx;
 
-        if (localCtx != null && localCtx.cancel()) {
+        if (localCtx != null) {
             async.execute(() -> {
                 try {
-                    localCtx.postCancel();
+                    localCtx.cancel();
                 } catch (RuntimeException | Error e) {
-                    log.error("Got an unexpected runtime error during coordination [process={}]", name, e);
+                    log.error("Got an unexpected runtime error while canceling coordination [process={}]", name, e);
                 }
             });
         }
