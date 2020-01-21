@@ -124,7 +124,7 @@ public abstract class HekateTestBase {
     }
 
     /** Maximum timeout in {@link TimeUnit#MINUTES} for each individual test case (see {@link #testTimeoutRule}). */
-    public static final int MAX_TEST_TIMEOUT = 5;
+    public static final int MAX_TEST_TIMEOUT = Integer.parseInt(System.getProperty("hekate.test.timeout.minutes", "5"));
 
     /** Maximum number of loop for {@link #busyWait(String, Callable)}. */
     public static final int BUSY_WAIT_LOOPS = 200;
