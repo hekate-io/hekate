@@ -17,7 +17,6 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterNode;
-import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.messaging.retry.FailedAttempt;
 import io.hekate.messaging.retry.RetryRoutingPolicy;
 import io.hekate.util.format.ToString;
@@ -83,11 +82,6 @@ class MessageOperationFailure implements FailedAttempt {
     @Override
     public RetryRoutingPolicy routing() {
         return routing;
-    }
-
-    @Override
-    public boolean isCausedBy(Class<? extends Throwable> type) {
-        return ErrorUtils.isCausedBy(type, error);
     }
 
     @Override

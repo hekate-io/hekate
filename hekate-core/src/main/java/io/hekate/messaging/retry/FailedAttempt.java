@@ -16,6 +16,10 @@
 
 package io.hekate.messaging.retry;
 
+import io.hekate.core.internal.util.ArgAssert;
+import io.hekate.core.internal.util.ErrorUtils;
+import java.util.function.Predicate;
+
 /**
  * Failed attempt.
  */
@@ -41,5 +45,27 @@ public interface FailedAttempt extends Attempt {
      *
      * @return {@code true} if this failure is caused by an error of the specified type.
      */
-    boolean isCausedBy(Class<? extends Throwable> type);
+    default boolean isCausedBy(Class<? extends Throwable> type) {
+        ArgAssert.notNull(type, "Error type");
+
+        return ErrorUtils.isCausedBy(type, error());
+    }
+
+    /**
+     * Returns {@code true} if this failure is caused by an error of the specified type.
+     *
+     * @param type Error type.
+     * @param predicate Error predicate.
+     * @param <T> Error type.
+     *
+     * @return {@code true} if this failure is caused by an error of the specified type.
+     */
+    default <T extends Throwable> boolean isCausedBy(Class<T> type, Predicate<T> predicate) {
+        ArgAssert.notNull(type, "Error type");
+        ArgAssert.notNull(predicate, "Error predicate");
+
+        T cause = ErrorUtils.findCause(type, error());
+
+        return cause != null && predicate.test(cause);
+    }
 }
