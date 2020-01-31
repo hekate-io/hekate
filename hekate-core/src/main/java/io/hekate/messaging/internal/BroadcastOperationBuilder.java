@@ -6,6 +6,7 @@ import io.hekate.messaging.loadbalance.UnknownRouteException;
 import io.hekate.messaging.operation.AckMode;
 import io.hekate.messaging.operation.Broadcast;
 import io.hekate.messaging.operation.BroadcastFuture;
+import io.hekate.messaging.operation.BroadcastRepeatCondition;
 import io.hekate.messaging.operation.BroadcastRetryConfigurer;
 import io.hekate.messaging.operation.BroadcastRetryPolicy;
 import io.hekate.messaging.retry.RetryBackoffPolicy;
@@ -20,6 +21,8 @@ class BroadcastOperationBuilder<T> extends MessageOperationBuilder<T> implements
 
     private AckMode ackMode = AckMode.NOT_NEEDED;
 
+    private long timeout;
+
     private RetryErrorPredicate retryErr;
 
     private RetryBackoffPolicy retryBackoff;
@@ -30,7 +33,7 @@ class BroadcastOperationBuilder<T> extends MessageOperationBuilder<T> implements
 
     private int maxAttempts;
 
-    private long timeout;
+    private BroadcastRepeatCondition<T> repeat;
 
     public BroadcastOperationBuilder(T message, MessagingGatewayContext<T> gateway, MessageOperationOpts<T> opts) {
         super(message, gateway, opts);
@@ -74,9 +77,20 @@ class BroadcastOperationBuilder<T> extends MessageOperationBuilder<T> implements
     }
 
     @Override
+    public Broadcast<T> withRepeat(BroadcastRepeatCondition<T> condition) {
+        ArgAssert.notNull(condition, "Repeat condition");
+
+        repeat = condition;
+
+        return this;
+    }
+
+    @Override
     public BroadcastFuture<T> submit() {
+        BroadcastFuture<T> future = new BroadcastFuture<>();
+
         // Use a static method to make sure that we immutably capture all current settings of this operation.
-        return doSubmit(
+        doSubmit(
             message(),
             affinity,
             timeout,
@@ -86,9 +100,13 @@ class BroadcastOperationBuilder<T> extends MessageOperationBuilder<T> implements
             retryCondition,
             retryBackoff,
             retryCallback,
+            repeat,
             gateway(),
-            opts()
+            opts(),
+            future
         );
+
+        return future;
     }
 
     @Override
@@ -142,7 +160,8 @@ class BroadcastOperationBuilder<T> extends MessageOperationBuilder<T> implements
         return nodes;
     }
 
-    private static <T> BroadcastFuture<T> doSubmit(
+    // Static to make sure that we capture all the parameter at once and do not depend on the operation builder's state changes.
+    private static <T> void doSubmit(
         T msg,
         Object affinity,
         long timeout,
@@ -152,11 +171,11 @@ class BroadcastOperationBuilder<T> extends MessageOperationBuilder<T> implements
         RetryCondition retryCondition,
         RetryBackoffPolicy retryBackoff,
         RetryCallback retryCallback,
+        BroadcastRepeatCondition<T> repeat,
         MessagingGatewayContext<T> gateway,
-        MessageOperationOpts<T> opts
+        MessageOperationOpts<T> opts,
+        BroadcastFuture<T> future
     ) {
-        BroadcastFuture<T> future = new BroadcastFuture<>();
-
         List<ClusterNode> nodes = nodesForBroadcast(affinity, opts);
 
         if (nodes.isEmpty()) {
@@ -192,19 +211,37 @@ class BroadcastOperationBuilder<T> extends MessageOperationBuilder<T> implements
                         //-----------------------------------------------
                         // Can happen in some rare cases if node leaves the cluster at the same time with this operation.
                         // We exclude such nodes from the operation's results as if it had left the cluster right before
-                        // we've started the operation.
+                        // we've started the operation (note that no messages had been submitted to that node).
                         complete = ctx.forgetNode(node);
                     } else {
                         complete = ctx.onSendFailure(node, err);
                     }
 
                     if (complete) {
-                        ctx.complete();
+                        if (repeat == null || gateway.isClosed() || ctx.isTimedOut() || !repeat.shouldRepeat(ctx)) {
+                            // Broadcast is complete.
+                            ctx.complete();
+                        } else {
+                            // Repeat broadcast.
+                            doSubmit(
+                                msg,
+                                affinity,
+                                timeout,
+                                maxAttempts,
+                                ackMode,
+                                retry,
+                                retryCondition,
+                                retryBackoff,
+                                retryCallback,
+                                repeat,
+                                gateway,
+                                opts,
+                                future
+                            );
+                        }
                     }
                 });
             });
         }
-
-        return future;
     }
 }

@@ -6,6 +6,17 @@ import io.hekate.messaging.retry.RetryResponseSupport;
 /**
  * Retry policy for an {@link Aggregate} operation.
  *
+ * <p>
+ * This policy gets applied to each individual (per-node) message. For example, if aggregation should be performed over 3 nodes
+ * and an error happens while sending an aggregation message to the second node then this retry policy will be applied only to that
+ * particular failed message.
+ * </p>
+ *
+ * <p>
+ * If retry logic should be implemented at the aggregation level (i.e. decide on whether to retry or not by looking at the whole
+ * {@link AggregateResult}) please see the {@link Aggregate#withRepeat(AggregateRepeatCondition)} method.
+ * </p>
+ *
  * @param <T> Message type.
  *
  * @see Aggregate#withRetry(AggregateRetryConfigurer)

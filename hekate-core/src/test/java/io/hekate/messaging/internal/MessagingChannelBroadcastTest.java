@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
 
 import static java.util.stream.Collectors.toList;
@@ -256,5 +257,32 @@ public class MessagingChannelBroadcastTest extends MessagingServiceTestBase {
                 c.awaitForMessage("test-join" + i);
             }
         });
+    }
+
+    @Test
+    public void testRepeat() throws Exception {
+        int attempts = 3;
+        int nodes = 3;
+
+        CountDownLatch allReceived = new CountDownLatch(attempts * nodes);
+
+        List<TestChannel> channels = createAndJoinChannels(nodes, c ->
+            c.withReceiver(msg -> {
+                assertFalse(msg.toString(), msg.isRetransmit());
+
+                allReceived.countDown();
+            })
+        );
+
+        AtomicInteger cnt = new AtomicInteger();
+
+        BroadcastResult<String> result = get(channels.get(0).channel().newBroadcast("test")
+            .withRepeat(r -> cnt.incrementAndGet() < attempts)
+            .submit()
+        );
+
+        assertTrue(result.toString(), result.isSuccess());
+
+        await(allReceived);
     }
 }

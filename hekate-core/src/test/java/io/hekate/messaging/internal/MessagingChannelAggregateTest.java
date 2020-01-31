@@ -18,15 +18,21 @@ package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.core.internal.HekateTestNode;
+import io.hekate.messaging.Message;
 import io.hekate.messaging.MessageReceiver;
+import io.hekate.messaging.MessageTimeoutException;
+import io.hekate.messaging.MessagingException;
 import io.hekate.messaging.operation.AggregateFuture;
 import io.hekate.messaging.operation.AggregateResult;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import org.junit.Test;
 
@@ -190,6 +196,36 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
     }
 
     @Test
+    public void testClientNodeLeave() throws Exception {
+        CountDownLatch leaveLatch = new CountDownLatch(3);
+
+        List<TestChannel> channels = createAndJoinChannels(3, c ->
+            c.withReceiver(msg -> {
+                leaveLatch.countDown();
+            })
+        );
+
+        TestChannel client = channels.get(0);
+
+        // Submit request.
+        AggregateFuture<String> future = client.channel().newAggregate("test").submit();
+
+        // Await for all nodes to receive the request.
+        await(leaveLatch);
+
+        // Leave the cluster while aggregation is not complete yet.
+        assertFalse(future.isDone());
+
+        client.node().leave();
+
+        AggregateResult<String> result = get(future);
+
+        assertFalse(result.toString(), result.isSuccess());
+        assertEquals(result.toString(), result.errors().size(), channels.size());
+        assertTrue(result.toString(), result.errors().values().stream().allMatch(e -> e instanceof MessagingException));
+    }
+
+    @Test
     public void testTopologyChange() throws Throwable {
         MessageReceiver<String> receiver = msg -> msg.reply(msg.payload() + "-reply");
 
@@ -300,5 +336,76 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
                 assertEquals("test-reply", result.resultsByNode().get(c.node().localNode()))
             );
         }
+    }
+
+    @Test
+    public void testRepeat() throws Exception {
+        List<TestChannel> channels = createAndJoinChannels(3, c ->
+            c.withReceiver(new MessageReceiver<String>() {
+                private final AtomicInteger cnt = new AtomicInteger();
+
+                @Override
+                public void receive(Message<String> msg) {
+                    assertFalse(msg.toString(), msg.isRetransmit());
+
+                    msg.reply("reply-" + cnt.incrementAndGet());
+                }
+            })
+        );
+
+        AtomicInteger cnt = new AtomicInteger();
+
+        AggregateResult<String> result = get(channels.get(0).channel().newAggregate("test")
+            .withRepeat(r -> cnt.incrementAndGet() < 3) // <-- Repeat 3 times.
+            .submit()
+        );
+
+        assertTrue(result.toString(), result.isSuccess());
+        assertEquals(result.toString(), result.results().size(), channels.size());
+        assertEquals(Arrays.asList("reply-3", "reply-3", "reply-3"), new ArrayList<>(result.results()));
+    }
+
+    @Test
+    public void testRepeatWithTimeout() throws Exception {
+        List<TestChannel> channels = createAndJoinChannels(3, c ->
+            c.withReceiver(msg -> {
+                // Do not reply (make sure that timeout is triggered on the client side).
+            })
+        );
+
+        AggregateResult<String> result = get(channels.get(0).channel().newAggregate("test")
+            .withTimeout(1, TimeUnit.MILLISECONDS)
+            .withRepeat(r -> true)
+            .submit()
+        );
+
+        assertFalse(result.toString(), result.isSuccess());
+        assertEquals(result.toString(), result.errors().size(), channels.size());
+        assertTrue(result.toString(), result.errors().values().stream().allMatch(e -> e instanceof MessageTimeoutException));
+    }
+
+    @Test
+    public void testRepeatWithChannelClose() throws Exception {
+        List<TestChannel> channels = createAndJoinChannels(3, c ->
+            c.withReceiver(msg -> {
+                msg.reply("ok");
+            })
+        );
+
+        AtomicInteger cnt = new AtomicInteger();
+
+        AggregateFuture<String> future = channels.get(0).channel().newAggregate("test")
+            .withRepeat(r -> {
+                // Stop the client node after several attempts.
+                if (cnt.incrementAndGet() == 3) {
+                    channels.get(0).node().leaveAsync();
+                }
+
+                return true;
+            })
+            .submit();
+
+        // Make sure that future gets completed.
+        get(future);
     }
 }
