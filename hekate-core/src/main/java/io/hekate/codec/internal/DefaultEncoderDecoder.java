@@ -34,6 +34,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 class DefaultEncoderDecoder<T> implements EncoderDecoder<T> {
+    private final Class<T> type;
+
     private final ByteArrayOutputStreamPool buffers;
 
     private final EncodeFunction<T> encoder;
@@ -44,16 +46,19 @@ class DefaultEncoderDecoder<T> implements EncoderDecoder<T> {
         assert buffers != null : "Buffer pool is null.";
         assert codec != null : "Codec is null.";
 
+        this.type = codec.baseType();
         this.buffers = buffers;
         this.encoder = codec;
         this.decoder = codec;
     }
 
-    public DefaultEncoderDecoder(ByteArrayOutputStreamPool buffers, EncodeFunction<T> encoder, DecodeFunction<T> decoder) {
+    public DefaultEncoderDecoder(Class<T> type, ByteArrayOutputStreamPool buffers, EncodeFunction<T> encoder, DecodeFunction<T> decoder) {
+        assert type != null : "Type is null.";
         assert buffers != null : "Buffer pool is null.";
         assert encoder != null : "Encode function is null.";
         assert decoder != null : "Decode function is null.";
 
+        this.type = type;
         this.buffers = buffers;
         this.encoder = encoder;
         this.decoder = decoder;
@@ -61,11 +66,15 @@ class DefaultEncoderDecoder<T> implements EncoderDecoder<T> {
 
     @Override
     public void encode(T obj, OutputStream out) throws IOException {
+        checkType(obj);
+
         encode(obj, (DataWriter)new StreamDataWriter(out));
     }
 
     @Override
     public void encode(T obj, DataWriter out) throws IOException {
+        checkType(obj);
+
         ArgAssert.notNull(obj, "Object to encode");
         ArgAssert.notNull(out, "Output stream");
 
@@ -75,6 +84,8 @@ class DefaultEncoderDecoder<T> implements EncoderDecoder<T> {
     @Override
     public byte[] encode(T obj) throws IOException {
         ArgAssert.notNull(obj, "Object to encode");
+
+        checkType(obj);
 
         ByteArrayOutputStream buf = buffers.acquire();
 
@@ -115,6 +126,12 @@ class DefaultEncoderDecoder<T> implements EncoderDecoder<T> {
         ArgAssert.notNull(in, "Input stream");
 
         return decoder.decode(in);
+    }
+
+    private void checkType(T obj) {
+        if (obj != null && !type.isInstance(obj)) {
+            throw new ClassCastException("Can't encode/decode " + obj.getClass().getName() + " (expected " + type.getName() + ")");
+        }
     }
 
     @Override

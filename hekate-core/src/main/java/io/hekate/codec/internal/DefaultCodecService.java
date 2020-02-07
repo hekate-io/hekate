@@ -75,7 +75,11 @@ public class DefaultCodecService implements CodecService, EncoderDecoder<Object>
 
     @Override
     public <T> EncoderDecoder<T> forType(Class<T> type, EncodeFunction<T> encode, DecodeFunction<T> decode) {
-        return new DefaultEncoderDecoder<>(buffers, encode, decode);
+        ArgAssert.notNull(type, "Type");
+        ArgAssert.notNull(encode, "Encode function");
+        ArgAssert.notNull(decode, "Decode function");
+
+        return new DefaultEncoderDecoder<>(type, buffers, encode, decode);
     }
 
     @Override
