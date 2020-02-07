@@ -70,7 +70,7 @@ public class CodecServiceTest extends HekateTestBase {
     }
 
     @Test
-    public void testEncodeDecode() throws Exception {
+    public void testEncoderDecoder() throws Exception {
         encodeDecode(String.class, "some string", Assert::assertEquals);
         encodeDecode(ClusterNodeId.class, newNodeId(), Assert::assertEquals);
         encodeDecode(ClusterAddress.class, newAddress(1), Assert::assertEquals);
@@ -81,6 +81,11 @@ public class CodecServiceTest extends HekateTestBase {
         encodeDecode(List.class, Arrays.asList("one", "two", "three"), Assert::assertEquals);
         encodeDecode(ClusterTopology.class, DefaultClusterTopology.of(1, toSet(newNode(), newNode(), newNode())), Assert::assertEquals);
         encodeDecode(ClusterHash.class, new DefaultClusterHash(Arrays.asList(newNode(), newNode(), newNode())), Assert::assertEquals);
+    }
+
+    @Test
+    public void testEncodeDecode() throws Exception {
+        assertEquals("test", service.decode(service.encode("test")));
     }
 
     @Test

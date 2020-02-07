@@ -98,8 +98,21 @@ public interface CodecService extends Service {
      * @return Byte array of encoded data.
      *
      * @throws IOException If object couldn't be decoded.
+     * @see #decode(byte[], DecodeFunction)
      */
     <T> byte[] encode(T obj, EncodeFunction<T> encoder) throws IOException;
+
+    /**
+     * Encodes the specified object into an array of bytes.
+     *
+     * @param obj Object.
+     *
+     * @return Bytes.
+     *
+     * @throws IOException Signals encoding failure.
+     * @see #decode(byte[])
+     */
+    byte[] encode(Object obj) throws IOException;
 
     /**
      * Decodes an object from the specified byte array by using the supplied decode function.
@@ -111,8 +124,34 @@ public interface CodecService extends Service {
      * @return Decoded object.
      *
      * @throws IOException If object couldn't be decoded.
+     * @see #encode(Object, EncodeFunction)
      */
     <T> T decode(byte[] bytes, DecodeFunction<T> decoder) throws IOException;
+
+    /**
+     * Decodes an object from the specified array of bytes.
+     *
+     * @param bytes Bytes.
+     * @param offset Offset of the first byte to read.
+     * @param limit Maximum number of bytes to read.
+     *
+     * @return Decoded object.
+     *
+     * @throws IOException Signals decoding failure.
+     */
+    Object decode(byte[] bytes, int offset, int limit) throws IOException;
+
+    /**
+     * Decodes an object from the specified array of bytes.
+     *
+     * @param bytes Bytes.
+     *
+     * @return Decoded object.
+     *
+     * @throws IOException Signals decoding failure.
+     * @see #encode(Object)
+     */
+    Object decode(byte[] bytes) throws IOException;
 
     /**
      * Decodes an object from the specified byte array by using the supplied decode function.
