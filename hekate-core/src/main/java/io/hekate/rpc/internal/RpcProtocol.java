@@ -41,7 +41,7 @@ abstract class RpcProtocol implements Traceable {
 
         NULL_RESPONSE,
 
-        ERROR_RESPONSE,
+        ERROR_RESPONSE
     }
 
     static class RpcCall<T> extends RpcProtocol implements RpcRequest {

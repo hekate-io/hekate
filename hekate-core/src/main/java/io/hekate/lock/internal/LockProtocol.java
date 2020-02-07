@@ -43,7 +43,7 @@ abstract class LockProtocol implements Traceable {
 
         MIGRATION_APPLY,
 
-        MIGRATION_RESPONSE,
+        MIGRATION_RESPONSE
     }
 
     abstract static class LockRequestBase extends LockProtocol {
@@ -106,7 +106,7 @@ abstract class LockProtocol implements Traceable {
         enum Status {
             OK,
 
-            RETRY,
+            RETRY
         }
 
         private final long threadId;
@@ -306,7 +306,7 @@ abstract class LockProtocol implements Traceable {
         enum Status {
             OK,
 
-            RETRY,
+            RETRY
         }
 
         private final UnlockResponse.Status status;

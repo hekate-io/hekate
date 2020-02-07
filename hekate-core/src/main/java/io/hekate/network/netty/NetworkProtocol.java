@@ -27,7 +27,7 @@ abstract class NetworkProtocol {
 
         HANDSHAKE_REJECT,
 
-        HEARTBEAT,
+        HEARTBEAT
     }
 
     static class HandshakeAccept extends NetworkProtocol {
