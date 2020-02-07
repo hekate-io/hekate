@@ -21,6 +21,7 @@ import io.hekate.cluster.ClusterNodeFilter;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.cluster.ClusterView;
 import io.hekate.codec.AutoSelectCodecFactory;
+import io.hekate.codec.Codec;
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.CodecService;
 import io.hekate.core.internal.HekateNodeFactory;
@@ -519,10 +520,15 @@ public class HekateBootstrap {
      * Sets the codec factory that should be used by the {@link CodecService}.
      *
      * <p>
-     * This parameter is mandatory and can't be {@code null}. If not configured then {@link AutoSelectCodecFactory} will be used by default.
+     * This parameter is mandatory and can't be {@code null}.
+     * Also, the specified codec factory must be stateless (see {@link Codec#isStateful()}).
      * </p>
      *
-     * @param defaultCodec Default codec factory.
+     * <p>
+     * If not configured then {@link AutoSelectCodecFactory} will be used by default.
+     * </p>
+     *
+     * @param defaultCodec Codec factory (must be stateless, see {@link Codec#isStateful()}) .
      *
      * @see CodecService
      */

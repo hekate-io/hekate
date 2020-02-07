@@ -51,15 +51,32 @@ public interface CodecService extends Service {
     <T> CodecFactory<T> codecFactory();
 
     /**
-     * Returns encoder/decoder for the specified type that uses the underlying {@link #codecFactory()} of this service for encoding/decoding
-     * operations.
+     * Returns encoder/decoder for the specified type.
+     *
+     * <p>
+     * Such encoder/decoder uses the underlying {@link #codecFactory()} of this service to perform encoding/decoding operations.
+     * </p>
      *
      * @param type Data type.
      * @param <T> Data type.
      *
      * @return Encoder/decoder for the specified type.
+     *
+     * @see HekateBootstrap#setDefaultCodec(CodecFactory)
      */
     <T> EncoderDecoder<T> forType(Class<T> type);
+
+    /**
+     * Returns encoder/decoder for the specified type and encoding/decoding functions.
+     *
+     * @param type Data type.
+     * @param encode Encode function.
+     * @param decode Decode function.
+     * @param <T> Data type.
+     *
+     * @return Encoder/decoder.
+     */
+    <T> EncoderDecoder<T> forType(Class<T> type, EncodeFunction<T> encode, DecodeFunction<T> decode);
 
     /**
      * Returns encoder/decoder for the codec factory.

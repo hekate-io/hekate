@@ -26,6 +26,7 @@ import io.hekate.codec.Codec;
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.DataReader;
 import io.hekate.codec.DataWriter;
+import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
@@ -407,6 +408,11 @@ public class KryoCodecFactory<T> implements CodecFactory<T> {
      * Codec#decode(DataReader) decode} methods when called on the same {@link Codec} instance. If set to {@code false} then such
      * mapping will be reset (see {@link ClassResolver#reset()}) after each {@link Codec#encode(Object, DataWriter) encode}/{@link
      * Codec#decode(DataReader) decode} operation.
+     * </p>
+     *
+     * <p>
+     * Note that codec factories with classes caching enabled can <b>not</b> be used as the
+     * {@link HekateBootstrap#setDefaultCodec(CodecFactory) default codec} of {@link Hekate} node, as the default codec must be stateless.
      * </p>
      *
      * <p>

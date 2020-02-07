@@ -16,10 +16,12 @@
 
 package io.hekate.codec.internal;
 
-import io.hekate.codec.CodecFactory;
+import io.hekate.codec.Codec;
 import io.hekate.codec.CodecService;
 import io.hekate.codec.DataReader;
 import io.hekate.codec.DataWriter;
+import io.hekate.codec.DecodeFunction;
+import io.hekate.codec.EncodeFunction;
 import io.hekate.codec.EncoderDecoder;
 import io.hekate.codec.StreamDataReader;
 import io.hekate.codec.StreamDataWriter;
@@ -32,16 +34,29 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 class DefaultEncoderDecoder<T> implements EncoderDecoder<T> {
-    private final ByteArrayOutputStreamPool bufferPool;
+    private final ByteArrayOutputStreamPool buffers;
 
-    private final CodecFactory<T> codecFactory;
+    private final EncodeFunction<T> encoder;
 
-    public DefaultEncoderDecoder(ByteArrayOutputStreamPool bufferPool, CodecFactory<T> codecFactory) {
-        assert bufferPool != null : "Buffer pool is null.";
-        assert codecFactory != null : "Codec factory is null.";
+    private final DecodeFunction<T> decoder;
 
-        this.codecFactory = codecFactory;
-        this.bufferPool = bufferPool;
+    public DefaultEncoderDecoder(ByteArrayOutputStreamPool buffers, Codec<T> codec) {
+        assert buffers != null : "Buffer pool is null.";
+        assert codec != null : "Codec is null.";
+
+        this.buffers = buffers;
+        this.encoder = codec;
+        this.decoder = codec;
+    }
+
+    public DefaultEncoderDecoder(ByteArrayOutputStreamPool buffers, EncodeFunction<T> encoder, DecodeFunction<T> decoder) {
+        assert buffers != null : "Buffer pool is null.";
+        assert encoder != null : "Encode function is null.";
+        assert decoder != null : "Decode function is null.";
+
+        this.buffers = buffers;
+        this.encoder = encoder;
+        this.decoder = decoder;
     }
 
     @Override
@@ -54,21 +69,21 @@ class DefaultEncoderDecoder<T> implements EncoderDecoder<T> {
         ArgAssert.notNull(obj, "Object to encode");
         ArgAssert.notNull(out, "Output stream");
 
-        codecFactory.createCodec().encode(obj, out);
+        encoder.encode(obj, out);
     }
 
     @Override
     public byte[] encode(T obj) throws IOException {
         ArgAssert.notNull(obj, "Object to encode");
 
-        ByteArrayOutputStream buf = bufferPool.acquire();
+        ByteArrayOutputStream buf = buffers.acquire();
 
         try {
-            codecFactory.createCodec().encode(obj, new StreamDataWriter(buf));
+            encoder.encode(obj, new StreamDataWriter(buf));
 
             return buf.toByteArray();
         } finally {
-            bufferPool.recycle(buf);
+            buffers.recycle(buf);
         }
     }
 
@@ -78,7 +93,7 @@ class DefaultEncoderDecoder<T> implements EncoderDecoder<T> {
 
         ByteArrayInputStream buf = new ByteArrayInputStream(bytes);
 
-        return codecFactory.createCodec().decode(new StreamDataReader(buf));
+        return decoder.decode(new StreamDataReader(buf));
     }
 
     @Override
@@ -87,7 +102,7 @@ class DefaultEncoderDecoder<T> implements EncoderDecoder<T> {
 
         ByteArrayInputStream buf = new ByteArrayInputStream(bytes, offset, limit);
 
-        return codecFactory.createCodec().decode(new StreamDataReader(buf));
+        return decoder.decode(new StreamDataReader(buf));
     }
 
     @Override
@@ -99,7 +114,7 @@ class DefaultEncoderDecoder<T> implements EncoderDecoder<T> {
     public T decode(DataReader in) throws IOException {
         ArgAssert.notNull(in, "Input stream");
 
-        return codecFactory.createCodec().decode(in);
+        return decoder.decode(in);
     }
 
     @Override
