@@ -38,7 +38,7 @@
     </issueManagement>
     <organization>
         <name>The Hekate Project</name>
-        <url>http://hekate.io/</url>
+        <url>https://hekate.io/</url>
     </organization>
     <developers>
         <developer>
@@ -61,7 +61,7 @@
         <java.target>1.8</java.target>
 
         <!-- Production dependencies.-->
-        <spring.boot.version>2.1.9.RELEASE</spring.boot.version>
+        <spring.boot.version>2.1.12.RELEASE</spring.boot.version>
         <kryo.version>4.0.2</kryo.version>
         <kryo.serializers.version>0.43</kryo.serializers.version>
         <fst.version>2.57</fst.version>
