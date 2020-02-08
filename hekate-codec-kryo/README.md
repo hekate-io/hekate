@@ -7,6 +7,6 @@ This module provides integration with [Kryo](https://github.com/EsotericSoftware
  <dependency>
      <groupId>io.hekate</groupId>
      <artifactId>hekate-codec-kryo</artifactId>
-     <version>3.7.0-SNAPSHOT</version>
+     <version>3.7.0</version>
  </dependency>
  ```
