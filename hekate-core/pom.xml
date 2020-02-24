@@ -159,6 +159,9 @@
                         <goals>
                             <goal>test-jar</goal>
                         </goals>
+                        <configuration>
+                            <excludes>**/logback-test.xml</excludes>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
