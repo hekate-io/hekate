@@ -40,8 +40,10 @@ import java.util.List;
  * @see ElectionService
  */
 public class ElectionServiceFactory implements ServiceFactory<ElectionService> {
+    /** See {@link #setCandidates(List)}. */
     private List<CandidateConfig> candidates;
 
+    /** See {@link #setConfigProviders(List)}. */
     private List<CandidateConfigProvider> configProviders;
 
     /**

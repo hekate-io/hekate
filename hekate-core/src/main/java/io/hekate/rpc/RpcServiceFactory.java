@@ -39,14 +39,19 @@ import java.util.List;
  * </p>
  */
 public class RpcServiceFactory extends MessagingConfigBase<RpcServiceFactory> implements ServiceFactory<RpcService> {
+    /** See {@link #setClients(List)}. */
     private List<RpcClientConfig> clients;
 
+    /** See {@link #setClientProviders(List)}. */
     private List<RpcClientConfigProvider> clientProviders;
 
+    /** See {@link #setServers(List)}. */
     private List<RpcServerConfig> servers;
 
+    /** See {@link #setServerProviders(List)}. */
     private List<RpcServerConfigProvider> serverProviders;
 
+    /** See {@link #setWorkerThreads(int)}. */
     private int workerThreads = Runtime.getRuntime().availableProcessors();
 
     /**

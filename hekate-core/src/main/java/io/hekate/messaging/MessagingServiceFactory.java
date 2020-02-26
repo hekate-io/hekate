@@ -27,10 +27,13 @@ import java.util.List;
  * Factory for {@link MessagingService}.
  */
 public class MessagingServiceFactory implements ServiceFactory<MessagingService> {
+    /** See {@link #setChannels(List)}. */
     private List<MessagingChannelConfig<?>> channels;
 
+    /** See {@link #setGlobalInterceptors(List)}. */
     private List<MessageInterceptor> globalInterceptors;
 
+    /** See {@link #setConfigProviders(List)}. */
     private List<MessagingConfigProvider> configProviders;
 
     /**
