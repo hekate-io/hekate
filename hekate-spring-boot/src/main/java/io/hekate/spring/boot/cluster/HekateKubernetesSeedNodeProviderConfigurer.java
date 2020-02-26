@@ -41,6 +41,7 @@ import org.springframework.context.annotation.Configuration;
  * <li>{@link KubernetesSeedNodeProviderConfig#setContainerPortName(String) 'hekate.cluster.seed.kubernetes.container-port-name'}</li>
  * <li>{@link KubernetesSeedNodeProviderConfig#setMasterUrl(String) 'hekate.cluster.seed.kubernetes.master-url'}</li>
  * <li>{@link KubernetesSeedNodeProviderConfig#setNamespace(String) 'hekate.cluster.seed.kubernetes.namespace'}</li>
+ * <li>{@link KubernetesSeedNodeProviderConfig#setTrustCertificates(Boolean)} 'hekate.cluster.seed.kubernetes.trust-certificates'}</li>
  * </ul>
  *
  * <p>
