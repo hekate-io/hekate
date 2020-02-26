@@ -54,26 +54,37 @@ public class ClusterServiceFactory implements ServiceFactory<ClusterService> {
     /** Default value (={@value}) for {@link #setSpeedUpGossipSize(int)}. */
     public static final int DEFAULT_SPEED_UP_SIZE = 100;
 
+    /** See {@link #setSplitBrainAction(SplitBrainAction)}. */
     private SplitBrainAction splitBrainAction = SplitBrainAction.TERMINATE;
 
+    /** See {@link #setSplitBrainDetector(SplitBrainDetector)}. */
     private SplitBrainDetector splitBrainDetector;
 
+    /** See {@link #setSplitBrainCheckInterval(long)}. */
     private long splitBrainCheckInterval;
 
+    /** See {@link #setSeedNodeProvider(SeedNodeProvider)}. */
     private SeedNodeProvider seedNodeProvider;
 
+    /** See {@link #setFailureDetector(FailureDetector)}. */
     private FailureDetector failureDetector = new DefaultFailureDetector();
 
+    /** See {@link #setClusterListeners(List)}. */
     private List<ClusterEventListener> clusterListeners;
 
+    /** See {@link #setAcceptors(List)}. */
     private List<ClusterAcceptor> acceptors;
 
+    /** See {@link #setGossipInterval(long)}. */
     private long gossipInterval = DEFAULT_GOSSIP_INTERVAL;
 
+    /** See {@link #setSpeedUpGossipSize(int)}. */
     private int speedUpGossipSize = DEFAULT_SPEED_UP_SIZE;
 
+    /** See {@link #setServiceGuard(StateGuard)}. */
     private StateGuard serviceGuard;
 
+    /** See {@link #setGossipSpy(GossipListener)}. */
     private GossipListener gossipSpy;
 
     /**

@@ -22,7 +22,7 @@ import io.hekate.util.format.ToString;
  * Configuration for {@link KubernetesSeedNodeProvider}.
  *
  * <p>
- * Besides those options that are provided by setters of this class it possible to specify the following system properties and/or
+ * Besides those options that are provided by setters of this class it is possible to specify the following system properties and/or
  * environment variables:
  * </p>
  * <ul>
