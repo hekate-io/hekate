@@ -73,18 +73,25 @@ public class JdbcSeedNodeProviderConfig {
     /** Default value (={@value}) for {@link #setClusterColumn(String)}. */
     public static final String DEFAULT_CLUSTER_COLUMN = "cluster_name";
 
+    /** See {@link #setDataSource(DataSource)}. */
     private DataSource dataSource;
 
+    /** See {@link #setCleanupInterval(long)}. */
     private long cleanupInterval = DEFAULT_CLEANUP_INTERVAL;
 
+    /** See {@link #setQueryTimeout(int)}. */
     private int queryTimeout;
 
+    /** See {@link #setTable(String)}. */
     private String table = DEFAULT_TABLE;
 
+    /** See {@link #setHostColumn(String)}. */
     private String hostColumn = DEFAULT_HOST_COLUMN;
 
+    /** See {@link #setPortColumn(String)}. */
     private String portColumn = DEFAULT_PORT_COLUMN;
 
+    /** See {@link #setClusterColumn(String)}. */
     private String clusterColumn = DEFAULT_CLUSTER_COLUMN;
 
     /**

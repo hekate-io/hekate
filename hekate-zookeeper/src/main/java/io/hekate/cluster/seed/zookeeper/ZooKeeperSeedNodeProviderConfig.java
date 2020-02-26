@@ -136,7 +136,7 @@ public class ZooKeeperSeedNodeProviderConfig {
      *
      * <p>
      * Note that {@link ZooKeeperSeedNodeProvider} uses short-lived connection when interacting with ZooKeeper server (i.e. it creates a
-     * new connection for each operation and then closes it once operation is completed). Thus, it is not necessary to set this parameter to
+     * new connection for each operation and then closes it once operation is complete). Thus, it is not necessary to set this parameter to
      * a large value.
      * </p>
      *

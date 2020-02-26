@@ -26,6 +26,7 @@ import java.util.List;
  * @see StaticSeedNodeProvider
  */
 public class StaticSeedNodeProviderConfig {
+    /** See {@link #setAddresses(List)}. */
     private List<String> addresses;
 
     /**

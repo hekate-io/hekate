@@ -42,16 +42,22 @@ public class MulticastSeedNodeProviderConfig {
     /** Default value (={@value}) for {@link #setLoopBackDisabled(boolean)}. */
     public static final boolean DEFAULT_LOOP_BACK_DISABLED = false;
 
+    /** See {@link #setGroup(String)}. */
     private String group = DEFAULT_GROUP;
 
+    /** See {@link #setPort(int)}. */
     private int port = DEFAULT_PORT;
 
+    /** See {@link #setTtl(int)}. */
     private int ttl = DEFAULT_TTL;
 
+    /** See {@link #setInterval(long)}. */
     private long interval = DEFAULT_INTERVAL;
 
+    /** See {@link #setWaitTime(long)}. */
     private long waitTime = DEFAULT_WAIT_TIME;
 
+    /** See {@link #setLoopBackDisabled(boolean)}. */
     private boolean loopBackDisabled = DEFAULT_LOOP_BACK_DISABLED;
 
     /**
@@ -164,7 +170,7 @@ public class MulticastSeedNodeProviderConfig {
     }
 
     /**
-     * Returns the timeout in millisecond to await for responses from remote nodes (see {@link #setWaitTime(long)}).
+     * Returns the timeout in milliseconds to await for responses from remote nodes (see {@link #setWaitTime(long)}).
      *
      * @return Timeout in milliseconds.
      */
@@ -173,13 +179,13 @@ public class MulticastSeedNodeProviderConfig {
     }
 
     /**
-     * Sets the timeout in millisecond to await for responses from remote nodes.
+     * Sets the timeout in milliseconds to await for responses from remote nodes.
      *
      * <p>
      * Default value of this parameter is {@value #DEFAULT_WAIT_TIME}.
      * </p>
      *
-     * @param waitTime Timeout in millisecond to await for responses from remote nodes.
+     * @param waitTime Timeout in milliseconds to await for responses from remote nodes.
      */
     public void setWaitTime(long waitTime) {
         this.waitTime = waitTime;
@@ -188,7 +194,7 @@ public class MulticastSeedNodeProviderConfig {
     /**
      * Fluent-style version of {@link #setWaitTime(long)}.
      *
-     * @param waitTime Timeout in millisecond to await for responses from remote nodes.
+     * @param waitTime Timeout in milliseconds to await for responses from remote nodes.
      *
      * @return This instance.
      */
