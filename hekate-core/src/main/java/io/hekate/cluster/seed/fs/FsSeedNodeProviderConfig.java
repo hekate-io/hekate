@@ -27,7 +27,7 @@ import java.io.File;
  */
 public class FsSeedNodeProviderConfig {
     /** Default value (={@value}) for {@link #setCleanupInterval(long)}. */
-    public static final long DEFAULT_CLEANUP_INTERVAL = 60 * 1000;
+    public static final long DEFAULT_CLEANUP_INTERVAL = 60_000;
 
     /** See {@link #setCleanupInterval(long)}. */
     private long cleanupInterval = DEFAULT_CLEANUP_INTERVAL;

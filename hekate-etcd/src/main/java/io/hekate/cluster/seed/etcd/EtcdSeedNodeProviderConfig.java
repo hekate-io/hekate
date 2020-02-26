@@ -30,7 +30,7 @@ import java.util.List;
  */
 public class EtcdSeedNodeProviderConfig {
     /** Default value (={@value}) for {@link #setCleanupInterval(int)}. */
-    public static final int DEFAULT_CLEANUP_INTERVAL = 60 * 1000;
+    public static final int DEFAULT_CLEANUP_INTERVAL = 60_000;
 
     /** Default value (={@value}) for {@link #setBasePath(String)}. */
     public static final String DEFAULT_BASE_PATH = "/hekate/cluster";

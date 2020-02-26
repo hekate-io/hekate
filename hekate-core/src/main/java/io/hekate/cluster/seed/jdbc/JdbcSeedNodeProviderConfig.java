@@ -59,7 +59,7 @@ import javax.sql.DataSource;
  */
 public class JdbcSeedNodeProviderConfig {
     /** Default value (={@value}) for {@link #setCleanupInterval(long)}. */
-    public static final long DEFAULT_CLEANUP_INTERVAL = 60 * 1000;
+    public static final long DEFAULT_CLEANUP_INTERVAL = 60_0000;
 
     /** Default value (={@value}) for {@link #setTable(String)}. */
     public static final String DEFAULT_TABLE = "cluster_nodes";

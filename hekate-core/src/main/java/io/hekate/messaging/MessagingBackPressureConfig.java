@@ -24,14 +24,19 @@ import io.hekate.util.format.ToString;
  * @see MessagingChannelConfig#setBackPressure(MessagingBackPressureConfig)
  */
 public class MessagingBackPressureConfig {
+    /** See {@link #setInLowWatermark(int)}. */
     private int inLowWatermark;
 
+    /** See {@link #setInHighWatermark(int)}. */
     private int inHighWatermark;
 
+    /** See {@link #setOutLowWatermark(int)}. */
     private int outLowWatermark;
 
+    /** See {@link #setOutHighWatermark(int)}. */
     private int outHighWatermark;
 
+    /** See {@link #setOutOverflowPolicy(MessagingOverflowPolicy)}. */
     private MessagingOverflowPolicy outOverflowPolicy = MessagingOverflowPolicy.IGNORE;
 
     /**

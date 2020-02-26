@@ -30,8 +30,10 @@ public class JmxServiceFactory implements ServiceFactory<JmxService> {
     /** Default value ({@value}) for {@link #setDomain(String)}. */
     public static final String DEFAULT_DOMAIN = "io.hekate";
 
+    /** See {@link #setDomain(String)}. */
     private String domain = DEFAULT_DOMAIN;
 
+    /** See {@link #setServer(MBeanServer)}. */
     private MBeanServer server = defaultServer();
 
     @Override
