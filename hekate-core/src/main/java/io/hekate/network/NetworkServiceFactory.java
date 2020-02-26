@@ -68,38 +68,55 @@ public class NetworkServiceFactory implements ServiceFactory<NetworkService> {
     /** Default value (={@value}) for {@link #setTcpNoDelay(boolean)}. */
     public static final boolean DEFAULT_TCP_NO_DELAY = true;
 
+    /** See {@link #setHostSelector(AddressSelector)}. */
     private AddressSelector hostSelector = new AddressPattern();
 
+    /** See {@link #setPort(int)}. */
     private int port = DEFAULT_PORT;
 
+    /** See {@link #setPortRange(int)}. */
     private int portRange = DEFAULT_PORT_RANGE;
 
+    /** See {@link #setConnectTimeout(int)}. */
     private int connectTimeout = DEFAULT_CONNECT_TIMEOUT;
 
+    /** See {@link #setAcceptRetryInterval(long)}. */
     private long acceptRetryInterval = DEFAULT_ACCEPT_RETRY_INTERVAL;
 
+    /** See {@link #setHeartbeatInterval(int)}. */
     private int heartbeatInterval = DEFAULT_HB_INTERVAL;
 
+    /** See {@link #setHeartbeatInterval(int)}. */
     private int heartbeatLossThreshold = DEFAULT_HB_LOSS_THRESHOLD;
 
+    /** See {@link #setNioThreads(int)}. */
     private int nioThreads = Runtime.getRuntime().availableProcessors();
 
+    /** See {@link #setTransport(NetworkTransportType)}. */
     private NetworkTransportType transport = NetworkTransportType.AUTO;
 
+    /** See {@link #setTcpNoDelay(boolean)}. */
     private boolean tcpNoDelay = DEFAULT_TCP_NO_DELAY;
 
+    /** See {@link #setTcpReceiveBufferSize(Integer)}. */
     private Integer tcpReceiveBufferSize;
 
+    /** See {@link #setTcpSendBufferSize(Integer)}. */
     private Integer tcpSendBufferSize;
 
+    /** See {@link #setTcpReuseAddress(Boolean)}. */
     private Boolean tcpReuseAddress;
 
+    /** See {@link #setTcpBacklog(Integer)}. */
     private Integer tcpBacklog;
 
+    /** See {@link #setSsl(NetworkSslConfig)}. */
     private NetworkSslConfig ssl;
 
+    /** See {@link #setConnectors(List)}. */
     private List<NetworkConnectorConfig<?>> connectors;
 
+    /** See {@link #setConfigProviders(List)}. */
     private List<NetworkConfigProvider> configProviders;
 
     /**
