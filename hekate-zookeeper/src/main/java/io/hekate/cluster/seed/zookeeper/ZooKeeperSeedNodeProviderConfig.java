@@ -26,13 +26,13 @@ import io.hekate.util.format.ToString;
  */
 public class ZooKeeperSeedNodeProviderConfig {
     /** Default value (={@value}) for {@link #setConnectTimeout(int)}. */
-    public static final int DEFAULT_CONNECT_TIMEOUT = 5 * 1000;
+    public static final int DEFAULT_CONNECT_TIMEOUT = 5_000;
 
     /** Default value (={@value}) for {@link #setSessionTimeout(int)}. */
-    public static final int DEFAULT_SESSION_TIMEOUT = 10 * 1000;
+    public static final int DEFAULT_SESSION_TIMEOUT = 10_000;
 
     /** Default value (={@value}) for {@link #setCleanupInterval(int)}. */
-    public static final int DEFAULT_CLEANUP_INTERVAL = 60 * 1000;
+    public static final int DEFAULT_CLEANUP_INTERVAL = 60_000;
 
     /** Default value (={@value}) for {@link #setBasePath(String)}. */
     public static final String DEFAULT_BASE_PATH = "/hekate/cluster";

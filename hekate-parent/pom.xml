@@ -697,35 +697,51 @@
                 </dependencies>
                 <executions>
                     <execution>
+                        <id>generate-spring-boot-properties-sample</id>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <phase>prepare-package</phase>
+                        <configuration>
+                            <includePluginDependencies>true</includePluginDependencies>
+                            <mainClass>io.hekate.dev.SpringBootPropertiesGeneratorMain</mainClass>
+                            <arguments>
+                                <argument>${project.parent.basedir}/../hekate-spring-boot/src/main/resources/META-INF/spring-configuration-metadata.json</argument>
+                                <argument>${project.build.directory}/site/apidocs/spring-boot.sample.properties</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+
+                    <execution>
                         <id>post-process-javadoc</id>
                         <goals>
                             <goal>java</goal>
                         </goals>
                         <phase>prepare-package</phase>
+                        <configuration>
+                            <includePluginDependencies>true</includePluginDependencies>
+                            <mainClass>io.hekate.dev.CodeSamplesProcessorMain</mainClass>
+                            <arguments>
+                                <argument>${project.build.directory}/site/apidocs</argument>
+                                <argument>
+                                    ${project.parent.basedir}/../src/test/java/io/hekate/javadoc;
+                                    ${project.parent.basedir}/../src/test/resources/javadoc;
+                                    ${project.parent.basedir}/../hekate-core/src/test/java/io/hekate/javadoc;
+                                    ${project.parent.basedir}/../hekate-core/src/test/resources/javadoc;
+                                    ${project.parent.basedir}/../hekate-spring/src/test/java/io/hekate/javadoc;
+                                    ${project.parent.basedir}/../hekate-spring/src/test/resources/javadoc;
+                                    ${project.parent.basedir}/../hekate-spring-boot/src/test/java/io/hekate/javadoc;
+                                    ${project.parent.basedir}/../hekate-spring-boot/src/test/resources/javadoc;
+                                    ${project.parent.basedir}/../hekate-codec-kryo/src/test/java/io/hekate/javadoc;
+                                    ${project.parent.basedir}/../hekate-codec-kryo/src/test/resources/javadoc;
+                                    ${project.parent.basedir}/../hekate-codec-fst/src/test/java/io/hekate/javadoc;
+                                    ${project.parent.basedir}/../hekate-codec-fst/src/test/resources/javadoc;
+                                    ${project.parent.basedir}/../hekate-kubernetes/src/test/resources/javadoc;
+                                </argument>
+                            </arguments>
+                        </configuration>
                     </execution>
                 </executions>
-                <configuration>
-                    <includePluginDependencies>true</includePluginDependencies>
-                    <mainClass>io.hekate.dev.CodeSamplesProcessorMain</mainClass>
-                    <arguments>
-                        <argument>${project.build.directory}/site/apidocs</argument>
-                        <argument>
-                            ${project.parent.basedir}/../src/test/java/io/hekate/javadoc;
-                            ${project.parent.basedir}/../src/test/resources/javadoc;
-                            ${project.parent.basedir}/../hekate-core/src/test/java/io/hekate/javadoc;
-                            ${project.parent.basedir}/../hekate-core/src/test/resources/javadoc;
-                            ${project.parent.basedir}/../hekate-spring/src/test/java/io/hekate/javadoc;
-                            ${project.parent.basedir}/../hekate-spring/src/test/resources/javadoc;
-                            ${project.parent.basedir}/../hekate-spring-boot/src/test/java/io/hekate/javadoc;
-                            ${project.parent.basedir}/../hekate-spring-boot/src/test/resources/javadoc;
-                            ${project.parent.basedir}/../hekate-codec-kryo/src/test/java/io/hekate/javadoc;
-                            ${project.parent.basedir}/../hekate-codec-kryo/src/test/resources/javadoc;
-                            ${project.parent.basedir}/../hekate-codec-fst/src/test/java/io/hekate/javadoc;
-                            ${project.parent.basedir}/../hekate-codec-fst/src/test/resources/javadoc;
-                            ${project.parent.basedir}/../hekate-kubernetes/src/test/resources/javadoc;
-                        </argument>
-                    </arguments>
-                </configuration>
             </plugin>
 
             <plugin>
