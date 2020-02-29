@@ -38,12 +38,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
+import java.util.function.BooleanSupplier;
+import java.util.function.Predicate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableList;
+import static java.util.stream.Collectors.toList;
 
 class DefaultCoordinatorContext implements CoordinatorContext {
     /**
@@ -195,15 +197,43 @@ class DefaultCoordinatorContext implements CoordinatorContext {
 
     @Override
     public void broadcast(Object request, CoordinationBroadcastCallback callback) {
-        if (DEBUG) {
-            log.debug("Broadcasting [request={}, context={}]", request, this);
+        broadcast(request, all -> true, callback);
+    }
+
+    @Override
+    public void broadcast(Object request, Predicate<CoordinationMember> filter, CoordinationBroadcastCallback callback) {
+        broadcast(request, () -> true, filter, callback);
+    }
+
+    @Override
+    public void broadcast(
+        Object request,
+        BooleanSupplier preCondition,
+        Predicate<CoordinationMember> filter,
+        CoordinationBroadcastCallback callback
+    ) {
+        if (preCondition.getAsBoolean()) {
+            List<CoordinationMember> receivers = members.stream()
+                .filter(filter)
+                .collect(toList());
+
+            if (!receivers.isEmpty()) {
+                if (DEBUG) {
+                    log.debug("Broadcasting [request={}, context={}]", request, this);
+                }
+
+                CoordinationBroadcastAdaptor adaptor = new CoordinationBroadcastAdaptor(receivers.size(), callback);
+
+                receivers.forEach(member ->
+                    member.request(request, adaptor)
+                );
+
+                return;
+            }
         }
 
-        CoordinationBroadcastAdaptor adaptor = new CoordinationBroadcastAdaptor(members.size(), callback);
-
-        members.forEach(member ->
-            member.request(request, adaptor)
-        );
+        // Nothing got submitted -> notify the callback.
+        callback.onResponses(emptyMap());
     }
 
     @Override
@@ -416,7 +446,7 @@ class DefaultCoordinatorContext implements CoordinatorContext {
     private void broadcastCompleteToRemotes(CoordinationBroadcastCallback callback) {
         List<DefaultCoordinationMember> remotes = membersById.values().stream()
             .filter(it -> !it.node().equals(localMember.node()))
-            .collect(Collectors.toList());
+            .collect(toList());
 
         if (remotes.isEmpty()) {
             callback.onResponses(emptyMap());

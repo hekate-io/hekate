@@ -36,6 +36,15 @@ public interface CoordinationRequest {
     CoordinationMember from();
 
     /**
+     * Returns {@code true} if the request message if of the specified type.
+     *
+     * @param type Type.
+     *
+     * @return {@code true} if the request message if of the specified type.
+     */
+    boolean is(Class<?> type);
+
+    /**
      * Returns the request message.
      *
      * @return Request message.

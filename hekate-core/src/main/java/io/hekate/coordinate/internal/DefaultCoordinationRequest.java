@@ -18,6 +18,8 @@ package io.hekate.coordinate.internal;
 
 import io.hekate.coordinate.CoordinationMember;
 import io.hekate.coordinate.CoordinationRequest;
+import io.hekate.coordinate.internal.CoordinationProtocol.Request;
+import io.hekate.coordinate.internal.CoordinationProtocol.Response;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.messaging.Message;
 import io.hekate.util.format.ToString;
@@ -31,25 +33,30 @@ class DefaultCoordinationRequest implements CoordinationRequest {
     private final CoordinationMember from;
 
     @ToStringIgnore
-    private final Message<CoordinationProtocol> msg;
+    private final Message<CoordinationProtocol> message;
 
-    private final CoordinationProtocol.Request request;
+    private final Request request;
 
-    public DefaultCoordinationRequest(String process, CoordinationMember from, Message<CoordinationProtocol> msg) {
+    public DefaultCoordinationRequest(String process, CoordinationMember from, Message<CoordinationProtocol> message) {
         assert process != null : "Process name is null.";
         assert from != null : "Member is null.";
-        assert msg != null : "Message is null.";
+        assert message != null : "Message is null.";
 
         this.process = process;
         this.from = from;
-        this.msg = msg;
+        this.message = message;
 
-        this.request = msg.payload(CoordinationProtocol.Request.class);
+        this.request = message.payload(Request.class);
     }
 
     @Override
     public CoordinationMember from() {
         return from;
+    }
+
+    @Override
+    public boolean is(Class<?> type) {
+        return type.isInstance(request.request());
     }
 
     @Override
@@ -66,7 +73,7 @@ class DefaultCoordinationRequest implements CoordinationRequest {
     public void reply(Object response) {
         ArgAssert.notNull(response, "Response");
 
-        msg.reply(new CoordinationProtocol.Response(process, response));
+        message.reply(new Response(process, response));
     }
 
     @Override
