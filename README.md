@@ -187,6 +187,8 @@ __More Examples__: Please see the **[hekate-io/hekate-examples](https://github.c
   
 ## Release History
 
+ - v.3.8.0 (29-Feb-2020) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.3.8.0)]
+ 
  - v.3.7.0 (3-Feb-2020) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.3.7.0)]
 
  - v.3.6.0 (13-Oct-2019) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.3.6.0)]
@@ -216,7 +218,5 @@ __More Examples__: Please see the **[hekate-io/hekate-examples](https://github.c
  - v.2.3.1 (18-May-2018) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.2.3.1)]
 
  - v.2.3.0 (4-May-2018) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.2.3.0)]
-
- - v.2.2.2 (21-Apr-2018) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.2.2.2)]
 
  - [...and so on](https://github.com/hekate-io/hekate/releases)
