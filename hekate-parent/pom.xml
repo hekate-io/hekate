@@ -707,7 +707,7 @@
                             <mainClass>io.hekate.dev.SpringBootPropertiesGeneratorMain</mainClass>
                             <arguments>
                                 <argument>${project.parent.basedir}/../hekate-spring-boot/src/main/resources/META-INF/spring-configuration-metadata.json</argument>
-                                <argument>${project.build.directory}/site/apidocs/spring-boot.sample.properties</argument>
+                                <argument>${project.build.directory}/site/apidocs/spring-boot.properties.txt</argument>
                             </arguments>
                         </configuration>
                     </execution>
