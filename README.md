@@ -78,12 +78,13 @@ Open source [Apache License v2.0](http://www.apache.org/licenses/)
 
 ## Documentation
 
-For now, the most detailed documentation is provided as part of [javadocs](http://javadoc.io/doc/io.hekate/hekate-all/). 
-Complete reference guide is coming soon.
+- [Javadocs](http://javadoc.io/doc/io.hekate/hekate-all/) (Follow ~~the White Rabbit~~ `[« start here]` marks).
+- Reference Guide (coming soon...) 
+- [Spring Boot Properties Reference](http://javadoc.io/doc/io.hekate/hekate-all/latest/spring-boot.properties.txt)
 
 ## Code Examples
 
-Quickstart for Standalone Java Application
+Quickstart for **Standalone** Java Application
 ```java
 public class MyApplication{
     public static void main(String[] args) throws Exception {
@@ -98,7 +99,7 @@ public class MyApplication{
 
 ```
 
-Quickstart for Spring Boot Application
+Quickstart for **Spring Boot** Application
 ```java
 @EnableHekate // <-- Enable Hekate integration.
 @SpringBootApplication
@@ -117,7 +118,9 @@ public class MyApplication {
 }
 ```
 
-__More Examples__: Please see the **[hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examples)** project for more examples.
+__More Examples__: 
+
+Please see the **[hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examples)** project for more examples.
 
 
 ## Maven artifacts
