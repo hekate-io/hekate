@@ -41,18 +41,18 @@ import static org.junit.Assert.fail;
 
 public class MulticastSeedNodeProviderTest extends SeedNodeProviderTestBase<MulticastSeedNodeProviderTest.TestProvider> {
     public static class TestProvider extends MulticastSeedNodeProvider {
-        private final AtomicInteger receivedDiscovery = new AtomicInteger();
+        private final AtomicInteger requests = new AtomicInteger();
 
         public TestProvider(MulticastSeedNodeProviderConfig cfg) throws IOException {
             super(cfg);
         }
 
-        public int getReceivedDiscovery() {
-            return receivedDiscovery.get();
+        public int getRequests() {
+            return requests.get();
         }
 
-        public void clearReceivedDiscovery() {
-            receivedDiscovery.set(0);
+        public void clearRequests() {
+            requests.set(0);
         }
 
         @Override
@@ -69,10 +69,10 @@ public class MulticastSeedNodeProviderTest extends SeedNodeProviderTestBase<Mult
         }
 
         @Override
-        void onDiscoveryMessage(InetSocketAddress address) {
-            super.onDiscoveryMessage(address);
+        void onDiscoveryRequest(InetSocketAddress address) {
+            super.onDiscoveryRequest(address);
 
-            receivedDiscovery.incrementAndGet();
+            requests.incrementAndGet();
         }
     }
 
@@ -126,18 +126,18 @@ public class MulticastSeedNodeProviderTest extends SeedNodeProviderTestBase<Mult
             for (Map.Entry<InetSocketAddress, TestProvider> e : providers.entrySet()) {
                 TestProvider provider = e.getValue();
 
-                assertTrue(e.getKey().toString(), provider.getReceivedDiscovery() > 0);
+                assertTrue(e.getKey().toString(), provider.getRequests() > 0);
 
                 provider.suspendDiscovery();
             }
 
             sleep(DISCOVERY_INTERVAL * 4);
 
-            providers.values().forEach(TestProvider::clearReceivedDiscovery);
+            providers.values().forEach(TestProvider::clearRequests);
 
             sleep(DISCOVERY_INTERVAL * 2);
 
-            providers.values().forEach(p -> assertEquals(0, p.getReceivedDiscovery()));
+            providers.values().forEach(p -> assertEquals(0, p.getRequests()));
 
         } finally {
             for (Map.Entry<InetSocketAddress, TestProvider> e : providers.entrySet()) {

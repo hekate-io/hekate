@@ -35,7 +35,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelOption;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.DatagramChannel;
@@ -61,15 +60,21 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.netty.channel.ChannelOption.IP_MULTICAST_IF;
+import static io.netty.channel.ChannelOption.IP_MULTICAST_LOOP_DISABLED;
+import static io.netty.channel.ChannelOption.IP_MULTICAST_TTL;
+import static io.netty.channel.ChannelOption.SO_REUSEADDR;
+import static java.lang.String.format;
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
 /**
  * Multicast-based seed node provider.
  *
  * <p>
- * This provider uses <a href="https://en.wikipedia.org/wiki/IP_multicast" target="_blank">IP multicasting</a> for seed nodes discovery.
- * When this provider starts it periodically sends multicast messages and awaits for responses from other nodes up to the configurable
- * timeout value.
+ * This provider uses <a href="https://en.wikipedia.org/wiki/IP_multicast" target="_blank">IP multicast</a> to discover seed nodes.
+ * When this provider starts it periodically sends multicast messages and awaits for responses from other nodes (up to a configurable
+ * timeout).
  * </p>
  *
  * <p>
@@ -88,9 +93,9 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider, JmxSupport<M
     }
 
     private static class SeedNode {
-        private final InetSocketAddress address;
-
         private final String cluster;
+
+        private final InetSocketAddress address;
 
         public SeedNode(InetSocketAddress address, String cluster) {
             this.address = address;
@@ -115,36 +120,26 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider, JmxSupport<M
                 return false;
             }
 
-            SeedNode seedNode = (SeedNode)o;
+            SeedNode other = (SeedNode)o;
 
-            if (!Objects.equals(address, seedNode.address)) {
-                return false;
-            }
-
-            return Objects.equals(cluster, seedNode.cluster);
+            return Objects.equals(address, other.address)
+                && Objects.equals(cluster, other.cluster);
         }
 
         @Override
         public int hashCode() {
-            int result = address != null ? address.hashCode() : 0;
-
-            result = 31 * result + (cluster != null ? cluster.hashCode() : 0);
-
-            return result;
+            return Objects.hash(address, cluster);
         }
 
         @Override
         public String toString() {
-            return getClass().getSimpleName() + "[cluster=" + cluster + ", address=" + address + ']';
+            return ToString.format(this);
         }
     }
 
     private static final Logger log = LoggerFactory.getLogger(MulticastSeedNodeProvider.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
-
-    @ToStringIgnore
-    private final Object mux = new Object();
 
     private final InetSocketAddress group;
 
@@ -159,16 +154,19 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider, JmxSupport<M
     private final boolean loopBackDisabled;
 
     @ToStringIgnore
+    private final Object mux = new Object();
+
+    @ToStringIgnore
     private SeedNode localNode;
 
     @ToStringIgnore
-    private Set<SeedNode> seedNodes;
+    private Set<SeedNode> discovered;
 
     @ToStringIgnore
     private NioEventLoopGroup eventLoop;
 
     @ToStringIgnore
-    private DatagramChannel listener;
+    private DatagramChannel receiver;
 
     @ToStringIgnore
     private DatagramChannel sender;
@@ -177,7 +175,7 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider, JmxSupport<M
     private ScheduledFuture<?> discoveryFuture;
 
     /**
-     * Constructs new instance with all configuration options set to their default values (see {@link MulticastSeedNodeProviderConfig}).
+     * Constructs a new instance with all configuration options set to their default values (see {@link MulticastSeedNodeProviderConfig}).
      *
      * @throws UnknownHostException If failed to resolve multicast group address.
      */
@@ -186,7 +184,7 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider, JmxSupport<M
     }
 
     /**
-     * Constructs new instance.
+     * Constructs a new instance.
      *
      * @param cfg Configuration.
      *
@@ -204,17 +202,22 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider, JmxSupport<M
         check.that(cfg.getInterval() < cfg.getWaitTime(), "discovery interval must be greater than wait time "
             + "[discovery-interval=" + cfg.getInterval() + ", wait-time=" + cfg.getWaitTime() + ']');
 
-        InetAddress groupAddress = InetAddress.getByName(cfg.getGroup());
+        InetAddress address = InetAddress.getByName(cfg.getGroup());
 
-        check.isTrue(groupAddress.isMulticastAddress(), "address is not a multicast address [address=" + groupAddress + ']');
+        check.isTrue(address.isMulticastAddress(), "address is not a multicast address [address=" + address + ']');
 
-        group = new InetSocketAddress(groupAddress, cfg.getPort());
+        group = new InetSocketAddress(address, cfg.getPort());
+
+        if (group.getAddress() instanceof Inet6Address) {
+            ipVer = InternetProtocolFamily.IPv6;
+        } else {
+            ipVer = InternetProtocolFamily.IPv4;
+        }
+
         ttl = cfg.getTtl();
         interval = cfg.getInterval();
         waitTime = cfg.getWaitTime();
         loopBackDisabled = cfg.isLoopBackDisabled();
-
-        ipVer = group.getAddress() instanceof Inet6Address ? InternetProtocolFamily.IPv6 : InternetProtocolFamily.IPv4;
     }
 
     @Override
@@ -232,18 +235,21 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider, JmxSupport<M
     public List<InetSocketAddress> findSeedNodes(String cluster) throws HekateException {
         synchronized (mux) {
             if (isRegistered()) {
-                return seedNodes.stream().filter(s -> s.cluster().equals(cluster)).map(SeedNode::address).collect(toList());
+                return discovered.stream()
+                    .filter(node -> node.cluster().equals(cluster))
+                    .map(SeedNode::address)
+                    .collect(toList());
             }
         }
 
-        return Collections.emptyList();
+        return emptyList();
     }
 
     @Override
     public void startDiscovery(String cluster, InetSocketAddress address) throws HekateException {
-        log.info("Starting seed nodes discovery [cluster={}, {}]", cluster, ToString.formatProperties(this));
+        log.info("Starting seed node discovery [cluster={}, {}]", cluster, ToString.formatProperties(this));
 
-        SeedNode thisNode = new SeedNode(address, cluster);
+        SeedNode self = new SeedNode(address, cluster);
 
         try {
             NetworkInterface nif = selectMulticastInterface(address);
@@ -251,81 +257,73 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider, JmxSupport<M
             try {
                 synchronized (mux) {
                     if (isRegistered()) {
-                        throw new IllegalStateException("Multicast seed node provider is already registered with another address "
-                            + "[existing=" + localNode + ']');
+                        String err = format("Multicast seed node provider is already registered with another address [existing=%s]", self);
+
+                        throw new IllegalStateException(err);
                     }
 
-                    ByteBuf discoveryMsg = prepareDiscovery(thisNode);
-
-                    ByteBuf seedNodeInfoBytes = prepareSeedNodeInfo(thisNode);
-
-                    localNode = thisNode;
-
-                    seedNodes = new HashSet<>();
-
+                    localNode = self;
+                    discovered = new HashSet<>();
                     eventLoop = new NioEventLoopGroup(1, new HekateThreadFactory("SeedNodeMulticast"));
 
                     // Prepare common bootstrap options.
-                    Bootstrap bootstrap = new Bootstrap();
+                    Bootstrap boot = new Bootstrap();
 
-                    bootstrap.option(ChannelOption.SO_REUSEADDR, true);
-                    bootstrap.option(ChannelOption.IP_MULTICAST_TTL, ttl);
-                    bootstrap.option(ChannelOption.IP_MULTICAST_IF, nif);
+                    // Threads and factories.
+                    boot.group(eventLoop);
+                    boot.channelFactory(() ->
+                        new NioDatagramChannel(ipVer)
+                    );
+
+                    // TCP options.
+                    boot.option(SO_REUSEADDR, true);
+                    boot.option(IP_MULTICAST_TTL, ttl);
+                    boot.option(IP_MULTICAST_IF, nif);
 
                     if (loopBackDisabled) {
-                        bootstrap.option(ChannelOption.IP_MULTICAST_LOOP_DISABLED, true);
+                        boot.option(IP_MULTICAST_LOOP_DISABLED, true);
 
                         if (DEBUG) {
-                            log.debug("Setting {} option to true", ChannelOption.IP_MULTICAST_LOOP_DISABLED);
+                            log.debug("Setting {} option to true", IP_MULTICAST_LOOP_DISABLED);
                         }
                     }
 
-                    bootstrap.group(eventLoop);
-                    bootstrap.channelFactory(() -> new NioDatagramChannel(ipVer));
-
                     // Create a sender channel (not joined to a multicast group).
-                    bootstrap.localAddress(0);
-                    bootstrap.handler(createSenderHandler(thisNode));
+                    boot.localAddress(0);
+                    boot.handler(createSenderHandler(self));
 
-                    ChannelFuture senderBind = bootstrap.bind();
+                    DatagramChannel sender = bindSender(boot);
 
-                    DatagramChannel localSender = (DatagramChannel)senderBind.channel();
+                    // Create a receiver channel and join to a multicast group.
+                    boot.localAddress(group.getPort());
+                    boot.handler(createReceiveHandler(self));
 
-                    sender = localSender;
+                    bindReceiver(boot);
 
-                    senderBind.get();
+                    // Join multicast group.
+                    log.info(
+                        "Joining multicast group [address={}, port={}, interface={}, ttl={}]",
+                        AddressUtils.host(group),
+                        group.getPort(),
+                        nif.getName(),
+                        ttl
+                    );
 
-                    // Create a listener channel and join to a multicast group.
-                    bootstrap.localAddress(group.getPort());
+                    receiver.joinGroup(group, nif).get();
 
-                    bootstrap.handler(createListenerHandler(thisNode, seedNodeInfoBytes));
-
-                    ChannelFuture listenerBind = bootstrap.bind();
-
-                    listener = (DatagramChannel)listenerBind.channel();
-
-                    listenerBind.get();
-
-                    log.info("Joining to a multicast group "
-                        + "[address={}, port={}, interface={}, ttl={}]", AddressUtils.host(group), group.getPort(), nif.getName(), ttl);
-
-                    listener.joinGroup(group, nif).get();
-
-                    // Create a periodic task for discovery messages sending.
+                    // Schedule a periodic task to send discovery messages.
                     discoveryFuture = eventLoop.scheduleWithFixedDelay(() -> {
                         if (DEBUG) {
-                            log.debug("Sending discovery message [from={}]", thisNode);
+                            log.debug("Sending discovery message [from={}]", self);
                         }
 
-                        DatagramPacket discovery = new DatagramPacket(discoveryMsg.copy(), group);
-
-                        localSender.writeAndFlush(discovery);
+                        sender.writeAndFlush(discoveryRequest(self));
                     }, 0, interval, TimeUnit.MILLISECONDS);
                 }
             } catch (ExecutionException e) {
                 cleanup();
 
-                throw new HekateException("Failed to start a multicast seed nodes discovery [node=" + thisNode + ']', e.getCause());
+                throw new HekateException("Failed to start a multicast seed nodes discovery [node=" + self + ']', e.getCause());
             }
 
             log.info("Will wait for seed nodes [timeout={}(ms)]", waitTime);
@@ -336,7 +334,7 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider, JmxSupport<M
 
             Thread.currentThread().interrupt();
 
-            throw new HekateException("Thread was interrupted while awaiting for multicast discovery [node=" + thisNode + ']', e);
+            throw new HekateException("Thread was interrupted while awaiting for multicast discovery [node=" + self + ']', e);
         }
 
         log.info("Done waiting for seed nodes.");
@@ -448,24 +446,24 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider, JmxSupport<M
         synchronized (mux) {
             suspended = suspendDiscoveryAsync();
 
-            if (listener != null && listener.isOpen()) {
+            if (receiver != null && receiver.isOpen()) {
                 if (DEBUG) {
-                    log.debug("Closing multicast listener channel [channel={}]", listener);
+                    log.debug("Closing multicast listener channel [channel={}]", receiver);
                 }
 
-                closed = listener.close()::await;
+                closed = receiver.close()::await;
             }
 
             stopped = NettyUtils.shutdown(eventLoop);
 
             localNode = null;
-            seedNodes = null;
+            discovered = null;
             discoveryFuture = null;
-            listener = null;
+            receiver = null;
             eventLoop = null;
         }
 
-        // Await for termination out of synchronized context in order to prevent deadlocks.
+        // Await for termination outside of synchronized context in order to prevent deadlocks.
         suspended.awaitUninterruptedly();
         closed.awaitUninterruptedly();
         stopped.awaitUninterruptedly();
@@ -499,6 +497,16 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider, JmxSupport<M
         return waiting;
     }
 
+    private DatagramChannel bindSender(Bootstrap boot) throws InterruptedException, ExecutionException {
+        ChannelFuture future = boot.bind();
+
+        sender = (DatagramChannel)future.channel();
+
+        future.get();
+
+        return sender;
+    }
+
     private SimpleChannelInboundHandler<DatagramPacket> createSenderHandler(SeedNode thisNode) {
         return new SimpleChannelInboundHandler<DatagramPacket>() {
             @Override
@@ -510,7 +518,6 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider, JmxSupport<M
 
                     if (msgType == MessageTYpe.SEED_NODE_INFO) {
                         String cluster = decodeUtf(buf);
-
                         InetSocketAddress address = decodeAddress(buf);
 
                         SeedNode otherNode = new SeedNode(address, cluster);
@@ -524,10 +531,10 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider, JmxSupport<M
 
                             synchronized (mux) {
                                 if (isRegistered()) {
-                                    if (!seedNodes.contains(otherNode)) {
+                                    if (!MulticastSeedNodeProvider.this.discovered.contains(otherNode)) {
                                         discovered = true;
 
-                                        seedNodes.add(otherNode);
+                                        MulticastSeedNodeProvider.this.discovered.add(otherNode);
                                     }
                                 }
                             }
@@ -542,7 +549,15 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider, JmxSupport<M
         };
     }
 
-    private SimpleChannelInboundHandler<DatagramPacket> createListenerHandler(SeedNode thisNode, ByteBuf seedNodeInfo) {
+    private void bindReceiver(Bootstrap boot) throws InterruptedException, ExecutionException {
+        ChannelFuture future = boot.bind();
+
+        receiver = (DatagramChannel)future.channel();
+
+        future.get();
+    }
+
+    private SimpleChannelInboundHandler<DatagramPacket> createReceiveHandler(SeedNode self) {
         return new SimpleChannelInboundHandler<DatagramPacket>() {
             @Override
             public void channelRead0(ChannelHandlerContext ctx, DatagramPacket msg) throws Exception {
@@ -555,12 +570,10 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider, JmxSupport<M
                         String cluster = decodeUtf(buf);
                         InetSocketAddress address = decodeAddress(buf);
 
-                        if (thisNode.cluster().equals(cluster) && !address.equals(thisNode.address())) {
-                            onDiscoveryMessage(address);
+                        if (self.cluster().equals(cluster) && !address.equals(self.address())) {
+                            onDiscoveryRequest(address);
 
-                            DatagramPacket response = new DatagramPacket(seedNodeInfo.copy(), msg.sender());
-
-                            ctx.writeAndFlush(response);
+                            ctx.writeAndFlush(discoveryResponse(msg.sender(), self));
                         }
                     }
                 }
@@ -569,7 +582,7 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider, JmxSupport<M
     }
 
     // Package level for testing purposes.
-    void onDiscoveryMessage(InetSocketAddress address) {
+    void onDiscoveryRequest(InetSocketAddress address) {
         if (DEBUG) {
             log.debug("Received discovery message [from={}]", address);
         }
@@ -581,35 +594,35 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider, JmxSupport<M
         return localNode != null;
     }
 
-    private ByteBuf prepareSeedNodeInfo(SeedNode node) {
-        ByteBuf out = Unpooled.buffer();
+    private DatagramPacket discoveryRequest(SeedNode node) {
+        ByteBuf buf = Unpooled.buffer();
 
-        out.writeInt(Utils.MAGIC_BYTES);
-        out.writeByte(MessageTYpe.SEED_NODE_INFO.ordinal());
+        buf.writeInt(Utils.MAGIC_BYTES);
+        buf.writeByte(MessageTYpe.DISCOVERY.ordinal());
 
-        encodeUtf(node.cluster(), out);
-        encodeAddress(node.address(), out);
+        encodeUtf(node.cluster(), buf);
+        encodeAddress(node.address(), buf);
 
-        return out;
+        return new DatagramPacket(buf, group);
     }
 
-    private ByteBuf prepareDiscovery(SeedNode node) {
-        ByteBuf out = Unpooled.buffer();
+    private DatagramPacket discoveryResponse(InetSocketAddress to, SeedNode node) {
+        ByteBuf buf = Unpooled.buffer();
 
-        out.writeInt(Utils.MAGIC_BYTES);
-        out.writeByte(MessageTYpe.DISCOVERY.ordinal());
+        buf.writeInt(Utils.MAGIC_BYTES);
+        buf.writeByte(MessageTYpe.SEED_NODE_INFO.ordinal());
 
-        encodeUtf(node.cluster(), out);
-        encodeAddress(node.address(), out);
+        encodeUtf(node.cluster(), buf);
+        encodeAddress(node.address(), buf);
 
-        return out;
+        return new DatagramPacket(buf, to);
     }
 
-    private void encodeUtf(String str, ByteBuf out) {
+    private void encodeUtf(String str, ByteBuf buf) {
         byte[] clusterIdBytes = str.getBytes(StandardCharsets.UTF_8);
 
-        out.writeInt(clusterIdBytes.length);
-        out.writeBytes(clusterIdBytes);
+        buf.writeInt(clusterIdBytes.length);
+        buf.writeBytes(clusterIdBytes);
     }
 
     private String decodeUtf(ByteBuf buf) {
@@ -622,12 +635,12 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider, JmxSupport<M
         return new String(strBytes, StandardCharsets.UTF_8);
     }
 
-    private void encodeAddress(InetSocketAddress socketAddress, ByteBuf out) {
-        byte[] addrBytes = socketAddress.getAddress().getAddress();
+    private void encodeAddress(InetSocketAddress addr, ByteBuf out) {
+        byte[] addrBytes = addr.getAddress().getAddress();
 
         out.writeByte(addrBytes.length);
         out.writeBytes(addrBytes);
-        out.writeInt(socketAddress.getPort());
+        out.writeInt(addr.getPort());
     }
 
     private InetSocketAddress decodeAddress(ByteBuf buf) throws UnknownHostException {
@@ -635,9 +648,10 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider, JmxSupport<M
 
         buf.readBytes(addrBytes);
 
-        int port = buf.readInt();
-
-        return new InetSocketAddress(InetAddress.getByAddress(addrBytes), port);
+        return new InetSocketAddress(
+            InetAddress.getByAddress(addrBytes),
+            buf.readInt()
+        );
     }
 
     // Package level for testing purposes.
