@@ -451,7 +451,7 @@ public class LockMigrationTest extends LockServiceTestBase {
     }
 
     private void setSpy(HekateTestNode node, LockMigrationSpy spy) {
-        node.get(DefaultLockService.class).region(REGION_1).setMigrationSpy(spy);
+        node.get(DefaultLockService.class).region(REGION_1).requireRegion().setMigrationSpy(spy);
     }
 
     private boolean checkBusy(DistributedLock lock) {

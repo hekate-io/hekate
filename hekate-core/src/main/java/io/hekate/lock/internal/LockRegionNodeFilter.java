@@ -35,9 +35,13 @@ class LockRegionNodeFilter implements ClusterNodeFilter {
         return "region." + region;
     }
 
+    public static ClusterNodeFilter hasLockService() {
+        return node -> node.hasService(LockService.class);
+    }
+
     @Override
     public boolean accept(ClusterNode node) {
-        if (DefaultLockService.HAS_SERVICE_FILTER.accept(node)) {
+        if (hasLockService().accept(node)) {
             ServiceInfo service = node.service(LockService.class);
 
             if (service != null) {

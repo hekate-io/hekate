@@ -18,6 +18,7 @@ package io.hekate.lock.internal;
 
 import io.hekate.HekateNodeTestBase;
 import io.hekate.core.internal.HekateTestNode;
+import io.hekate.lock.DistributedLock;
 import io.hekate.lock.LockRegion;
 import io.hekate.lock.LockRegionConfig;
 import io.hekate.lock.LockServiceFactory;
@@ -66,5 +67,28 @@ public class LockServiceSingleNodeTest extends HekateNodeTestBase {
         region2.get("lock").lock();
         region1.get("lock").unlock();
         region2.get("lock").unlock();
+    }
+
+    @Test
+    public void testLockRegionAfterRejoin() throws Exception {
+        HekateTestNode node = createNode(boot ->
+            boot.withService(LockServiceFactory.class, locks ->
+                locks.withRegion(new LockRegionConfig("test"))
+            )
+        ).join();
+
+        LockRegion region = node.locks().region("test");
+
+        DistributedLock before = region.get("test-lock");
+
+        before.lock();
+        before.unlock();
+
+        node.leave().join();
+
+        DistributedLock after = region.get("test-lock");
+
+        after.lock();
+        after.unlock();
     }
 }

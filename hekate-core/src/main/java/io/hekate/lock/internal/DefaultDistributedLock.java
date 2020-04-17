@@ -37,16 +37,16 @@ import org.slf4j.LoggerFactory;
 
 class DefaultDistributedLock implements DistributedLock {
     private static class LocalLock {
-        private final LockControllerClient handle;
+        private final long id;
 
         private int hold = 1;
 
-        public LocalLock(LockControllerClient handle) {
-            this.handle = handle;
+        public LocalLock(long id) {
+            this.id = id;
         }
 
-        public LockControllerClient getHandle() {
-            return handle;
+        public long id() {
+            return id;
         }
 
         void increment() {
@@ -72,18 +72,15 @@ class DefaultDistributedLock implements DistributedLock {
 
     private final String name;
 
-    private final String region;
-
     @ToStringIgnore
-    private final DefaultLockRegion regionManager;
+    private final DefaultLockRegion region;
 
-    public DefaultDistributedLock(String name, DefaultLockRegion regionManager) {
+    public DefaultDistributedLock(String name, DefaultLockRegion region) {
         assert name != null : "Name is null.";
-        assert regionManager != null : "Lock region is null.";
+        assert region != null : "Lock region is null.";
 
         this.name = name;
-        this.region = regionManager.name();
-        this.regionManager = regionManager;
+        this.region = region;
     }
 
     @Override
@@ -93,7 +90,7 @@ class DefaultDistributedLock implements DistributedLock {
 
     @Override
     public String regionName() {
-        return region;
+        return region.name();
     }
 
     @Override
@@ -119,7 +116,7 @@ class DefaultDistributedLock implements DistributedLock {
 
         AsyncLockCallbackAdaptor adaptor = new AsyncLockCallbackAdaptor(this, executor, callback);
 
-        LockControllerClient handle = regionManager.lock(DefaultLockRegion.TIMEOUT_UNBOUND, this, adaptor);
+        LockControllerClient handle = region.lock(DefaultLockRegion.TIMEOUT_UNBOUND, this, adaptor);
 
         return handle.lockFuture();
     }
@@ -133,12 +130,12 @@ class DefaultDistributedLock implements DistributedLock {
                 log.debug("Locking [lock={}]", this);
             }
 
-            LockControllerClient handle = regionManager.lock(DefaultLockRegion.TIMEOUT_UNBOUND, this);
+            LockControllerClient lock = region.lock(DefaultLockRegion.TIMEOUT_UNBOUND, this);
 
             try {
-                AsyncUtils.getUninterruptedly(handle.lockFuture());
+                AsyncUtils.getUninterruptedly(lock.lockFuture());
 
-                registerLock(handle);
+                registerLock(lock.lockId());
 
                 if (DEBUG) {
                     log.debug("Locked [lock={}]", this);
@@ -160,19 +157,19 @@ class DefaultDistributedLock implements DistributedLock {
                 log.debug("Locking [lock={}]", this);
             }
 
-            LockControllerClient handle = regionManager.lock(DefaultLockRegion.TIMEOUT_UNBOUND, this);
+            LockControllerClient lock = region.lock(DefaultLockRegion.TIMEOUT_UNBOUND, this);
 
             try {
-                handle.lockFuture().get();
+                lock.lockFuture().get();
 
-                registerLock(handle);
+                registerLock(lock.lockId());
 
                 if (DEBUG) {
                     log.debug("Locked [lock={}]", this);
                 }
             } catch (InterruptedException e) {
                 // Do not wait for lock to be released.
-                regionManager.unlock(handle.lockId());
+                region.unlock(lock.lockId());
 
                 throw e;
             } catch (ExecutionException e) {
@@ -192,13 +189,13 @@ class DefaultDistributedLock implements DistributedLock {
                 log.debug("Trying lock [lock={}]", this);
             }
 
-            LockControllerClient handle = regionManager.lock(DefaultLockRegion.TIMEOUT_IMMEDIATE, this);
+            LockControllerClient lock = region.lock(DefaultLockRegion.TIMEOUT_IMMEDIATE, this);
 
             try {
-                boolean locked = AsyncUtils.getUninterruptedly(handle.lockFuture());
+                boolean locked = AsyncUtils.getUninterruptedly(lock.lockFuture());
 
                 if (locked) {
-                    registerLock(handle);
+                    registerLock(lock.lockId());
                 }
 
                 if (DEBUG) {
@@ -231,16 +228,16 @@ class DefaultDistributedLock implements DistributedLock {
 
             if (localLock == null) {
                 if (DEBUG) {
-                    log.debug("Trying lock with timeout [timeout={}, unit={}, lock={}]", time, unit, this);
+                    log.debug("Trying lock [timeout={}, unit={}, lock={}]", time, unit, this);
                 }
 
-                LockControllerClient handle = regionManager.lock(timeNanos, this);
+                LockControllerClient lock = region.lock(timeNanos, this);
 
                 try {
-                    boolean locked = handle.lockFuture().get();
+                    boolean locked = lock.lockFuture().get();
 
                     if (locked) {
-                        registerLock(handle);
+                        registerLock(lock.lockId());
                     }
 
                     if (DEBUG) {
@@ -254,7 +251,7 @@ class DefaultDistributedLock implements DistributedLock {
                     return locked;
                 } catch (InterruptedException e) {
                     // Do not wait for lock to be released.
-                    regionManager.unlock(handle.lockId());
+                    region.unlock(lock.lockId());
 
                     throw e;
                 } catch (ExecutionException e) {
@@ -270,7 +267,7 @@ class DefaultDistributedLock implements DistributedLock {
 
     @Override
     public Optional<LockOwnerInfo> owner() throws InterruptedException {
-        return regionManager.ownerOf(name);
+        return region.ownerOf(name);
     }
 
     @Override
@@ -289,17 +286,17 @@ class DefaultDistributedLock implements DistributedLock {
     }
 
     private void doUnlock(boolean sync) {
-        LocalLock localLock = existingLock();
+        LocalLock lock = existingLock();
 
-        if (localLock != null) {
-            if (localLock.decrement()) {
+        if (lock != null) {
+            if (lock.decrement()) {
                 if (DEBUG) {
                     log.debug("Unlocking [lock={}]", this);
                 }
 
                 clearLock();
 
-                LockFuture future = regionManager.unlock(localLock.getHandle().lockId());
+                LockFuture future = region.unlock(lock.id());
 
                 if (sync) {
                     try {
@@ -318,8 +315,8 @@ class DefaultDistributedLock implements DistributedLock {
         }
     }
 
-    void registerLock(LockControllerClient handleInfo) {
-        LocalLock lock = new LocalLock(handleInfo);
+    void registerLock(long id) {
+        LocalLock lock = new LocalLock(id);
 
         Map<DefaultLockRegion, Map<String, LocalLock>> managers = THREAD_LOCAL_LOCKS.get();
 
@@ -329,7 +326,7 @@ class DefaultDistributedLock implements DistributedLock {
             THREAD_LOCAL_LOCKS.set(managers);
         }
 
-        Map<String, LocalLock> locks = managers.computeIfAbsent(regionManager, k -> new HashMap<>());
+        Map<String, LocalLock> locks = managers.computeIfAbsent(region, k -> new HashMap<>());
 
         locks.put(name, lock);
     }
@@ -340,14 +337,14 @@ class DefaultDistributedLock implements DistributedLock {
         Map<DefaultLockRegion, Map<String, LocalLock>> managers = THREAD_LOCAL_LOCKS.get();
 
         if (managers != null) {
-            Map<String, LocalLock> locks = managers.get(regionManager);
+            Map<String, LocalLock> locks = managers.get(region);
 
             if (locks != null) {
                 removed = locks.remove(name) != null;
 
                 if (removed) {
                     if (locks.isEmpty()) {
-                        managers.remove(regionManager);
+                        managers.remove(region);
                     }
 
                     if (managers.isEmpty()) {
@@ -364,7 +361,7 @@ class DefaultDistributedLock implements DistributedLock {
         Map<DefaultLockRegion, Map<String, LocalLock>> managers = THREAD_LOCAL_LOCKS.get();
 
         if (managers != null) {
-            Map<String, LocalLock> locks = managers.get(regionManager);
+            Map<String, LocalLock> locks = managers.get(region);
 
             if (locks != null) {
                 return locks.get(name);

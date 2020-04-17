@@ -37,11 +37,11 @@ class AsyncLockCallbackAdaptor {
         this.callback = callback;
     }
 
-    public void onLockAcquire(LockControllerClient handleInfo) {
+    public void onLockAcquire(LockControllerClient client) {
         try {
             executor.execute(() -> {
                 try {
-                    lock.registerLock(handleInfo);
+                    lock.registerLock(client.lockId());
 
                     callback.onLockAcquire(lock);
                 } catch (RuntimeException | Error e) {

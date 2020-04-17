@@ -87,7 +87,7 @@ public abstract class LockServiceTestBase extends HekateNodeParamTestBase {
 
         busyWait("queued lock [lock=" + lock + ']', () -> {
             for (HekateTestNode node : nodes) {
-                List<ClusterNodeId> locks = node.get(DefaultLockService.class).region(REGION_1).queueOf(lock);
+                List<ClusterNodeId> locks = node.get(DefaultLockService.class).region(REGION_1).requireRegion().queueOf(lock);
 
                 if (locks.contains(owner.localNode().id())) {
                     result.set(node);
@@ -109,7 +109,7 @@ public abstract class LockServiceTestBase extends HekateNodeParamTestBase {
     }
 
     protected String getRemotelyManagedLockName(String lockPrefix, HekateTestNode node) throws Exception {
-        DefaultLockRegion region = node.get(DefaultLockService.class).region(REGION_1);
+        DefaultLockRegion region = node.get(DefaultLockService.class).region(REGION_1).requireRegion();
 
         for (int i = 0; i < BUSY_WAIT_LOOPS; i++) {
             String lockName = lockPrefix + i;
@@ -127,7 +127,7 @@ public abstract class LockServiceTestBase extends HekateNodeParamTestBase {
     protected HekateTestNode getLockManagerNode(String lock, List<HekateTestNode> nodes) {
         assertTrue(nodes.size() > 1);
 
-        ClusterNodeId nodeId = nodes.get(0).get(DefaultLockService.class).region(REGION_1).managerOf(lock);
+        ClusterNodeId nodeId = nodes.get(0).get(DefaultLockService.class).region(REGION_1).requireRegion().managerOf(lock);
 
         return nodes.stream()
             .filter(n -> n.localNode().id().equals(nodeId))
@@ -140,7 +140,7 @@ public abstract class LockServiceTestBase extends HekateNodeParamTestBase {
             Set<ClusterHash> topologies = new HashSet<>();
 
             nodes.forEach(n -> {
-                ClusterHash topology = n.get(DefaultLockService.class).region(REGION_1).lastRebalancedTopology();
+                ClusterHash topology = n.get(DefaultLockService.class).region(REGION_1).requireRegion().lastRebalancedTopology();
 
                 topologies.add(topology);
             });
