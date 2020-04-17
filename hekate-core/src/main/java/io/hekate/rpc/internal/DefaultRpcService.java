@@ -119,7 +119,7 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
     private MessagingChannel<RpcProtocol> channel;
 
     public DefaultRpcService(RpcServiceFactory factory) {
-        assert factory != null : "Factory is null.";
+        ArgAssert.notNull(factory, "Factory");
 
         workerThreads = factory.getWorkerThreads();
         nioThreads = factory.getNioThreads();

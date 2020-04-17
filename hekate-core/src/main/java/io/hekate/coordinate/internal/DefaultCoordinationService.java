@@ -111,7 +111,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
     private CodecService defaultCodec;
 
     public DefaultCoordinationService(CoordinationServiceFactory factory) {
-        assert factory != null : "Factory is null.";
+        ArgAssert.notNull(factory, "Factory");
 
         ConfigCheck check = ConfigCheck.get(CoordinationServiceFactory.class);
 

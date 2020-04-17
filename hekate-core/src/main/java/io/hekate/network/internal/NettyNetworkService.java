@@ -203,7 +203,7 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
     private NetworkServer server;
 
     public NettyNetworkService(NetworkServiceFactory factory) {
-        assert factory != null : "Factory is null.";
+        ArgAssert.notNull(factory, "Factory");
 
         ConfigCheck check = ConfigCheck.get(NetworkServiceFactory.class);
 

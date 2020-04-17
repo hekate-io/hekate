@@ -195,6 +195,8 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
     private volatile ClusterNode localNode;
 
     public DefaultClusterService(ClusterServiceFactory factory, StateGuard guard, GossipListener gossipSpy) {
+        ArgAssert.notNull(factory, "Factory");
+
         ConfigCheck check = ConfigCheck.get(ClusterServiceFactory.class);
 
         check.notNull(factory, "configuration");

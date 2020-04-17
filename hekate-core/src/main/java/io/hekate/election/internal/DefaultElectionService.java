@@ -22,7 +22,6 @@ import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
-import io.hekate.core.internal.util.StreamUtils;
 import io.hekate.core.jmx.JmxService;
 import io.hekate.core.report.ConfigReportSupport;
 import io.hekate.core.report.ConfigReporter;
@@ -58,6 +57,7 @@ import java.util.concurrent.Executors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.hekate.core.internal.util.StreamUtils.nullSafe;
 import static java.util.stream.Collectors.toList;
 
 public class DefaultElectionService implements ElectionService, DependentService, ConfigurableService, InitializingService,
@@ -81,10 +81,10 @@ public class DefaultElectionService implements ElectionService, DependentService
     public DefaultElectionService(ElectionServiceFactory factory) {
         ArgAssert.notNull(factory, "Factory");
 
-        StreamUtils.nullSafe(factory.getCandidates()).forEach(candidatesConfig::add);
+        nullSafe(factory.getCandidates()).forEach(candidatesConfig::add);
 
-        StreamUtils.nullSafe(factory.getConfigProviders()).forEach(provider ->
-            StreamUtils.nullSafe(provider.configureElection()).forEach(candidatesConfig::add)
+        nullSafe(factory.getConfigProviders()).forEach(provider ->
+            nullSafe(provider.configureElection()).forEach(candidatesConfig::add)
         );
     }
 
@@ -98,10 +98,8 @@ public class DefaultElectionService implements ElectionService, DependentService
     @Override
     public void configure(ConfigurationContext ctx) {
         // Collect configurations from providers.
-        Collection<CandidateConfigProvider> providers = ctx.findComponents(CandidateConfigProvider.class);
-
-        StreamUtils.nullSafe(providers).forEach(provider ->
-            StreamUtils.nullSafe(provider.configureElection()).forEach(candidatesConfig::add)
+        nullSafe(ctx.findComponents(CandidateConfigProvider.class)).forEach(provider ->
+            nullSafe(provider.configureElection()).forEach(candidatesConfig::add)
         );
 
         // Validate configs.
