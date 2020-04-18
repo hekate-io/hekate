@@ -58,6 +58,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static io.hekate.core.internal.util.StreamUtils.nullSafe;
+import static io.hekate.util.async.Waiting.awaitAll;
 import static java.util.stream.Collectors.toList;
 
 public class DefaultElectionService implements ElectionService, DependentService, ConfigurableService, InitializingService,
@@ -195,7 +196,11 @@ public class DefaultElectionService implements ElectionService, DependentService
 
         try {
             if (guard.becomeTerminating()) {
-                waiting = Waiting.awaitAll(handlers.values().stream().map(CandidateHandler::terminate).collect(toList()));
+                waiting = awaitAll(
+                    handlers.values().stream()
+                        .map(CandidateHandler::terminate)
+                        .collect(toList())
+                );
             }
         } finally {
             guard.unlockWrite();
@@ -225,7 +230,11 @@ public class DefaultElectionService implements ElectionService, DependentService
                     log.debug("Terminating...");
                 }
 
-                waiting = Waiting.awaitAll(handlers.values().stream().map(CandidateHandler::shutdown).collect(toList()));
+                waiting = awaitAll(
+                    handlers.values().stream()
+                        .map(CandidateHandler::shutdown)
+                        .collect(toList())
+                );
 
                 handlers.clear();
             }
@@ -250,21 +259,19 @@ public class DefaultElectionService implements ElectionService, DependentService
     private CandidateHandler handler(String group) {
         ArgAssert.notNull(group, "Group name");
 
-        CandidateHandler handler;
-
         guard.lockReadWithStateCheck();
 
         try {
-            handler = handlers.get(group);
+            CandidateHandler handler = handlers.get(group);
+
+            if (handler == null) {
+                throw new IllegalArgumentException("Unknown group [name=" + group + ']');
+            }
+
+            return handler;
         } finally {
             guard.unlockRead();
         }
-
-        if (handler == null) {
-            throw new IllegalArgumentException("Unknown group [name=" + group + ']');
-        }
-
-        return handler;
     }
 
     private void doRegister(CandidateConfig cfg, Hekate hekate) {
@@ -285,7 +292,7 @@ public class DefaultElectionService implements ElectionService, DependentService
         DistributedLock lock = locks.region(LOCK_REGION).get(group);
 
         // Coordination thread.
-        ExecutorService worker = Executors.newSingleThreadExecutor(new HekateThreadFactory("Election" + '-' + group));
+        ExecutorService worker = Executors.newSingleThreadExecutor(new HekateThreadFactory("Election-" + group));
 
         // Register coordination handler.
         CandidateHandler handler = new CandidateHandler(
