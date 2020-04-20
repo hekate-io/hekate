@@ -43,7 +43,7 @@ class DefaultRpcClientBuilder<T> implements RpcClientBuilder<T> {
 
     private final long timeout;
 
-    private final GenericRetryConfigurer retryPolicy;
+    private final GenericRetryConfigurer retry;
 
     @ToStringIgnore
     private final MessagingChannel<RpcProtocol> channel;
@@ -53,7 +53,7 @@ class DefaultRpcClientBuilder<T> implements RpcClientBuilder<T> {
         String tag,
         MessagingChannel<RpcProtocol> channel,
         long timeout,
-        GenericRetryConfigurer retryPolicy
+        GenericRetryConfigurer retry
     ) {
         assert type != null : "RPC type is null.";
         assert channel != null : "Messaging channel is null.";
@@ -62,7 +62,7 @@ class DefaultRpcClientBuilder<T> implements RpcClientBuilder<T> {
         this.tag = tag;
         this.channel = channel;
         this.timeout = timeout;
-        this.retryPolicy = retryPolicy;
+        this.retry = retry;
     }
 
     @Override
@@ -78,7 +78,7 @@ class DefaultRpcClientBuilder<T> implements RpcClientBuilder<T> {
             tag,
             channel.withLoadBalancer(rpcBalancer),
             timeout,
-            retryPolicy
+            retry
         );
     }
 
@@ -105,7 +105,7 @@ class DefaultRpcClientBuilder<T> implements RpcClientBuilder<T> {
             tag,
             channel,
             unit.toMillis(timeout),
-            retryPolicy
+            retry
         );
     }
 
@@ -116,7 +116,7 @@ class DefaultRpcClientBuilder<T> implements RpcClientBuilder<T> {
             tag,
             channel.filterAll(filter),
             timeout,
-            retryPolicy
+            retry
         );
     }
 
@@ -132,7 +132,7 @@ class DefaultRpcClientBuilder<T> implements RpcClientBuilder<T> {
             tag,
             channel.withPartitions(partitions, backupNodes),
             timeout,
-            retryPolicy
+            retry
         );
     }
 
@@ -158,7 +158,7 @@ class DefaultRpcClientBuilder<T> implements RpcClientBuilder<T> {
             tag,
             channel.withCluster(cluster.filter(RpcUtils.filterFor(type, tag))),
             timeout,
-            retryPolicy
+            retry
         );
     }
 
@@ -208,8 +208,8 @@ class DefaultRpcClientBuilder<T> implements RpcClientBuilder<T> {
 
             return retry -> {
                 // Apply global policy first.
-                if (retryPolicy != null) {
-                    retryPolicy.configure(retry);
+                if (this.retry != null) {
+                    this.retry.configure(retry);
                 }
 
                 // Apply the method retry policy.

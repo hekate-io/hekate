@@ -17,12 +17,12 @@
 package io.hekate.rpc;
 
 import io.hekate.core.internal.util.ArgAssert;
-import io.hekate.core.internal.util.StreamUtils;
 import io.hekate.util.format.ToString;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
+import static io.hekate.core.internal.util.StreamUtils.nullSafe;
 import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableSet;
 import static java.util.stream.Collectors.toList;
@@ -51,8 +51,8 @@ public class RpcServerInfo {
         ArgAssert.notNull(rpc, "RPC");
 
         this.rpc = rpc;
-        this.interfaces = unmodifiableList(StreamUtils.nullSafe(interfaces).collect(toList()));
-        this.tags = unmodifiableSet(StreamUtils.nullSafe(tags).collect(toSet()));
+        this.interfaces = unmodifiableList(nullSafe(interfaces).collect(toList()));
+        this.tags = unmodifiableSet(nullSafe(tags).collect(toSet()));
     }
 
     /**

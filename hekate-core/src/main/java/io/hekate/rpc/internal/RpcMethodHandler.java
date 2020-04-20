@@ -32,6 +32,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 class RpcMethodHandler {
+    public static final RpcMethodHandler[] EMPTY_ARRAY = new RpcMethodHandler[0];
+
     private static final Logger log = LoggerFactory.getLogger(RpcMethodHandler.class);
 
     private final Object target;
