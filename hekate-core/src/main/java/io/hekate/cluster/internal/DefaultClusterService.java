@@ -61,16 +61,12 @@ import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.internal.util.Jvm;
 import io.hekate.core.jmx.JmxService;
 import io.hekate.core.jmx.JmxSupport;
-import io.hekate.core.report.ConfigReportSupport;
 import io.hekate.core.report.ConfigReporter;
 import io.hekate.core.service.ClusterServiceManager;
-import io.hekate.core.service.ConfigurableService;
 import io.hekate.core.service.ConfigurationContext;
+import io.hekate.core.service.CoreService;
 import io.hekate.core.service.DependencyContext;
-import io.hekate.core.service.DependentService;
 import io.hekate.core.service.InitializationContext;
-import io.hekate.core.service.InitializingService;
-import io.hekate.core.service.TerminatingService;
 import io.hekate.network.NetworkConfigProvider;
 import io.hekate.network.NetworkConnector;
 import io.hekate.network.NetworkConnectorConfig;
@@ -113,8 +109,8 @@ import static java.util.Collections.unmodifiableList;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toSet;
 
-public class DefaultClusterService implements ClusterService, ClusterServiceManager, DependentService, ConfigurableService,
-    InitializingService, TerminatingService, NetworkConfigProvider, JmxSupport<ClusterServiceJmx>, ConfigReportSupport {
+public class DefaultClusterService implements ClusterService, ClusterServiceManager, CoreService, NetworkConfigProvider,
+    JmxSupport<ClusterServiceJmx> {
     private static final Logger log = LoggerFactory.getLogger(DefaultClusterService.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();

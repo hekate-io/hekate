@@ -29,18 +29,14 @@ import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.internal.util.StreamUtils;
 import io.hekate.core.jmx.JmxService;
 import io.hekate.core.jmx.JmxSupport;
-import io.hekate.core.report.ConfigReportSupport;
 import io.hekate.core.report.ConfigReporter;
 import io.hekate.core.resource.ResourceService;
-import io.hekate.core.service.ConfigurableService;
 import io.hekate.core.service.ConfigurationContext;
+import io.hekate.core.service.CoreService;
 import io.hekate.core.service.DependencyContext;
-import io.hekate.core.service.DependentService;
 import io.hekate.core.service.InitializationContext;
-import io.hekate.core.service.InitializingService;
 import io.hekate.core.service.NetworkBindCallback;
 import io.hekate.core.service.NetworkServiceManager;
-import io.hekate.core.service.TerminatingService;
 import io.hekate.network.NetworkClient;
 import io.hekate.network.NetworkClientCallback;
 import io.hekate.network.NetworkConfigProvider;
@@ -90,8 +86,7 @@ import org.slf4j.LoggerFactory;
 
 import static java.util.stream.Collectors.toList;
 
-public class NettyNetworkService implements NetworkService, NetworkServiceManager, DependentService, ConfigurableService,
-    InitializingService, TerminatingService, JmxSupport<NetworkServiceJmx>, ConfigReportSupport {
+public class NettyNetworkService implements NetworkService, NetworkServiceManager, CoreService, JmxSupport<NetworkServiceJmx> {
     private static class ConnectorRegistration<T> {
         private final EventLoopGroup eventLoop;
 

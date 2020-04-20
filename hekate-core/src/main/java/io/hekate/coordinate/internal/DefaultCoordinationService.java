@@ -38,15 +38,11 @@ import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.internal.util.StreamUtils;
 import io.hekate.core.internal.util.Utils;
-import io.hekate.core.report.ConfigReportSupport;
 import io.hekate.core.report.ConfigReporter;
-import io.hekate.core.service.ConfigurableService;
 import io.hekate.core.service.ConfigurationContext;
+import io.hekate.core.service.CoreService;
 import io.hekate.core.service.DependencyContext;
-import io.hekate.core.service.DependentService;
 import io.hekate.core.service.InitializationContext;
-import io.hekate.core.service.InitializingService;
-import io.hekate.core.service.TerminatingService;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
@@ -73,8 +69,7 @@ import org.slf4j.LoggerFactory;
 
 import static java.util.stream.Collectors.toList;
 
-public class DefaultCoordinationService implements CoordinationService, ConfigurableService, DependentService, InitializingService,
-    TerminatingService, MessagingConfigProvider, ConfigReportSupport {
+public class DefaultCoordinationService implements CoordinationService, CoreService, MessagingConfigProvider {
     private static final Logger log = LoggerFactory.getLogger(DefaultCoordinationProcess.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();

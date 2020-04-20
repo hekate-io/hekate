@@ -24,15 +24,11 @@ import io.hekate.core.inject.InjectionService;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.jmx.JmxService;
-import io.hekate.core.report.ConfigReportSupport;
 import io.hekate.core.report.ConfigReporter;
-import io.hekate.core.service.ConfigurableService;
 import io.hekate.core.service.ConfigurationContext;
+import io.hekate.core.service.CoreService;
 import io.hekate.core.service.DependencyContext;
-import io.hekate.core.service.DependentService;
 import io.hekate.core.service.InitializationContext;
-import io.hekate.core.service.InitializingService;
-import io.hekate.core.service.TerminatingService;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessagingBackPressureConfig;
 import io.hekate.messaging.MessagingChannel;
@@ -77,9 +73,7 @@ import static java.util.Collections.singleton;
 import static java.util.Collections.unmodifiableList;
 import static java.util.stream.Collectors.toList;
 
-public class DefaultRpcService implements RpcService, ConfigurableService, DependentService, InitializingService, TerminatingService,
-    MessagingConfigProvider, ConfigReportSupport {
-
+public class DefaultRpcService implements RpcService, CoreService, MessagingConfigProvider {
     private static final Logger log = LoggerFactory.getLogger(DefaultRpcService.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();

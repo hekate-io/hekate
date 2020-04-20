@@ -25,15 +25,11 @@ import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
-import io.hekate.core.report.ConfigReportSupport;
 import io.hekate.core.report.ConfigReporter;
-import io.hekate.core.service.ConfigurableService;
 import io.hekate.core.service.ConfigurationContext;
+import io.hekate.core.service.CoreService;
 import io.hekate.core.service.DependencyContext;
-import io.hekate.core.service.DependentService;
 import io.hekate.core.service.InitializationContext;
-import io.hekate.core.service.InitializingService;
-import io.hekate.core.service.TerminatingService;
 import io.hekate.lock.LockConfigProvider;
 import io.hekate.lock.LockRegion;
 import io.hekate.lock.LockRegionConfig;
@@ -74,8 +70,7 @@ import static io.hekate.core.internal.util.StreamUtils.nullSafe;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
 
-public class DefaultLockService implements LockService, InitializingService, DependentService, ConfigurableService, TerminatingService,
-    MessagingConfigProvider, ConfigReportSupport {
+public class DefaultLockService implements LockService, CoreService, MessagingConfigProvider {
     private static final Logger log = LoggerFactory.getLogger(DefaultLockService.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
