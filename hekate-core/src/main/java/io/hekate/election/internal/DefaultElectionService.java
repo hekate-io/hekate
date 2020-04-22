@@ -54,7 +54,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static io.hekate.core.internal.util.StreamUtils.nullSafe;
-import static io.hekate.util.async.Waiting.awaitAll;
 import static java.util.stream.Collectors.toList;
 
 public class DefaultElectionService implements ElectionService, CoreService, LockConfigProvider {
@@ -131,11 +130,7 @@ public class DefaultElectionService implements ElectionService, CoreService, Loc
             log.debug("Initializing...");
         }
 
-        guard.lockWrite();
-
-        try {
-            guard.becomeInitialized();
-
+        guard.becomeInitialized(() -> {
             if (!candidatesConfig.isEmpty()) {
                 // Register handlers.
                 candidatesConfig.forEach(cfg ->
@@ -156,9 +151,7 @@ public class DefaultElectionService implements ElectionService, CoreService, Loc
                     ), ClusterEventType.JOIN
                 );
             }
-        } finally {
-            guard.unlockWrite();
-        }
+        });
 
         if (DEBUG) {
             log.debug("Initialized.");
@@ -185,25 +178,13 @@ public class DefaultElectionService implements ElectionService, CoreService, Loc
 
     @Override
     public void preTerminate() throws HekateException {
-        Waiting waiting = null;
+        Waiting done = guard.becomeTerminating(() ->
+            handlers.values().stream()
+                .map(CandidateHandler::terminate)
+                .collect(toList())
+        );
 
-        guard.lockWrite();
-
-        try {
-            if (guard.becomeTerminating()) {
-                waiting = awaitAll(
-                    handlers.values().stream()
-                        .map(CandidateHandler::terminate)
-                        .collect(toList())
-                );
-            }
-        } finally {
-            guard.unlockWrite();
-        }
-
-        if (waiting != null) {
-            waiting.awaitUninterruptedly();
-        }
+        done.awaitUninterruptedly();
     }
 
     @Override
@@ -215,34 +196,24 @@ public class DefaultElectionService implements ElectionService, CoreService, Loc
 
     @Override
     public void postTerminate() throws HekateException {
-        Waiting waiting = null;
-
-        guard.lockWrite();
-
-        try {
-            if (guard.becomeTerminated()) {
-                if (DEBUG) {
-                    log.debug("Terminating...");
-                }
-
-                waiting = awaitAll(
-                    handlers.values().stream()
-                        .map(CandidateHandler::shutdown)
-                        .collect(toList())
-                );
-
-                handlers.clear();
-            }
-        } finally {
-            guard.unlockWrite();
+        if (DEBUG) {
+            log.debug("Terminating...");
         }
 
-        if (waiting != null) {
-            waiting.awaitUninterruptedly();
+        Waiting done = guard.becomeTerminated(() -> {
+            List<Waiting> waiting = handlers.values().stream()
+                .map(CandidateHandler::shutdown)
+                .collect(toList());
 
-            if (DEBUG) {
-                log.debug("Terminated.");
-            }
+            handlers.clear();
+
+            return waiting;
+        });
+
+        done.awaitUninterruptedly();
+
+        if (DEBUG) {
+            log.debug("Terminated.");
         }
     }
 
@@ -252,11 +223,9 @@ public class DefaultElectionService implements ElectionService, CoreService, Loc
     }
 
     private CandidateHandler handler(String group) {
-        ArgAssert.notNull(group, "Group name");
+        return guard.withReadLockAndStateCheck(() -> {
+            ArgAssert.notNull(group, "Group name");
 
-        guard.lockReadWithStateCheck();
-
-        try {
             CandidateHandler handler = handlers.get(group);
 
             if (handler == null) {
@@ -264,9 +233,7 @@ public class DefaultElectionService implements ElectionService, CoreService, Loc
             }
 
             return handler;
-        } finally {
-            guard.unlockRead();
-        }
+        });
     }
 
     private void doRegister(CandidateConfig cfg, Hekate hekate) {

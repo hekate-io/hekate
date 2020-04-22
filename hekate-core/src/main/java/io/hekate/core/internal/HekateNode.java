@@ -73,6 +73,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -135,7 +136,7 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
 
     private final AtomicReference<State> state = new AtomicReference<>(DOWN);
 
-    private final AtomicReference<TerminateFuture> terminateFutureRef = new AtomicReference<>();
+    private final AtomicReference<TerminateFuture> terminateFuture = new AtomicReference<>();
 
     private final Map<String, Object> attributes = synchronizedMap(new HashMap<>());
 
@@ -695,7 +696,7 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
                 // Start plugins.
                 plugins.start(this);
 
-                // Pre-check state since plugin could initiate leave/termination procedure.
+                // Pre-check state because some plugin could initiate leave/termination procedure.
                 if (isInitializingFor(localNodeId)) {
                     // Update state and notify listeners/future.
                     state.set(INITIALIZED);
@@ -985,19 +986,15 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
 
     private TerminateFuture doTerminateAsync(boolean rejoin, ClusterLeaveReason reason, Throwable cause) {
         return guard.withWriteLock(() -> {
-            if (state.compareAndSet(INITIALIZING, TERMINATING)
-                || state.compareAndSet(INITIALIZED, TERMINATING)
-                || state.compareAndSet(JOINING, TERMINATING)
-                || state.compareAndSet(SYNCHRONIZING, TERMINATING)
-                || state.compareAndSet(UP, TERMINATING)
-                || state.compareAndSet(LEAVING, TERMINATING)) {
+            if (EnumSet.of(INITIALIZING, INITIALIZED, JOINING, SYNCHRONIZING, UP, LEAVING).contains(state.get())) {
                 if (DEBUG) {
                     log.debug("Scheduling task for asynchronous termination [rejoin={}]", rejoin);
                 }
 
                 TerminateFuture future = new TerminateFuture();
 
-                terminateFutureRef.set(future);
+                state.set(TERMINATING);
+                terminateFuture.set(future);
 
                 if (rejoin) {
                     // Enable rejoin after termination.
@@ -1021,7 +1018,7 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
                     rejoining.set(false);
                 }
 
-                return terminateFutureRef.get().fork();
+                return terminateFuture.get().fork();
             } else {
                 if (DEBUG) {
                     log.debug("Skipped termination request processing since service is already in {} state.", DOWN);
@@ -1069,7 +1066,7 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
         try {
             AsyncUtils.getUninterruptedly(clusterEvents.ensureLeaveEventFired(reason, topology));
         } catch (ExecutionException e) {
-            log.error("Got an unexpected error while awaiting for cluster leave event processing.", e);
+            log.error("Got an unexpected error while waiting for cluster leave event processing.", e);
         }
 
         preTerminateServices();
@@ -1094,7 +1091,7 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
 
             if (!rejoin) {
                 // Always clear this flag in case of non-rejoining termination.
-                // Otherwise terminations of subsequent explicit joins will act as rejoin.
+                // Otherwise, terminations of subsequent explicit joins will act as rejoin.
                 rejoining.set(null);
             }
 
@@ -1105,11 +1102,10 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
             nodeId = null;
             sysWorker = null;
             preTerminated = false;
+            terminateFuture.set(null);
 
-            terminateFutureRef.set(null);
-
-            // Init/Join/Leave futures must be notified only if this is not a rejoin.
-            // Otherwise they can be prematurely notified if rejoining happens before node is UP.
+            // Init/Join/Leave futures must be notified only if this is not a re-join.
+            // Otherwise, they can be prematurely notified if re-joining happens before the node is UP.
             if (!rejoin) {
                 if (!initFuture.isDone()) {
                     notifyInit = initFuture;

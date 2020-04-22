@@ -53,7 +53,6 @@ import io.hekate.messaging.MessagingService;
 import io.hekate.messaging.intercept.ClientMessageInterceptor;
 import io.hekate.messaging.intercept.ClientSendContext;
 import io.hekate.util.StateGuard;
-import io.hekate.util.async.AsyncUtils;
 import io.hekate.util.async.Waiting;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
@@ -67,8 +66,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static io.hekate.core.internal.util.StreamUtils.nullSafe;
+import static io.hekate.util.async.AsyncUtils.shutdown;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
+import static java.util.Collections.singletonList;
 
 public class DefaultLockService implements LockService, CoreService, MessagingConfigProvider {
     private static final Logger log = LoggerFactory.getLogger(DefaultLockService.class);
@@ -139,6 +140,25 @@ public class DefaultLockService implements LockService, CoreService, MessagingCo
     }
 
     @Override
+    public void report(ConfigReporter report) {
+        guard.withReadLockIfInitialized(() -> {
+            if (!regions.isEmpty()) {
+                report.section("locks", locksSec -> {
+                    locksSec.value("retry-interval", retryInterval);
+
+                    locksSec.section("regions", regionsSec ->
+                        regions.values().forEach(region ->
+                            regionsSec.section("region", regionSec ->
+                                regionSec.value("name", region.name())
+                            )
+                        )
+                    );
+                });
+            }
+        });
+    }
+
+    @Override
     public Collection<MessagingChannelConfig<?>> configureMessaging() {
         if (regions.isEmpty()) {
             return emptyList();
@@ -173,15 +193,11 @@ public class DefaultLockService implements LockService, CoreService, MessagingCo
 
     @Override
     public void initialize(InitializationContext ctx) throws HekateException {
-        guard.lockWrite();
+        if (DEBUG) {
+            log.debug("Initializing...");
+        }
 
-        try {
-            guard.becomeInitialized();
-
-            if (DEBUG) {
-                log.debug("Initializing...");
-            }
-
+        guard.becomeInitialized(() -> {
             if (!regions.isEmpty()) {
                 ClusterNode node = ctx.localNode();
 
@@ -219,113 +235,70 @@ public class DefaultLockService implements LockService, CoreService, MessagingCo
                     proxy.initialize(region);
                 });
             }
-
-            if (DEBUG) {
-                log.debug("Initialized.");
-            }
-        } finally {
-            guard.unlockWrite();
-        }
-    }
-
-    @Override
-    public void report(ConfigReporter report) {
-        guard.withReadLockIfInitialized(() -> {
-            if (!regions.isEmpty()) {
-                report.section("locks", locksSec -> {
-                    locksSec.value("retry-interval", retryInterval);
-
-                    locksSec.section("regions", regionsSec ->
-                        regions.values().forEach(region ->
-                            regionsSec.section("region", regionSec ->
-                                regionSec.value("name", region.name())
-                            )
-                        )
-                    );
-                });
-            }
         });
+
+        if (DEBUG) {
+            log.debug("Initialized.");
+        }
     }
 
     @Override
     public void preTerminate() {
-        guard.withWriteLock(() -> {
-            if (guard.becomeTerminating()) {
-                regions.values().forEach(LockRegionProxy::preTerminate);
-            }
-        });
+        guard.becomeTerminating(() ->
+            regions.values().forEach(LockRegionProxy::preTerminate)
+        );
     }
 
     @Override
     public void terminate() throws HekateException {
-        Waiting waiting = null;
-
-        guard.lockWrite();
-
-        try {
-            if (guard.becomeTerminated()) {
-                if (DEBUG) {
-                    log.debug("Terminating...");
-                }
-
-                // Shutdown scheduler.
-                if (scheduler != null) {
-                    waiting = AsyncUtils.shutdown(scheduler);
-
-                    scheduler = null;
-                }
-
-                // Terminate regions.
-                regions.values().forEach(LockRegionProxy::terminate);
-            }
-        } finally {
-            guard.unlockWrite();
+        if (DEBUG) {
+            log.debug("Terminating...");
         }
 
-        if (waiting != null) {
-            waiting.awaitUninterruptedly();
+        Waiting done = guard.becomeTerminated(() -> {
+            // Shutdown scheduler.
+            Waiting waiting = shutdown(scheduler);
 
-            if (DEBUG) {
-                log.debug("Terminated.");
-            }
+            scheduler = null;
+
+            // Terminate regions.
+            regions.values().forEach(LockRegionProxy::terminate);
+
+            return singletonList(waiting);
+        });
+
+        done.awaitUninterruptedly();
+
+        if (DEBUG) {
+            log.debug("Terminated.");
         }
     }
 
     @Override
     public List<LockRegion> allRegions() {
-        guard.lockReadWithStateCheck();
-
-        try {
-            return new ArrayList<>(regions.values());
-        } finally {
-            guard.unlockRead();
-        }
+        return guard.withReadLockAndStateCheck(() ->
+            new ArrayList<>(regions.values())
+        );
     }
 
     @Override
     public LockRegionProxy region(String region) {
-        guard.lockReadWithStateCheck();
+        return guard.withReadLockAndStateCheck(() -> {
+            ArgAssert.notNull(region, "Region name");
 
-        try {
             LockRegionProxy proxy = regions.get(region);
 
             ArgAssert.check(proxy != null, "Lock region is not configured [name=" + region + ']');
 
             return proxy;
-        } finally {
-            guard.unlockRead();
-        }
+        });
     }
 
     @Override
     public boolean hasRegion(String region) {
-        guard.lockReadWithStateCheck();
-
-        try {
-            return regions.containsKey(region);
-        } finally {
-            guard.unlockRead();
-        }
+        return guard.withReadLockAndStateCheck(() ->
+            regions.containsKey(region)
+        );
     }
 
     private void register(LockRegionConfig cfg) {

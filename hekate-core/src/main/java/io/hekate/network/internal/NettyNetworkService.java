@@ -265,6 +265,53 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
     }
 
     @Override
+    public void report(ConfigReporter report) {
+        report.section("network", net -> {
+            net.value("address-selector", addressSelector);
+            net.value("transport", transport);
+            net.value("init-port", initPort);
+            net.value("port-range", portRange);
+            net.value("acceptor-retry-interval", acceptorRetryInterval);
+            net.value("connect-timeout", connectTimeout);
+            net.value("heartbeat-interval", heartbeatInterval);
+            net.value("heartbeat-loss-threshold", heartbeatLossThreshold);
+            net.value("nio-thread-pool-size", nioThreadPoolSize);
+            net.value("tcp-no-delay", tcpNoDelay);
+            net.value("so-receive-buffer-size", soReceiveBufferSize);
+            net.value("so-send-buffer-size", soSendBufferSize);
+            net.value("so-reuse-address", soReuseAddress);
+            net.value("so-backlog", soBacklog);
+
+            if (sslConfig != null) {
+                net.section("ssl", ssl -> {
+                    ssl.value("provider", sslConfig.getProvider());
+                    ssl.value("key-store-path", sslConfig.getKeyStorePath());
+                    ssl.value("key-store-type", sslConfig.getKeyStoreType());
+                    ssl.value("key-store-type", sslConfig.getKeyStoreAlgorithm());
+                    ssl.value("trust-store-path", sslConfig.getTrustStorePath());
+                    ssl.value("trust-store-type", sslConfig.getTrustStoreType());
+                    ssl.value("trust-store-type", sslConfig.getTrustStoreAlgorithm());
+                    ssl.value("session-cache-size", sslConfig.getSslSessionCacheSize());
+                    ssl.value("session-cache-timeout", sslConfig.getSslSessionCacheTimeout());
+                });
+            }
+
+            if (!connectors.isEmpty()) {
+                net.section("connectors", css ->
+                    connectors.values().forEach(c ->
+                        css.section("connector", cs -> {
+                            cs.value("protocol", c.connector().protocol());
+                            cs.value("server", c.connector().isServer());
+                            cs.value("nio-threads", c.hasEventLoop() ? c.connector().nioThreads() : "shared");
+                            cs.value("idle-timeout", c.connector().idleSocketTimeout());
+                        })
+                    )
+                );
+            }
+        });
+    }
+
+    @Override
     public NetworkServerFuture bind(NetworkBindCallback callback) throws HekateException {
         ArgAssert.notNull(callback, "Callback");
 
@@ -375,15 +422,11 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
 
     @Override
     public void initialize(InitializationContext ctx) throws HekateException {
-        guard.lockWrite();
+        if (DEBUG) {
+            log.debug("Initializing...");
+        }
 
-        try {
-            guard.becomeInitialized();
-
-            if (DEBUG) {
-                log.debug("Initializing...");
-            }
-
+        guard.becomeInitialized(() -> {
             // Register connectors.
             if (!connectorConfigs.isEmpty()) {
                 connectorConfigs.forEach(cfg -> {
@@ -403,76 +446,21 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
                     jmx.register(conn.connector(), conn.connector().protocol());
                 }
             }
+        });
 
-            if (DEBUG) {
-                log.debug("Initialized.");
-            }
-        } finally {
-            guard.unlockWrite();
+        if (DEBUG) {
+            log.debug("Initialized.");
         }
     }
 
     @Override
     public void postInitialize(InitializationContext ctx) {
-        guard.lockRead();
-
-        try {
-            if (guard.isInitialized()) {
-                if (log.isInfoEnabled()) {
-                    log.info("Started accepting network connections [address={}]", server.address());
-                }
-
-                server.startAccepting();
-            }
-        } finally {
-            guard.unlockRead();
-        }
-    }
-
-    @Override
-    public void report(ConfigReporter report) {
-        report.section("network", net -> {
-            net.value("address-selector", addressSelector);
-            net.value("transport", transport);
-            net.value("init-port", initPort);
-            net.value("port-range", portRange);
-            net.value("acceptor-retry-interval", acceptorRetryInterval);
-            net.value("connect-timeout", connectTimeout);
-            net.value("heartbeat-interval", heartbeatInterval);
-            net.value("heartbeat-loss-threshold", heartbeatLossThreshold);
-            net.value("nio-thread-pool-size", nioThreadPoolSize);
-            net.value("tcp-no-delay", tcpNoDelay);
-            net.value("so-receive-buffer-size", soReceiveBufferSize);
-            net.value("so-send-buffer-size", soSendBufferSize);
-            net.value("so-reuse-address", soReuseAddress);
-            net.value("so-backlog", soBacklog);
-
-            if (sslConfig != null) {
-                net.section("ssl", ssl -> {
-                    ssl.value("provider", sslConfig.getProvider());
-                    ssl.value("key-store-path", sslConfig.getKeyStorePath());
-                    ssl.value("key-store-type", sslConfig.getKeyStoreType());
-                    ssl.value("key-store-type", sslConfig.getKeyStoreAlgorithm());
-                    ssl.value("trust-store-path", sslConfig.getTrustStorePath());
-                    ssl.value("trust-store-type", sslConfig.getTrustStoreType());
-                    ssl.value("trust-store-type", sslConfig.getTrustStoreAlgorithm());
-                    ssl.value("session-cache-size", sslConfig.getSslSessionCacheSize());
-                    ssl.value("session-cache-timeout", sslConfig.getSslSessionCacheTimeout());
-                });
+        guard.withWriteLockIfInitialized(() -> {
+            if (log.isInfoEnabled()) {
+                log.info("Started accepting network connections [address={}]", server.address());
             }
 
-            if (!connectors.isEmpty()) {
-                net.section("connectors", css ->
-                    connectors.values().forEach(c ->
-                        css.section("connector", cs -> {
-                            cs.value("protocol", c.connector().protocol());
-                            cs.value("server", c.connector().isServer());
-                            cs.value("nio-threads", c.hasEventLoop() ? c.connector().nioThreads() : "shared");
-                            cs.value("idle-timeout", c.connector().idleSocketTimeout());
-                        })
-                    )
-                );
-            }
+            server.startAccepting();
         });
     }
 
@@ -542,11 +530,9 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
 
     @Override
     public <T> NetworkConnector<T> connector(String protocol) throws IllegalArgumentException {
-        ArgAssert.notNull(protocol, "Protocol");
+        return guard.withReadLockAndStateCheck(() -> {
+            ArgAssert.notNull(protocol, "Protocol");
 
-        guard.lockReadWithStateCheck();
-
-        try {
             ConnectorRegistration<?> module = connectors.get(protocol);
 
             ArgAssert.check(module != null, "Unknown protocol [name=" + protocol + ']');
@@ -555,20 +541,14 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
             NetworkConnector<T> connector = (NetworkConnector<T>)module.connector();
 
             return connector;
-        } finally {
-            guard.unlockRead();
-        }
+        });
     }
 
     @Override
     public boolean hasConnector(String protocol) {
-        guard.lockReadWithStateCheck();
-
-        try {
-            return connectors.containsKey(protocol);
-        } finally {
-            guard.unlockRead();
-        }
+        return guard.withReadLockAndStateCheck(() ->
+            connectors.containsKey(protocol)
+        );
     }
 
     @Override

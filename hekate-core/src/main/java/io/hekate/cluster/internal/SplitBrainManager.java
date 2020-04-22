@@ -104,9 +104,7 @@ class SplitBrainManager implements ConfigReportSupport {
         assert async != null : "Executor is null.";
         assert callback != null : "Callback is null.";
 
-        guard.withWriteLock(() -> {
-            guard.becomeInitialized();
-
+        guard.becomeInitialized(() -> {
             this.localNode = localNode;
             this.async = async;
             this.callback = callback;
@@ -115,11 +113,9 @@ class SplitBrainManager implements ConfigReportSupport {
     }
 
     public void terminate() {
-        guard.withWriteLock(() -> {
-            if (guard.becomeTerminated()) {
-                this.async = null;
-                this.callback = null;
-            }
+        guard.becomeTerminated(() -> {
+            this.async = null;
+            this.callback = null;
         });
     }
 

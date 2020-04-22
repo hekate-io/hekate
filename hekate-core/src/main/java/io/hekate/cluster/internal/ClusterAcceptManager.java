@@ -70,27 +70,23 @@ class ClusterAcceptManager {
             return null;
         });
 
-        // Make sure that guard is in the 'initialized' state (must be done while write lock is being held).
-        guard.withWriteLock(guard::becomeInitialized);
+        // Make sure that guard is in the 'initialized' state.
+        guard.becomeInitialized(() -> { /* No-op. */ });
     }
 
     public void terminate() {
-        guard.withWriteLock(() -> {
-            if (guard.becomeTerminated()) {
-                activeChecks.values().forEach(future -> future.cancel(false));
+        guard.becomeTerminated(() -> {
+            activeChecks.values().forEach(future -> future.cancel(false));
 
-                activeChecks.clear();
-            }
+            activeChecks.clear();
         });
     }
 
     public CompletableFuture<Optional<String>> check(ClusterNode joining, Hekate hekate) {
-        guard.lockReadWithStateCheck();
-
-        try {
+        return guard.withReadLockAndStateCheck(() -> {
             CompletableFuture<Optional<String>> future = new CompletableFuture<>();
 
-            // Preserve enqueueing multiple checks for the same node.
+            // Do not enqueueing multiple checks for the same node.
             CompletableFuture<Optional<String>> existing = activeChecks.putIfAbsent(joining.id(), future);
 
             if (existing == null) {
@@ -114,9 +110,7 @@ class ClusterAcceptManager {
             } else {
                 return existing;
             }
-        } finally {
-            guard.unlockRead();
-        }
+        });
     }
 
     private String doAccept(ClusterNode newNode, Hekate hekate) {

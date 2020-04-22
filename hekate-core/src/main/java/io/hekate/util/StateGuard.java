@@ -16,14 +16,15 @@
 
 package io.hekate.util;
 
+import io.hekate.util.async.Waiting;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
-import java.util.function.Supplier;
 
 import static io.hekate.util.StateGuard.State.INITIALIZED;
 import static io.hekate.util.StateGuard.State.INITIALIZING;
@@ -55,6 +56,39 @@ public class StateGuard {
         TERMINATED
     }
 
+    /**
+     * Guarded supplier.
+     *
+     * @param <T> Result type.
+     * @param <E> Error type.
+     */
+    @FunctionalInterface
+    public interface GuardedSupplier<T, E extends Exception> {
+        /**
+         * Returns a value.
+         *
+         * @return Value.
+         *
+         * @throws E Error.
+         */
+        T get() throws E;
+    }
+
+    /**
+     * Guarded runnable.
+     *
+     * @param <E> Error type.
+     */
+    @FunctionalInterface
+    public interface GuardedRunnable<E extends Exception> {
+        /**
+         * Runs this task.
+         *
+         * @throws E Error.
+         */
+        void run() throws E;
+    }
+
     private final Class<?> type;
 
     @ToStringIgnore
@@ -66,9 +100,9 @@ public class StateGuard {
     private State state = TERMINATED;
 
     /**
-     * Constructs new instance.
+     * Constructs a new instance.
      *
-     * @param type Type of a guarded component (for errors reporting).
+     * @param type Guarded component type (for errors reporting).
      */
     public StateGuard(Class<?> type) {
         assert type != null : "Type is null.";
@@ -86,10 +120,13 @@ public class StateGuard {
      * initialized} state.
      *
      * @param task Task.
+     * @param <E> Error type.
      *
      * @return {@code true} if task was executed or {@code false} if this guard is not in the {@link #isInitialized() initialized} state.
+     *
+     * @throws E Task execution error.
      */
-    public boolean withReadLockIfInitialized(Runnable task) {
+    public <E extends Exception> boolean withReadLockIfInitialized(GuardedRunnable<E> task) throws E {
         lockRead();
 
         try {
@@ -110,10 +147,13 @@ public class StateGuard {
      * initialized} state.
      *
      * @param task Task.
+     * @param <E> Error type.
      *
      * @return {@code true} if task was executed or {@code false} if this guard is not in the {@link #isInitialized() initialized} state.
+     *
+     * @throws E Task execution error.
      */
-    public boolean withWriteLockIfInitialized(Runnable task) {
+    public <E extends Exception> boolean withWriteLockIfInitialized(GuardedRunnable<E> task) throws E {
         lockWrite();
 
         try {
@@ -133,8 +173,11 @@ public class StateGuard {
      * Executes the specified task while holding the {@link #lockRead() read} lock.
      *
      * @param task Task.
+     * @param <E> Error type.
+     *
+     * @throws E Task execution error.
      */
-    public void withReadLock(Runnable task) {
+    public <E extends Exception> void withReadLock(GuardedRunnable<E> task) throws E {
         lockRead();
 
         try {
@@ -149,10 +192,13 @@ public class StateGuard {
      *
      * @param task Task.
      * @param <T> Result type.
+     * @param <E> Error type.
      *
      * @return Task execution result.
+     *
+     * @throws E Task execution error.
      */
-    public <T> T withReadLock(Supplier<T> task) {
+    public <T, E extends Exception> T withReadLock(GuardedSupplier<T, E> task) throws E {
         lockRead();
 
         try {
@@ -166,8 +212,11 @@ public class StateGuard {
      * Executes the specified task while holding the {@link #lockWrite() write} lock.
      *
      * @param task Task.
+     * @param <E> Error type.
+     *
+     * @throws E Task execution error.
      */
-    public void withWriteLock(Runnable task) {
+    public <E extends Exception> void withWriteLock(GuardedRunnable<E> task) throws E {
         lockWrite();
 
         try {
@@ -182,10 +231,13 @@ public class StateGuard {
      *
      * @param task Task.
      * @param <T> Result type.
+     * @param <E> Error type.
      *
      * @return Task execution result.
+     *
+     * @throws E Task execution error.
      */
-    public <T> T withWriteLock(Supplier<T> task) {
+    public <T, E extends Exception> T withWriteLock(GuardedSupplier<T, E> task) throws E {
         lockWrite();
 
         try {
@@ -243,6 +295,22 @@ public class StateGuard {
     }
 
     /**
+     * Switches this guard to {@link State#INITIALIZED} state and executes the specified task.
+     *
+     * @param task Task.
+     * @param <E> Error type.
+     *
+     * @throws E Task execution error.
+     */
+    public <E extends Exception> void becomeInitialized(GuardedRunnable<E> task) throws E {
+        withWriteLock(() -> {
+            becomeInitialized();
+
+            task.run();
+        });
+    }
+
+    /**
      * Returns {@code true} if this guard is in {@link State#INITIALIZED} state.
      *
      * <p>
@@ -278,6 +346,46 @@ public class StateGuard {
     }
 
     /**
+     * Tries to switch this guard to {@link State#TERMINATING} state and executes the specified task if switch happened.
+     *
+     * @param task Task.
+     * @param <E> Error type.
+     *
+     * @return {@link Waiting} object to await for the task execution.
+     *
+     * @throws E Task execution error.
+     * @see #becomeTerminating()
+     */
+    public <E extends Exception> Waiting becomeTerminating(GuardedSupplier<List<Waiting>, E> task) throws E {
+        return withWriteLock(() -> {
+            if (becomeTerminating()) {
+                List<Waiting> result = task.get();
+
+                return result != null && !result.isEmpty() ? Waiting.awaitAll(result) : Waiting.NO_WAIT;
+            } else {
+                return Waiting.NO_WAIT;
+            }
+        });
+    }
+
+    /**
+     * Tries to switch this guard to {@link State#TERMINATING} state and executes the specified task if switch happened.
+     *
+     * @param task Task.
+     * @param <E> Error type.
+     *
+     * @throws E Task execution error.
+     * @see #becomeTerminating()
+     */
+    public <E extends Exception> void becomeTerminating(GuardedRunnable<E> task) throws E {
+        withWriteLock(() -> {
+            if (becomeTerminating()) {
+                task.run();
+            }
+        });
+    }
+
+    /**
      * Switches this guard to {@link State#TERMINATED} state if guard is currently in any other state besides {@link State#TERMINATED}.
      *
      * <p>
@@ -299,6 +407,44 @@ public class StateGuard {
     }
 
     /**
+     * Switches this guard to {@link State#TERMINATED} state and executes the specified task.
+     *
+     * @param task Task.
+     * @param <E> Error type.
+     *
+     * @return {@link Waiting} object to await for the task execution.
+     *
+     * @throws E Task execution error.
+     */
+    public <E extends Exception> Waiting becomeTerminated(GuardedSupplier<List<Waiting>, E> task) throws E {
+        return withWriteLock(() -> {
+            if (becomeTerminated()) {
+                List<Waiting> result = task.get();
+
+                return result != null && !result.isEmpty() ? Waiting.awaitAll(result) : Waiting.NO_WAIT;
+            } else {
+                return Waiting.NO_WAIT;
+            }
+        });
+    }
+
+    /**
+     * Switches this guard to {@link State#TERMINATED} state and executes the specified task.
+     *
+     * @param task Task.
+     * @param <E> Error type.
+     *
+     * @throws E Task execution error.
+     */
+    public <E extends Exception> void becomeTerminated(GuardedRunnable<E> task) throws E {
+        withWriteLock(() -> {
+            if (becomeTerminated()) {
+                task.run();
+            }
+        });
+    }
+
+    /**
      * Acquires the read lock on this guard and checks its current state. If state is anything other than {@link State#INITIALIZED} then
      * {@link IllegalStateException} will be thrown and lock will be released.
      *
@@ -317,12 +463,61 @@ public class StateGuard {
      * @throws IllegalStateException If the specified {@code state} doesn't match the current state of this guard.
      */
     public void lockReadWithStateCheck(State state) {
-        readLock.lock();
+        lockRead();
 
         if (this.state != state) {
-            readLock.unlock();
+            unlockRead();
 
             throw new IllegalStateException(type.getSimpleName() + " is not " + state.name().toLowerCase(Locale.US) + '.');
+        }
+    }
+
+    /**
+     * Executes the specified task while holding the {@link #lockRead() read} lock.
+     *
+     * <p>
+     * If the current state is anything other than {@link State#INITIALIZED} then {@link IllegalStateException} will be thrown and lock will
+     * be released without executing the task.
+     * </p>
+     *
+     * @param task Task.
+     * @param <T> Result type.
+     * @param <E> Task execution error type.
+     *
+     * @return Task execution result.
+     *
+     * @throws E Task execution error.
+     */
+    public <T, E extends Exception> T withReadLockAndStateCheck(GuardedSupplier<T, E> task) throws E {
+        lockReadWithStateCheck();
+
+        try {
+            return task.get();
+        } finally {
+            unlockRead();
+        }
+    }
+
+    /**
+     * Executes the specified task while holding the {@link #lockRead() read} lock.
+     *
+     * <p>
+     * If the current state is anything other than {@link State#INITIALIZED} then {@link IllegalStateException} will be thrown and lock will
+     * be released without executing the task.
+     * </p>
+     *
+     * @param task Task.
+     * @param <E> Task execution error type.
+     *
+     * @throws E Task execution error.
+     */
+    public <E extends Exception> void withReadLockAndStateCheck(GuardedRunnable<E> task) throws E {
+        lockReadWithStateCheck();
+
+        try {
+            task.run();
+        } finally {
+            unlockRead();
         }
     }
 
@@ -332,10 +527,10 @@ public class StateGuard {
      * @return {@code true} if lock was acquired.
      */
     public boolean tryLockReadWithStateCheck() {
-        readLock.lock();
+        lockRead();
 
         if (state != INITIALIZED) {
-            readLock.unlock();
+            unlockRead();
 
             return false;
         }
@@ -351,10 +546,10 @@ public class StateGuard {
      * @return {@code true} if lock was acquired.
      */
     public boolean tryLockReadWithStateCheck(State state) {
-        readLock.lock();
+        lockRead();
 
         if (this.state != state) {
-            readLock.unlock();
+            unlockRead();
 
             return false;
         }
@@ -379,7 +574,7 @@ public class StateGuard {
      *
      * @return {@code true} if lock was successfully acquired.
      *
-     * @throws InterruptedException If thread was interrupted while awaiting for lock acquisition.
+     * @throws InterruptedException If thread was interrupted while waiting for lock acquisition.
      * @see ReadLock#tryLock(long, TimeUnit)
      */
     public boolean tryLockRead(long timeout, TimeUnit unit) throws InterruptedException {
@@ -402,10 +597,10 @@ public class StateGuard {
      * @throws IllegalStateException If guard is not in {@link State#INITIALIZED} state.
      */
     public void lockWriteWithStateCheck() {
-        writeLock.lock();
+        lockWrite();
 
         if (state != INITIALIZED) {
-            writeLock.unlock();
+            unlockWrite();
 
             throw new IllegalStateException(type.getSimpleName() + " is not " + INITIALIZED.name().toLowerCase(Locale.US) + '.');
         }
@@ -445,9 +640,9 @@ public class StateGuard {
     }
 
     /**
-     * Returns {@code true} if current thread hold the write lock.
+     * Returns {@code true} if the current thread holds a write lock.
      *
-     * @return {@code true} if current thread hold the write lock.
+     * @return {@code true} if the current thread holds a write lock.
      *
      * @see WriteLock#isHeldByCurrentThread()
      */

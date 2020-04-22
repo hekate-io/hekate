@@ -54,7 +54,6 @@ import io.hekate.network.NetworkMessage;
 import io.hekate.network.NetworkServerHandler;
 import io.hekate.network.NetworkService;
 import io.hekate.util.StateGuard;
-import io.hekate.util.async.AsyncUtils;
 import io.hekate.util.async.ExtendedScheduledExecutor;
 import io.hekate.util.async.Waiting;
 import io.hekate.util.format.ToString;
@@ -71,6 +70,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static io.hekate.core.internal.util.StreamUtils.nullSafe;
+import static io.hekate.util.async.AsyncUtils.shutdown;
 import static java.util.stream.Collectors.toList;
 
 public class DefaultMessagingService implements MessagingService, CoreService, NetworkConfigProvider, ClusterAcceptor {
@@ -217,15 +217,11 @@ public class DefaultMessagingService implements MessagingService, CoreService, N
 
     @Override
     public void initialize(InitializationContext ctx) throws HekateException {
-        guard.lockWrite();
+        if (DEBUG) {
+            log.debug("Initializing...");
+        }
 
-        try {
-            guard.becomeInitialized();
-
-            if (DEBUG) {
-                log.debug("Initializing...");
-            }
-
+        guard.becomeInitialized(() -> {
             if (!gateways.isEmpty()) {
                 nodeId = ctx.localNode().id();
 
@@ -241,71 +237,56 @@ public class DefaultMessagingService implements MessagingService, CoreService, N
                     ClusterEventType.CHANGE
                 );
             }
+        });
 
-            if (DEBUG) {
-                log.debug("Initialized.");
-            }
-        } finally {
-            guard.unlockWrite();
+        if (DEBUG) {
+            log.debug("Initialized.");
         }
     }
 
     @Override
     public void preTerminate() throws HekateException {
-        guard.withWriteLock(guard::becomeTerminating);
+        // Switch to the TERMINATING state in order to stop processing incoming messages.
+        guard.becomeTerminating(() -> { /* No-op. */ });
     }
 
     @Override
     public void terminate() {
-        List<Waiting> waiting = null;
-
-        guard.lockWrite();
-
-        try {
-            if (guard.becomeTerminated()) {
-                if (DEBUG) {
-                    log.debug("Terminating...");
-                }
-
-                // Close all gateways.
-                waiting = gateways.values().stream()
-                    .map(MessagingGateway::context)
-                    .filter(Objects::nonNull)
-                    .map(MessagingGatewayContext::close)
-                    .collect(toList());
-
-                // Shutdown timer.
-                if (timer != null) {
-                    waiting.add(AsyncUtils.shutdown(timer));
-                }
-
-                timer = null;
-                nodeId = null;
-            }
-        } finally {
-            guard.unlockWrite();
+        if (DEBUG) {
+            log.debug("Terminating...");
         }
 
-        if (waiting != null) {
-            Waiting.awaitAll(waiting).awaitUninterruptedly();
+        Waiting done = guard.becomeTerminated(() -> {
+            // Close all gateways.
+            List<Waiting> waiting = gateways.values().stream()
+                .map(MessagingGateway::context)
+                .filter(Objects::nonNull)
+                .map(MessagingGatewayContext::close)
+                .collect(toList());
 
-            if (DEBUG) {
-                log.debug("Terminated.");
-            }
+            // Shutdown timer.
+            waiting.add(shutdown(timer));
+
+            timer = null;
+            nodeId = null;
+
+            return waiting;
+        });
+
+        done.awaitUninterruptedly();
+
+        if (DEBUG) {
+            log.debug("Terminated.");
         }
     }
 
     @Override
     public List<MessagingChannel<?>> allChannels() {
-        guard.lockReadWithStateCheck();
-
-        try {
-            return gateways.values().stream()
+        return guard.withReadLockAndStateCheck(() ->
+            gateways.values().stream()
                 .map(gateway -> gateway.context().channel())
-                .collect(toList());
-        } finally {
-            guard.unlockRead();
-        }
+                .collect(toList())
+        );
     }
 
     @Override
@@ -315,11 +296,9 @@ public class DefaultMessagingService implements MessagingService, CoreService, N
 
     @Override
     public <T> DefaultMessagingChannel<T> channel(String name, Class<T> baseType) throws IllegalArgumentException {
-        ArgAssert.notNull(name, "Channel name");
+        return guard.withReadLockAndStateCheck(() -> {
+            ArgAssert.notNull(name, "Channel name");
 
-        guard.lockReadWithStateCheck();
-
-        try {
             @SuppressWarnings("unchecked")
             MessagingGateway<T> gateway = (MessagingGateway<T>)gateways.get(name);
 
@@ -331,9 +310,7 @@ public class DefaultMessagingService implements MessagingService, CoreService, N
             }
 
             return gateway.context().channel();
-        } finally {
-            guard.unlockRead();
-        }
+        });
     }
 
     @Override
@@ -554,10 +531,10 @@ public class DefaultMessagingService implements MessagingService, CoreService, N
 
                 @Override
                 public void onDisconnect(NetworkEndpoint<MessagingProtocol> client) {
-                    MessagingConnectionIn<?> clientCtx = (MessagingConnectionIn<?>)client.getContext();
+                    MessagingConnectionIn<?> conn = (MessagingConnectionIn<?>)client.getContext();
 
-                    if (clientCtx != null) {
-                        clientCtx.onDisconnect();
+                    if (conn != null) {
+                        conn.onDisconnect();
                     }
                 }
             });

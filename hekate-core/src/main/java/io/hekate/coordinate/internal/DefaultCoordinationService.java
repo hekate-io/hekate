@@ -197,15 +197,11 @@ public class DefaultCoordinationService implements CoordinationService, CoreServ
 
     @Override
     public void initialize(InitializationContext ctx) throws HekateException {
-        guard.lockWrite();
+        if (DEBUG) {
+            log.debug("Initializing...");
+        }
 
-        try {
-            guard.becomeInitialized();
-
-            if (DEBUG) {
-                log.debug("Initializing...");
-            }
-
+        guard.becomeInitialized(() -> {
             if (!processesConfig.isEmpty()) {
                 // Register cluster listener to trigger coordination.
                 cluster.addListener(this::processTopologyChange, ClusterEventType.JOIN, ClusterEventType.CHANGE);
@@ -218,12 +214,10 @@ public class DefaultCoordinationService implements CoordinationService, CoreServ
                     initializeProcess(cfg, ctx, channel);
                 }
             }
+        });
 
-            if (DEBUG) {
-                log.debug("Initialized.");
-            }
-        } finally {
-            guard.unlockWrite();
+        if (DEBUG) {
+            log.debug("Initialized.");
         }
     }
 
@@ -248,53 +242,43 @@ public class DefaultCoordinationService implements CoordinationService, CoreServ
 
     @Override
     public void preTerminate() throws HekateException {
-        Waiting waiting = guard.withWriteLock(() -> {
-            if (guard.becomeTerminating()) {
-                if (DEBUG) {
-                    log.debug("Pre-terminating.");
-                }
+        if (DEBUG) {
+            log.debug("Pre-terminating.");
+        }
 
-                return Waiting.awaitAll(processes.values().stream()
-                    .map(DefaultCoordinationProcess::terminate)
-                    .collect(toList())
-                );
-            } else {
-                return Waiting.NO_WAIT;
-            }
-        });
+        Waiting done = guard.becomeTerminating(() ->
+            processes.values().stream()
+                .map(DefaultCoordinationProcess::terminate)
+                .collect(toList())
+        );
 
-        waiting.awaitUninterruptedly();
+        done.awaitUninterruptedly();
+
+        if (DEBUG) {
+            log.debug("Pre-terminated.");
+        }
     }
 
     @Override
     public void terminate() throws HekateException {
-        Waiting waiting = null;
-
-        guard.lockWrite();
-
-        try {
-            if (guard.becomeTerminated()) {
-                if (DEBUG) {
-                    log.debug("Terminating.");
-                }
-
-                waiting = Waiting.awaitAll(processes.values().stream()
-                    .map(DefaultCoordinationProcess::terminate)
-                    .collect(toList())
-                );
-
-                processes.clear();
-            }
-        } finally {
-            guard.unlockWrite();
+        if (DEBUG) {
+            log.debug("Terminating.");
         }
 
-        if (waiting != null) {
-            waiting.awaitUninterruptedly();
+        Waiting done = guard.becomeTerminated(() -> {
+            List<Waiting> waiting = processes.values().stream()
+                .map(DefaultCoordinationProcess::terminate)
+                .collect(toList());
 
-            if (DEBUG) {
-                log.debug("Terminated.");
-            }
+            processes.clear();
+
+            return waiting;
+        });
+
+        done.awaitUninterruptedly();
+
+        if (DEBUG) {
+            log.debug("Terminated.");
         }
     }
 

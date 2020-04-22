@@ -253,7 +253,7 @@ public class DefaultRpcService implements RpcService, CoreService, MessagingConf
             methods = allMethods.toArray(RpcMethodHandler.EMPTY_ARRAY);
         }
 
-        this.servers = unmodifiableList(serversInfo);
+        servers = unmodifiableList(serversInfo);
     }
 
     @Override
@@ -322,15 +322,11 @@ public class DefaultRpcService implements RpcService, CoreService, MessagingConf
 
     @Override
     public void initialize(InitializationContext ctx) throws HekateException {
-        guard.lockWrite();
+        if (DEBUG) {
+            log.debug("Initializing...");
+        }
 
-        try {
-            guard.becomeInitialized();
-
-            if (DEBUG) {
-                log.debug("Initializing...");
-            }
-
+        guard.becomeInitialized(() -> {
             // Initialize RPC messaging channel.
             channel = messaging.channel(CHANNEL_NAME, RpcProtocol.class);
 
@@ -374,31 +370,27 @@ public class DefaultRpcService implements RpcService, CoreService, MessagingConf
                     }
                 }
             }
+        });
 
-            if (DEBUG) {
-                log.debug("Initialized.");
-            }
-        } finally {
-            guard.unlockWrite();
+        if (DEBUG) {
+            log.debug("Initialized.");
         }
     }
 
     @Override
     public void terminate() throws HekateException {
-        guard.lockWrite();
+        if (DEBUG) {
+            log.debug("Terminating...");
+        }
 
-        try {
-            if (guard.becomeTerminated()) {
-                clients.clear();
+        guard.becomeTerminated(() -> {
+            clients.clear();
 
-                channel = null;
+            channel = null;
+        });
 
-                if (DEBUG) {
-                    log.debug("Terminated.");
-                }
-            }
-        } finally {
-            guard.unlockWrite();
+        if (DEBUG) {
+            log.debug("Terminated.");
         }
     }
 
@@ -409,22 +401,18 @@ public class DefaultRpcService implements RpcService, CoreService, MessagingConf
 
     @Override
     public <T> RpcClientBuilder<T> clientFor(Class<T> type, String tag) {
-        ArgAssert.notNull(type, "Type");
+        return guard.withReadLockAndStateCheck(() -> {
+            ArgAssert.notNull(type, "Type");
 
-        RpcTypeKey key = new RpcTypeKey(type, tag);
+            RpcTypeKey key = new RpcTypeKey(type, tag);
 
-        guard.lockReadWithStateCheck();
-
-        try {
             @SuppressWarnings("unchecked")
             RpcClientBuilder<T> client = (RpcClientBuilder<T>)clients.computeIfAbsent(key, missingKey ->
                 createClient(missingKey, null)
             );
 
             return client;
-        } finally {
-            guard.unlockRead();
-        }
+        });
     }
 
     @Override
@@ -434,17 +422,13 @@ public class DefaultRpcService implements RpcService, CoreService, MessagingConf
 
     @Override
     public ClusterView clusterOf(Class<?> type, String tag) {
-        ArgAssert.notNull(type, "Type");
+        return guard.withReadLockAndStateCheck(() -> {
+            ArgAssert.notNull(type, "Type");
 
-        guard.lockReadWithStateCheck();
-
-        try {
             RpcInterfaceInfo<?> rpcType = types.analyzeType(type);
 
             return channel.cluster().filter(filterFor(rpcType, tag));
-        } finally {
-            guard.unlockRead();
-        }
+        });
     }
 
     @Override
