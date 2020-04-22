@@ -134,8 +134,6 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
 
     private final AtomicReference<Boolean> rejoining = new AtomicReference<>();
 
-    private final AtomicReference<State> state = new AtomicReference<>(DOWN);
-
     private final AtomicReference<TerminateFuture> terminateFuture = new AtomicReference<>();
 
     private final Map<String, Object> attributes = synchronizedMap(new HashMap<>());
@@ -175,6 +173,8 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
     private volatile ScheduledExecutorService sysWorker;
 
     private volatile DefaultClusterNode node;
+
+    private volatile State state = DOWN;
 
     public HekateNode(HekateBootstrap boot) {
         assert boot != null : "Bootstrap is null.";
@@ -336,9 +336,9 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
 
         return guard.withWriteLock(() -> {
             // Try to become INITIALIZING.
-            switch (state.get()) {
+            switch (state) {
                 case DOWN: {
-                    state.set(INITIALIZING);
+                    state = INITIALIZING;
 
                     break;
                 }
@@ -401,17 +401,26 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
     public JoinFuture joinAsync() {
         JoinFuture localJoinFuture = guard.withReadLock(() -> this.joinFuture);
 
-        initializeAsync().thenRun(() -> {
-            try {
-                if (state.get() == INITIALIZED) {
-                    clusterManager.joinAsync();
-                }
-            } catch (RuntimeException | Error e) {
-                if (log.isErrorEnabled()) {
-                    log.error("Got and unexpected runtime error while joining the cluster.", e);
-                }
-            }
-        });
+        initializeAsync().thenRun(() ->
+            runOnSysThread(() ->
+                guard.withWriteLock(() -> {
+                    try {
+                        if (state == INITIALIZED) {
+                            state = JOINING;
+
+                            notifyOnLifecycleChange();
+
+                            // Continue only if we are still joining (lifecycle listener could change state).
+                            if (state == JOINING) {
+                                clusterManager.joinAsync();
+                            }
+                        }
+                    } catch (RuntimeException | Error e) {
+                        doTerminateAsync(ClusterLeaveReason.TERMINATE, e);
+                    }
+                })
+            )
+        );
 
         return localJoinFuture.fork();
     }
@@ -428,7 +437,7 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
         }
 
         return guard.withWriteLock(() -> {
-            if (state.get() == DOWN) {
+            if (state == DOWN) {
                 if (DEBUG) {
                     log.debug("Skipped leave request since already in {} state.", state);
                 }
@@ -439,16 +448,16 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
                 // Fork the leave future early in order to guard against internal state changes (f.e. by lifecycle listeners).
                 LeaveFuture leaveFutureFork = leaveFuture.fork();
 
-                if (state.get() == INITIALIZING || state.get() == INITIALIZED) {
+                if (state == INITIALIZING || state == INITIALIZED) {
                     // Safe to run termination process (and bypass leave protocol) since we haven't started joining yet.
                     doTerminateAsync(ClusterLeaveReason.LEAVE);
-                } else if (state.get() == JOINING || state.get() == SYNCHRONIZING || state.get() == UP) {
-                    state.set(LEAVING);
+                } else if (state == JOINING || state == SYNCHRONIZING || state == UP) {
+                    state = LEAVING;
 
                     notifyOnLifecycleChange();
 
                     // Double check that state wasn't changed by listeners.
-                    if (state.get() == LEAVING) {
+                    if (state == LEAVING) {
                         if (DEBUG) {
                             log.debug("Scheduling leave task for asynchronous processing.");
                         }
@@ -495,7 +504,7 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
 
     @Override
     public State state() {
-        return state.get();
+        return state;
     }
 
     @Override
@@ -572,7 +581,7 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
                         guard.lockRead();
 
                         try {
-                            if (state.get() == INITIALIZING) {
+                            if (state == INITIALIZING) {
                                 // Continue initialization on the system thread.
                                 runOnSysThread(() ->
                                     doInitializeNode(address, localNodeId)
@@ -699,7 +708,7 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
                 // Pre-check state because some plugin could initiate leave/termination procedure.
                 if (isInitializingFor(localNodeId)) {
                     // Update state and notify listeners/future.
-                    state.set(INITIALIZED);
+                    state = INITIALIZED;
 
                     initFuture.complete(this);
 
@@ -731,33 +740,14 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
             private final List<CompletableFuture<?>> syncFutures = new CopyOnWriteArrayList<>();
 
             @Override
-            public CompletableFuture<Boolean> onStartJoining() {
-                CompletableFuture<Boolean> future = new CompletableFuture<>();
-
-                runOnSysThread(() -> {
-                    boolean changed = guard.withWriteLock(() -> {
-                        if (state.compareAndSet(INITIALIZED, JOINING)) {
-                            notifyOnLifecycleChange();
-
-                            return true;
-                        } else {
-                            return false;
-                        }
-                    });
-
-                    future.complete(changed);
-                });
-
-                return future;
-            }
-
-            @Override
             public CompletableFuture<ClusterJoinEvent> onJoin(int joinOrder, Set<ClusterNode> nodes) {
                 CompletableFuture<ClusterJoinEvent> future = new CompletableFuture<>();
 
                 runOnSysThread(() ->
                     guard.withWriteLock(() -> {
-                        if (state.compareAndSet(JOINING, SYNCHRONIZING)) {
+                        if (state == JOINING) {
+                            state = SYNCHRONIZING;
+
                             localNode.setJoinOrder(joinOrder);
 
                             DefaultClusterTopology newTopology = topology.update(nodes);
@@ -777,7 +767,7 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
                             notifyOnLifecycleChange();
 
                             // Double check state as it could be changed by the lifecycle listeners.
-                            if (state.get() == SYNCHRONIZING) {
+                            if (state == SYNCHRONIZING) {
                                 ClusterJoinEvent joinEvent = new ClusterJoinEvent(newTopology, hekate());
 
                                 // Notify join future only after the initial join event has been processed by all listeners.
@@ -787,7 +777,9 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
                                             try {
                                                 // Try to switch from SYNCHRONIZING to UP.
                                                 boolean becameUp = guard.withWriteLock(() -> {
-                                                    if (state.compareAndSet(SYNCHRONIZING, UP)) {
+                                                    if (state == SYNCHRONIZING) {
+                                                        state = UP;
+
                                                         log.info("Hekate is UP and running [cluster={}, node={}]", clusterName, localNode);
 
                                                         notifyOnLifecycleChange();
@@ -931,7 +923,7 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
 
             @Override
             public State state() {
-                return state.get();
+                return state;
             }
 
             @Override
@@ -986,14 +978,14 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
 
     private TerminateFuture doTerminateAsync(boolean rejoin, ClusterLeaveReason reason, Throwable cause) {
         return guard.withWriteLock(() -> {
-            if (EnumSet.of(INITIALIZING, INITIALIZED, JOINING, SYNCHRONIZING, UP, LEAVING).contains(state.get())) {
+            if (EnumSet.of(INITIALIZING, INITIALIZED, JOINING, SYNCHRONIZING, UP, LEAVING).contains(state)) {
                 if (DEBUG) {
                     log.debug("Scheduling task for asynchronous termination [rejoin={}]", rejoin);
                 }
 
                 TerminateFuture future = new TerminateFuture();
 
-                state.set(TERMINATING);
+                state = TERMINATING;
                 terminateFuture.set(future);
 
                 if (rejoin) {
@@ -1008,7 +1000,7 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
                 );
 
                 return future.fork();
-            } else if (state.get() == TERMINATING) {
+            } else if (state == TERMINATING) {
                 if (DEBUG) {
                     log.debug("Skipped termination request processing since service is already in {} state.", TERMINATING);
                 }
@@ -1031,7 +1023,7 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
     }
 
     private void doLeave() {
-        if (state.get() == LEAVING) {
+        if (state == LEAVING) {
             clusterEvents.ensureLeaveEventFired(ClusterLeaveReason.LEAVE, topology).thenRun(() ->
                 runOnSysThread(this::preTerminateServices)
             );
@@ -1051,7 +1043,7 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
     private void doTerminate(ClusterLeaveReason reason, TerminateFuture future, Throwable cause) {
         assert future != null : "Termination future is null.";
         assert reason != null : "Reason is null";
-        assert state.get() == TERMINATING : "Unexpected service state: " + state;
+        assert state == TERMINATING : "Unexpected service state: " + state;
 
         if (cause == null) {
             if (log.isInfoEnabled()) {
@@ -1084,7 +1076,7 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
         guard.lockWrite();
 
         try {
-            state.set(DOWN);
+            state = DOWN;
 
             // Check if we should rejoin after termination.
             boolean rejoin = rejoining.compareAndSet(true, null);
@@ -1139,7 +1131,7 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
             notifyOnLifecycleChange();
 
             // Run rejoin process (if not already requested by a lifecycle listener).
-            if (rejoin && state.get() == DOWN) {
+            if (rejoin && state == DOWN) {
                 joinAsync();
             }
         } finally {
@@ -1182,7 +1174,7 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
     }
 
     private boolean isInitializingFor(ClusterNodeId localNodeId) {
-        return state.get() == INITIALIZING && localNodeId.equals(nodeId);
+        return state == INITIALIZING && localNodeId.equals(nodeId);
     }
 
     private void notifyOnLifecycleChange() {
