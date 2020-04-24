@@ -22,8 +22,6 @@ import java.util.Optional;
 public interface GossipCommListener {
     void onReceive(GossipProtocol msg);
 
-    void onSendSuccess(GossipProtocol msg);
-
     void onSendFailure(GossipProtocol msg, Throwable error);
 
     void onConnectFailure(ClusterAddress address);

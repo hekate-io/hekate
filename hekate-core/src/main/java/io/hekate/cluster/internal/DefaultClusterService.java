@@ -158,7 +158,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
     private NetworkService net;
 
     @ToStringIgnore
-    private ClusterMetricsSink metricsSink;
+    private ClusterMetricsSink metrics;
 
     @ToStringIgnore
     private JmxService jmx;
@@ -275,6 +275,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
         netCfg.setServerHandler(new NetworkServerHandler<GossipProtocol>() {
             @Override
             public void onConnect(GossipProtocol login, NetworkEndpoint<GossipProtocol> client) {
+                // Volatile read.
                 GossipCommManager localCommMgr = commMgr;
 
                 if (localCommMgr != null) {
@@ -284,6 +285,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
             @Override
             public void onMessage(NetworkMessage<GossipProtocol> msg, NetworkEndpoint<GossipProtocol> from) throws IOException {
+                // Volatile read.
                 GossipCommManager localCommMgr = commMgr;
 
                 if (localCommMgr != null) {
@@ -293,6 +295,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
             @Override
             public void onDisconnect(NetworkEndpoint<GossipProtocol> client) {
+                // Volatile read.
                 GossipCommManager localCommMgr = commMgr;
 
                 if (localCommMgr != null) {
@@ -350,11 +353,6 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                 }
 
                 @Override
-                public void onSendSuccess(GossipProtocol msg) {
-                    // No-op.
-                }
-
-                @Override
                 public void onSendFailure(GossipProtocol msg, Throwable error) {
                     processSendFailure(msg, error);
                 }
@@ -394,7 +392,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             });
 
             // Prepare metrics sink.
-            metricsSink = new ClusterMetricsSink(ctx.metrics());
+            metrics = new ClusterMetricsSink(ctx.metrics());
 
             // Register JMX beans (optional).
             if (jmx != null) {
@@ -583,7 +581,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             serviceThread = null;
             gossipThread = null;
             seedNodeMgr = null;
-            metricsSink = null;
+            metrics = null;
 
             return waiting;
         });
@@ -643,7 +641,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
         ArgAssert.notNull(predicate, "Predicate");
 
         return guard.withReadLock(() -> {
-            // Completable future that gets completed upon a cluster event that has a matching topology.
+            // Completable future that completes upon a cluster event with the matching topology.
             class PredicateFuture extends CompletableFuture<ClusterTopology> implements ClusterEventListener {
                 public PredicateFuture() {
                     // Unregister listener when this future gets completed.
@@ -781,7 +779,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                 log.debug("Scheduling an asynchronous join task [interval={}]", gossipInterval);
             }
 
-            // Schedule task for asynchronous join.
+            // Schedule the asynchronous join task.
             joinTask = scheduleOn(serviceThread, DefaultClusterService.this::doJoin, 0, gossipInterval);
         });
     }
@@ -791,7 +789,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             try {
                 List<InetSocketAddress> nodes = seedNodeMgr.getSeedNodes();
 
-                // Schedule join task to run on the gossip thread.
+                // Schedule the join task to run on the gossip thread.
                 runOnGossipThread(() ->
                     guard.withReadLockIfInitialized(() -> {
                         JoinRequest msg = gossipMgr.join(nodes);
@@ -859,7 +857,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
         assert msg != null : "Message is null.";
 
         guard.withReadLockIfInitialized(() -> {
-            metricsSink.onGossipMessage(msg.type());
+            metrics.onGossipMessage(msg.type());
 
             if (msg instanceof GossipMessage) {
                 GossipMessage gossipMsg = (GossipMessage)msg;
@@ -1060,7 +1058,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                                     guard.withReadLockIfInitialized(() -> {
                                         ClusterTopology topology = event.topology();
 
-                                        metricsSink.onTopologyChange(topology);
+                                        metrics.onTopologyChange(topology);
 
                                         if (isCoordinator(topology)) {
                                             startSeedNodeCleaner();
@@ -1137,7 +1135,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                             try {
                                 ClusterTopology topology = event.topology();
 
-                                metricsSink.onTopologyChange(topology);
+                                metrics.onTopologyChange(topology);
 
                                 if (isCoordinator(topology)) {
                                     startSeedNodeCleaner();

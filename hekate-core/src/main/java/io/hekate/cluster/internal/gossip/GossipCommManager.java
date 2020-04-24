@@ -73,15 +73,15 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
 
     private static final boolean TRACE = log.isDebugEnabled();
 
+    private final Object mux = new Object();
+
+    private final Map<ClusterNodeId, EndpointHolder> cache = new HashMap<>();
+
     private final ClusterAddress localAddress;
 
     private final NetworkConnector<GossipProtocol> connector;
 
     private final GossipCommListener listener;
-
-    private final Object mux = new Object();
-
-    private final Map<ClusterNodeId, EndpointHolder> cache = new HashMap<>();
 
     private final NetworkClientCallback<GossipProtocol> outboundCallback;
 
@@ -161,9 +161,7 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
             }
 
             endpoint.get().send(msg, (sent, err) -> {
-                if (err == null) {
-                    listener.onSendSuccess(sent);
-                } else {
+                if (err != null) {
                     if (TRACE) {
                         log.trace("Failed to send a message [reason={}, message={}]", err, sent);
                     }
@@ -195,8 +193,6 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
                 @Override
                 public void onConnect(NetworkClient<GossipProtocol> client) {
                     client.disconnect();
-
-                    listener.onSendSuccess(msg);
                 }
 
                 @Override
