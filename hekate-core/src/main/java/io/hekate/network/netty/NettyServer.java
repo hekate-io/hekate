@@ -528,22 +528,28 @@ class NettyServer implements NetworkServer, NettyChannelSupport {
                         if (clients.isEmpty()) {
                             allClientsClosed.complete(null);
                         } else {
-                            List<SocketChannel> connectionsCopy = new ArrayList<>(clients.keySet());
+                            List<SocketChannel> clientsCopy = new ArrayList<>(clients.keySet());
 
                             clients.clear();
 
-                            AtomicInteger remaining = new AtomicInteger(connectionsCopy.size());
+                            AtomicInteger remaining = new AtomicInteger(clientsCopy.size());
 
-                            connectionsCopy.forEach(channel -> {
+                            clientsCopy.forEach(channel -> {
                                 if (DEBUG) {
                                     log.debug("Closing connection due to server shutdown [address={}]", channel.remoteAddress());
                                 }
 
-                                channel.close().addListener(clientClose -> {
-                                    if (remaining.decrementAndGet() == 0) {
-                                        allClientsClosed.complete(null);
-                                    }
-                                });
+                                // Close channel by scheduling an asynchronous task on its event loop.
+                                // Need to do in order to make sure that there is no disruption in case
+                                // if this channel is currently migrating onto a different event loop
+                                // (see handshake logic in NettyServerClient).
+                                channel.eventLoop().execute(() ->
+                                    channel.close().addListener(closed -> {
+                                        if (remaining.decrementAndGet() == 0) {
+                                            allClientsClosed.complete(null);
+                                        }
+                                    })
+                                );
                             });
                         }
                     }
@@ -551,7 +557,6 @@ class NettyServer implements NetworkServer, NettyChannelSupport {
                     allClientsClosed.thenRun(() -> {
                         synchronized (mux) {
                             state = STOPPED;
-
                             server = null;
 
                             if (oldState == STARTED && localCallback != null && !localStopFuture.isDone()) {
