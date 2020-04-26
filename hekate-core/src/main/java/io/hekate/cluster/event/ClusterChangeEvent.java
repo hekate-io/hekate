@@ -21,7 +21,12 @@ import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.cluster.health.FailureDetector;
 import io.hekate.core.HekateSupport;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+
+import static java.util.Collections.emptyList;
+import static java.util.Collections.unmodifiableList;
 
 /**
  * Cluster topology change event.
@@ -65,6 +70,30 @@ public class ClusterChangeEvent extends ClusterEventBase {
         this.added = added;
         this.removed = removed;
         this.failed = failed;
+    }
+
+    /**
+     * Constructs a new instance by comparing old and new cluster topologies.
+     *
+     * @param oldTopology Old topology.
+     * @param newTopology New topology.
+     * @param failed Failed nodes (see {@link #failed()}).
+     * @param hekate Delegate for {@link #hekate()}.
+     */
+    public ClusterChangeEvent(
+        ClusterTopology oldTopology,
+        ClusterTopology newTopology,
+        Set<ClusterNode> failed,
+        HekateSupport hekate
+    ) {
+        super(newTopology, hekate);
+
+        Set<ClusterNode> oldNodes = oldTopology.nodeSet();
+        Set<ClusterNode> newNodes = newTopology.nodeSet();
+
+        this.removed = diff(oldNodes, newNodes);
+        this.added = diff(newNodes, oldNodes);
+        this.failed = copy(failed);
     }
 
     /**
@@ -125,6 +154,26 @@ public class ClusterChangeEvent extends ClusterEventBase {
     @Override
     public ClusterChangeEvent asChange() {
         return this;
+    }
+
+    private static List<ClusterNode> diff(Set<ClusterNode> oldSet, Set<ClusterNode> newSet) {
+        List<ClusterNode> diff = null;
+
+        for (ClusterNode oldNode : oldSet) {
+            if (!newSet.contains(oldNode)) {
+                if (diff == null) {
+                    diff = new ArrayList<>(oldSet.size());
+                }
+
+                diff.add(oldNode);
+            }
+        }
+
+        return diff != null ? unmodifiableList(diff) : emptyList();
+    }
+
+    private static List<ClusterNode> copy(Set<ClusterNode> set) {
+        return set.isEmpty() ? emptyList() : unmodifiableList(new ArrayList<>(set));
     }
 
     @Override

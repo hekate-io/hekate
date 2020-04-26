@@ -528,11 +528,9 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
     }
 
     @Override
-    public void preTerminate() {
+    public void leaveAsync() {
         guard.withReadLockIfInitialized(() -> {
-            if (ctx.state() == Hekate.State.LEAVING) {
-                runOnGossipThread(this::doLeave);
-            }
+            runOnGossipThread(this::doLeave);
         });
     }
 
