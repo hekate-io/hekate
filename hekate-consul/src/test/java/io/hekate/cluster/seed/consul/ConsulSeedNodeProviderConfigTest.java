@@ -106,10 +106,22 @@ public class ConsulSeedNodeProviderConfigTest extends HekateTestBase {
     }
 
     @Test
+    public void testAclToken() {
+        assertNull(cfg.getAclToken());
+
+        cfg.setAclToken("test");
+
+        assertEquals("test", cfg.getAclToken());
+
+        assertSame(cfg, cfg.withAclToken("test2"));
+
+        assertEquals("test2", cfg.getAclToken());
+    }
+
+    @Test
     public void testToString() {
         cfg.setUrl("http://127.0.0.1:8501");
 
         assertEquals(ToString.format(cfg), cfg.toString());
     }
-
 }

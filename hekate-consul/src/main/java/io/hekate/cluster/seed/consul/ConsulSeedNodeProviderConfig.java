@@ -50,6 +50,9 @@ public class ConsulSeedNodeProviderConfig {
     /** See {@link #setWriteTimeout(Long)}. */
     private Long writeTimeout;
 
+    /** See {@link #setAclToken(String)}. */
+    private String aclToken;
+
     /**
      * Returns url of the Consul (see {@link #setUrl(String)} (String)}).
      *
@@ -260,6 +263,37 @@ public class ConsulSeedNodeProviderConfig {
      */
     public ConsulSeedNodeProviderConfig withWriteTimeout(Long writeTimeout) {
         setWriteTimeout(writeTimeout);
+
+        return this;
+    }
+
+    /**
+     * Returns the ACL token to access Consul (see {@link #setAclToken(String)}).
+     *
+     * @return ACL token to access Consul.
+     */
+    public String getAclToken() {
+        return aclToken;
+    }
+
+    /**
+     * Sets ACL token to access Consul.
+     *
+     * @param aclToken ACL token.
+     */
+    public void setAclToken(String aclToken) {
+        this.aclToken = aclToken;
+    }
+
+    /**
+     * Fluent style version of {@link #setAclToken(String)} .
+     *
+     * @param aclToken ACL token.
+     *
+     * @return This instance.
+     */
+    public ConsulSeedNodeProviderConfig withAclToken(String aclToken) {
+        setAclToken(aclToken);
 
         return this;
     }

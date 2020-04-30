@@ -365,6 +365,9 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
 
         setProperty(cfg, el, "url", "url");
         setProperty(cfg, el, "basePath", "base-path");
+        setProperty(cfg, el, "username", "username");
+        setProperty(cfg, el, "password", "password");
+        setProperty(cfg, el, "aclToken", "acl-token");
         setProperty(cfg, el, "cleanupInterval", "cleanup-interval-ms");
         setProperty(cfg, el, "connectTimeout", "connect-timeout-ms");
         setProperty(cfg, el, "readTimeout", "read-timeout-ms");

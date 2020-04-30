@@ -773,6 +773,13 @@
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
+        <xsd:attribute name="acl-token" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.seed.consul.ConsulSeedNodeProviderConfig#setAclToken(java.lang.String)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
         <xsd:attribute name="connect-timeout-ms" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation>

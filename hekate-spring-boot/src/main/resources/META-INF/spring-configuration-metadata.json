@@ -547,6 +547,12 @@
       "defaultValue": "/hekate/cluster"
     },
     {
+      "name": "hekate.cluster.seed.consul.acl-token",
+      "type": "java.lang.String",
+      "description": "Consul ACL token.",
+      "defaultValue": "/hekate/cluster"
+    },
+    {
       "name": "hekate.cluster.seed.consul.connect-timeout",
       "type": "java.lang.Long",
       "description": "Consul connect timeout in milliseconds.",
