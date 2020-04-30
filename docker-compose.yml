@@ -44,6 +44,6 @@ services:
     command: etcd -name=hekate-etcd -advertise-client-urls http://etcd:2379 -listen-client-urls http://0.0.0.0:2379
   consul:
     container_name: hekate-test-consul
-    image: consul:1.5.1
+    image: consul:1.7.2
     ports:
       - "8501:8500"
