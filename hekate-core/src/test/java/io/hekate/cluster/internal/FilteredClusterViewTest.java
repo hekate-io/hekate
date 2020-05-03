@@ -94,11 +94,11 @@ public class FilteredClusterViewTest extends HekateNodeTestBase {
 
         HekateTestNode node4 = createNode(c -> c.withRole("role4").withRole("all")).join();
 
+        get(node1.cluster().forRemotes().forRole("role4").futureOf(topology -> !topology.isEmpty()));
+
         Object ctx2 = allRemote.topologyContext(top -> new Object());
         assertSame(ctx2, allRemote.topologyContext(top -> new Object()));
         assertNotSame(ctx1, ctx2);
-
-        get(node1.cluster().forRemotes().forRole("role4").futureOf(topology -> !topology.isEmpty()));
 
         ArgumentCaptor<ClusterChangeEvent> evt1 = ArgumentCaptor.forClass(ClusterChangeEvent.class);
         ArgumentCaptor<ClusterChangeEvent> evt2 = ArgumentCaptor.forClass(ClusterChangeEvent.class);
