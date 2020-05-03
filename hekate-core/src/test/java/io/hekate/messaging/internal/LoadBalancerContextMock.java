@@ -26,7 +26,11 @@ import static org.mockito.Mockito.mock;
  * Exposes the {@link DefaultLoadBalancerContext} class to other packages for testing purposes.
  */
 public class LoadBalancerContextMock extends DefaultLoadBalancerContext {
-    public LoadBalancerContextMock(int affinity, Object affinityKey, ClusterTopology topology) {
-        super(affinity, affinityKey, topology, mock(PartitionMapper.class), Optional.empty());
+    public LoadBalancerContextMock(
+        int affinity,
+        Object affinityKey,
+        ClusterTopology topology
+    ) {
+        super(affinity, affinityKey, topology, mock(PartitionMapper.class), Optional.empty(), new DefaultLoadBalancerCache());
     }
 }

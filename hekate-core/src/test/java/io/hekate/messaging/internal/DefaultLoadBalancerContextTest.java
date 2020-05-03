@@ -46,8 +46,6 @@ public class DefaultLoadBalancerContextTest extends ClusterTopologyTestBase {
         assertEquals("test", ctx.affinityKey());
         assertTrue(ctx.hasAffinity());
         assertSame(details, ctx.failure().get());
-        assertSame(details, ctx.filter(n -> false).failure().get());
-        assertSame(details, ctx.filter(n -> n.equals(n1)).failure().get());
     }
 
     @Override
@@ -65,7 +63,8 @@ public class DefaultLoadBalancerContextTest extends ClusterTopologyTestBase {
         DefaultClusterTopology topology = DefaultClusterTopology.of(topologyVersion, nodes);
         Optional<FailedAttempt> optFailure = Optional.ofNullable(failure);
         PartitionMapper partitions = mock(PartitionMapper.class);
+        DefaultLoadBalancerCache cache = new DefaultLoadBalancerCache();
 
-        return new DefaultLoadBalancerContext(affinity, affinityKey, topology, partitions, optFailure);
+        return new DefaultLoadBalancerContext(affinity, affinityKey, topology, partitions, optFailure, cache);
     }
 }

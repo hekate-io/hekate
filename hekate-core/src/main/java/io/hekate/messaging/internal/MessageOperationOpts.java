@@ -20,12 +20,44 @@ import io.hekate.cluster.ClusterView;
 import io.hekate.messaging.loadbalance.LoadBalancer;
 import io.hekate.partition.PartitionMapper;
 
+/**
+ * Messaging operation options.
+ *
+ * @param <T> Message type.
+ */
 interface MessageOperationOpts<T> {
+    /**
+     * Channel name.
+     *
+     * @return Channel name.
+     */
     String name();
 
+    /**
+     * Load balancer.
+     *
+     * @return Load balancer.
+     */
     LoadBalancer<T> balancer();
 
+    /**
+     * Load balancer cache.
+     *
+     * @return Load balancer cache.
+     */
+    DefaultLoadBalancerCache balancerCache();
+
+    /**
+     * Cluster view of this channel.
+     *
+     * @return Cluster view of this channel.
+     */
     ClusterView cluster();
 
+    /**
+     * Partition mapper.
+     *
+     * @return Partition mapper.
+     */
     PartitionMapper partitions();
 }

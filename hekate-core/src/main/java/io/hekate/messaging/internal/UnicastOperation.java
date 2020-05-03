@@ -66,7 +66,8 @@ abstract class UnicastOperation<T> extends MessageOperation<T> {
             affinityKey(),
             mapper.topology(),
             mapper,
-            prevFailure
+            prevFailure,
+            opts().balancerCache()
         );
 
         return opts().balancer().route(message(), ctx);

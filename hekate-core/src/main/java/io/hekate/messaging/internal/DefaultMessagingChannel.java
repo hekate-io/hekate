@@ -33,16 +33,37 @@ import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.concurrent.Executor;
 
+/**
+ * Default implementation of {@link MessagingChannel} interface.
+ *
+ * @param <T> Message type.
+ */
 class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperationOpts<T> {
+    /** Messaging gateway. */
     private final MessagingGateway<T> gateway;
 
+    /** Cluster view of this channel. */
     @ToStringIgnore
     private final ClusterView cluster;
 
+    /** Partition mapper (see {@link #withPartitions(PartitionMapper)}). */
     private final PartitionMapper partitions;
 
+    /** Load balancer (see {@link #withLoadBalancer(LoadBalancer)}. */
     private final LoadBalancer<T> balancer;
 
+    /** Cache for load balancer. */
+    @ToStringIgnore
+    private DefaultLoadBalancerCache balancerCache;
+
+    /**
+     * Constructs a new instance.
+     *
+     * @param gateway Messaging gateway.
+     * @param cluster Cluster view of this channel.
+     * @param partitions Partition mapper.
+     * @param balancer Load balancer.
+     */
     public DefaultMessagingChannel(
         MessagingGateway<T> gateway,
         ClusterView cluster,
@@ -122,6 +143,17 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
     @Override
     public PartitionMapper partitions() {
         return partitions;
+    }
+
+    @Override
+    public DefaultLoadBalancerCache balancerCache() {
+        // No synchronization here.
+        // It is ok if different threads will construct and access different cache instances in parallel.
+        if (balancerCache == null) {
+            balancerCache = new DefaultLoadBalancerCache();
+        }
+
+        return balancerCache;
     }
 
     @Override

@@ -186,8 +186,6 @@ public abstract class ClusterTopologyTestBase extends HekateTestBase {
         assertFalse(t2.contains(n1));
         assertTrue(t2.contains(n2));
         assertTrue(t2.contains(n3));
-
-        assertSame(t1, t1.filter(n -> true));
     }
 
     @Test

@@ -16,13 +16,13 @@
 
 package io.hekate.messaging.loadbalance;
 
-import io.hekate.cluster.ClusterFilter;
-import io.hekate.cluster.ClusterNodeFilter;
 import io.hekate.cluster.ClusterTopology;
+import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.retry.FailedAttempt;
 import io.hekate.messaging.retry.RetryErrorPredicate;
 import io.hekate.partition.PartitionMapper;
 import java.util.Optional;
+import java.util.function.Function;
 
 /**
  * Context for {@link LoadBalancer}.
@@ -76,9 +76,24 @@ public interface LoadBalancerContext extends ClusterTopology {
      */
     Optional<FailedAttempt> failure();
 
-    @Override
-    LoadBalancerContext filter(ClusterNodeFilter filter);
-
-    @Override
-    LoadBalancerContext filterAll(ClusterFilter filter);
+    /**
+     * Constructs a new context object or returns a cached one, based on the current cluster topology.
+     *
+     * <p>
+     * This method provides support to cache user context objects that are necessary for message routing and are expensive to construct
+     * on each routing operation. Such objects are cached at the {@link MessagingChannel} instance level until the topology changes.
+     * When topology changes, a new object is lazily constructed via the provided {@code supplier} function.
+     * </p>
+     *
+     * <p>
+     * Note that only one context object is supported per {@link MessagingChannel} instance. Any attempt to use different {@code supplier}
+     * functions will lead to unpredictable results.
+     * </p>
+     *
+     * @param supplier Context supplier (must be idempotent and free of side effects).
+     * @param <T> Context type.
+     *
+     * @return Context object.
+     */
+    <T> T topologyContext(Function<ClusterTopology, T> supplier);
 }
