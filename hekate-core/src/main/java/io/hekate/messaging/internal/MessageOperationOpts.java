@@ -17,6 +17,7 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterView;
+import io.hekate.cluster.internal.TopologyContextCache;
 import io.hekate.messaging.loadbalance.LoadBalancer;
 import io.hekate.partition.PartitionMapper;
 
@@ -45,7 +46,7 @@ interface MessageOperationOpts<T> {
      *
      * @return Load balancer cache.
      */
-    DefaultLoadBalancerCache balancerCache();
+    TopologyContextCache balancerCache();
 
     /**
      * Cluster view of this channel.

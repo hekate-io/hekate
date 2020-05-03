@@ -35,6 +35,8 @@ import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
@@ -87,7 +89,14 @@ public class FilteredClusterViewTest extends HekateNodeTestBase {
         reset(l3);
         reset(l4);
 
+        Object ctx1 = allRemote.topologyContext(top -> new Object());
+        assertSame(ctx1, allRemote.topologyContext(top -> new Object()));
+
         HekateTestNode node4 = createNode(c -> c.withRole("role4").withRole("all")).join();
+
+        Object ctx2 = allRemote.topologyContext(top -> new Object());
+        assertSame(ctx2, allRemote.topologyContext(top -> new Object()));
+        assertNotSame(ctx1, ctx2);
 
         get(node1.cluster().forRemotes().forRole("role4").futureOf(topology -> !topology.isEmpty()));
 

@@ -30,6 +30,7 @@ import java.util.EnumSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 public class FilteredClusterView implements ClusterView {
@@ -38,6 +39,9 @@ public class FilteredClusterView implements ClusterView {
 
     @ToStringIgnore
     private final ClusterFilter filter;
+
+    @ToStringIgnore
+    private TopologyContextCache ctxCache;
 
     private ClusterTopology topology;
 
@@ -94,6 +98,19 @@ public class FilteredClusterView implements ClusterView {
     @Override
     public void removeListener(ClusterEventListener listener) {
         parent.removeListener(new FilteredClusterListener(filter, listener, Collections.emptySet()));
+    }
+
+    @Override
+    public <T> T topologyContext(Function<ClusterTopology, T> supplier) {
+        TopologyContextCache ctxCache = this.ctxCache;
+
+        if (ctxCache == null) {
+            // No synchronization here.
+            // It is ok if different threads will construct and access different cache instances in parallel.
+            this.ctxCache = ctxCache = new TopologyContextCache();
+        }
+
+        return ctxCache.get(topology(), supplier);
     }
 
     @Override

@@ -18,6 +18,7 @@ package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterFilter;
 import io.hekate.cluster.ClusterView;
+import io.hekate.cluster.internal.TopologyContextCache;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelId;
@@ -54,7 +55,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
 
     /** Cache for load balancer. */
     @ToStringIgnore
-    private DefaultLoadBalancerCache balancerCache;
+    private TopologyContextCache balancerCache;
 
     /**
      * Constructs a new instance.
@@ -146,11 +147,11 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
     }
 
     @Override
-    public DefaultLoadBalancerCache balancerCache() {
+    public TopologyContextCache balancerCache() {
         // No synchronization here.
         // It is ok if different threads will construct and access different cache instances in parallel.
         if (balancerCache == null) {
-            balancerCache = new DefaultLoadBalancerCache();
+            balancerCache = new TopologyContextCache();
         }
 
         return balancerCache;

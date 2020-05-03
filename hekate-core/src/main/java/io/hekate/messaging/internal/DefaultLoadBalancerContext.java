@@ -22,6 +22,7 @@ import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeFilter;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
+import io.hekate.cluster.internal.TopologyContextCache;
 import io.hekate.messaging.loadbalance.LoadBalancer;
 import io.hekate.messaging.loadbalance.LoadBalancerContext;
 import io.hekate.messaging.retry.FailedAttempt;
@@ -57,7 +58,7 @@ class DefaultLoadBalancerContext implements LoadBalancerContext {
 
     /** See {@link #topologyContext(Function)}. */
     @ToStringIgnore
-    private final DefaultLoadBalancerCache cache;
+    private final TopologyContextCache topologyCtx;
 
     /**
      * Constructs a new instance.
@@ -67,7 +68,7 @@ class DefaultLoadBalancerContext implements LoadBalancerContext {
      * @param topology See {@link #topology()}.
      * @param partitions See {@link #partitions()}.
      * @param failure See {@link #failure()}.
-     * @param cache See {@link #topologyContext(Function)}.
+     * @param topologyCtx See {@link #topologyContext(Function)}.
      */
     public DefaultLoadBalancerContext(
         int affinity,
@@ -75,14 +76,14 @@ class DefaultLoadBalancerContext implements LoadBalancerContext {
         ClusterTopology topology,
         PartitionMapper partitions,
         Optional<FailedAttempt> failure,
-        DefaultLoadBalancerCache cache
+        TopologyContextCache topologyCtx
     ) {
         this.affinity = affinity;
         this.affinityKey = affinityKey;
         this.topology = topology;
         this.partitions = partitions;
         this.failure = failure;
-        this.cache = cache;
+        this.topologyCtx = topologyCtx;
     }
 
     @Override
@@ -117,7 +118,7 @@ class DefaultLoadBalancerContext implements LoadBalancerContext {
 
     @Override
     public <T> T topologyContext(Function<ClusterTopology, T> supplier) {
-        return cache.customContext(topology, supplier);
+        return topologyCtx.get(topology, supplier);
     }
 
     @Override

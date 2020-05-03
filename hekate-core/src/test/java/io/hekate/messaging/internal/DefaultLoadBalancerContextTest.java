@@ -19,6 +19,7 @@ package io.hekate.messaging.internal;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterTopologyTestBase;
 import io.hekate.cluster.internal.DefaultClusterTopology;
+import io.hekate.cluster.internal.TopologyContextCache;
 import io.hekate.messaging.loadbalance.LoadBalancerContext;
 import io.hekate.messaging.retry.FailedAttempt;
 import io.hekate.partition.PartitionMapper;
@@ -63,7 +64,7 @@ public class DefaultLoadBalancerContextTest extends ClusterTopologyTestBase {
         DefaultClusterTopology topology = DefaultClusterTopology.of(topologyVersion, nodes);
         Optional<FailedAttempt> optFailure = Optional.ofNullable(failure);
         PartitionMapper partitions = mock(PartitionMapper.class);
-        DefaultLoadBalancerCache cache = new DefaultLoadBalancerCache();
+        TopologyContextCache cache = new TopologyContextCache();
 
         return new DefaultLoadBalancerContext(affinity, affinityKey, topology, partitions, optFailure, cache);
     }

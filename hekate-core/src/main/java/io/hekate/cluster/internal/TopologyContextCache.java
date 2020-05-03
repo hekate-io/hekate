@@ -14,15 +14,16 @@
  * under the License.
  */
 
-package io.hekate.messaging.internal;
+package io.hekate.cluster.internal;
 
 import io.hekate.cluster.ClusterTopology;
+import io.hekate.cluster.ClusterView;
 import java.util.function.Function;
 
 /**
- * Cache for {@link DefaultLoadBalancerContext#topologyContext(Function)}.
+ * Cache for {@link ClusterView#topologyContext(Function)}.
  */
-class DefaultLoadBalancerCache {
+public class TopologyContextCache {
     /**
      * Cache entry.
      */
@@ -76,7 +77,7 @@ class DefaultLoadBalancerCache {
      * @return Context object.
      */
     @SuppressWarnings("unchecked")
-    public <C> C customContext(ClusterTopology topology, Function<ClusterTopology, C> supplier) {
+    public <C> C get(ClusterTopology topology, Function<ClusterTopology, C> supplier) {
         // Volatile read.
         CacheEntry ctx = this.ctx;
 

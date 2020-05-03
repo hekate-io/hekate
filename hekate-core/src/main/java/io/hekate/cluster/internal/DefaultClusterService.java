@@ -98,6 +98,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -144,6 +145,9 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
     @ToStringIgnore
     private final List<DeferredClusterListener> deferredListeners = synchronizedList(new ArrayList<>());
+
+    @ToStringIgnore
+    private final TopologyContextCache ctxCache = new TopologyContextCache();
 
     @ToStringIgnore
     private ClusterAcceptManager acceptMgr;
@@ -632,6 +636,11 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
             deferredListeners.remove(new DeferredClusterListener(listener, null));
         });
+    }
+
+    @Override
+    public <T> T topologyContext(Function<ClusterTopology, T> supplier) {
+        return ctxCache.get(topology(), supplier);
     }
 
     @Override

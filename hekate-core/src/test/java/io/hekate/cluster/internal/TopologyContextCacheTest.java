@@ -14,7 +14,7 @@
  * under the License.
  */
 
-package io.hekate.messaging.internal;
+package io.hekate.cluster.internal;
 
 import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterTopology;
@@ -26,8 +26,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 
-public class DefaultLoadBalancerCacheTest extends HekateTestBase {
-    private final DefaultLoadBalancerCache cache = new DefaultLoadBalancerCache();
+public class TopologyContextCacheTest extends HekateTestBase {
+    private final TopologyContextCache cache = new TopologyContextCache();
 
     @Test
     public void test() throws Exception {
@@ -37,20 +37,20 @@ public class DefaultLoadBalancerCacheTest extends HekateTestBase {
         ClusterTopology t2 = ClusterTopology.of(2, toSet(newNode(), newNode()));
         ClusterTopology t3 = ClusterTopology.of(3, toSet(newNode(), newNode(), newNode()));
 
-        Object o1 = cache.customContext(t1, supplier);
+        Object o1 = cache.get(t1, supplier);
 
-        assertSame(o1, cache.customContext(t1, supplier));
+        assertSame(o1, cache.get(t1, supplier));
 
-        Object o2 = cache.customContext(t2, supplier);
+        Object o2 = cache.get(t2, supplier);
 
         assertNotSame(o2, o1);
-        assertSame(o2, cache.customContext(t2, supplier));
+        assertSame(o2, cache.get(t2, supplier));
 
-        Object o3 = cache.customContext(t3, supplier);
+        Object o3 = cache.get(t3, supplier);
 
         assertNotSame(o1, o3);
         assertNotSame(o2, o3);
-        assertSame(o3, cache.customContext(t3, supplier));
+        assertSame(o3, cache.get(t3, supplier));
     }
 
     @Test
@@ -64,7 +64,7 @@ public class DefaultLoadBalancerCacheTest extends HekateTestBase {
         runParallel(4, 1_000_000, status -> {
             ClusterTopology top = topologies[ThreadLocalRandom.current().nextInt(topologies.length)];
 
-            assertEquals(top.hash(), cache.customContext(top, ClusterTopology::hash));
+            assertEquals(top.hash(), cache.get(top, ClusterTopology::hash));
         });
     }
 }

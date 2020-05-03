@@ -17,6 +17,7 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterTopology;
+import io.hekate.cluster.internal.TopologyContextCache;
 import io.hekate.partition.PartitionMapper;
 import java.util.Optional;
 
@@ -31,6 +32,6 @@ public class LoadBalancerContextMock extends DefaultLoadBalancerContext {
         Object affinityKey,
         ClusterTopology topology
     ) {
-        super(affinity, affinityKey, topology, mock(PartitionMapper.class), Optional.empty(), new DefaultLoadBalancerCache());
+        super(affinity, affinityKey, topology, mock(PartitionMapper.class), Optional.empty(), new TopologyContextCache());
     }
 }

@@ -20,6 +20,7 @@ import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.internal.DefaultClusterTopology;
+import io.hekate.cluster.internal.TopologyContextCache;
 import io.hekate.messaging.loadbalance.DefaultLoadBalancer;
 import io.hekate.messaging.loadbalance.LoadBalancer;
 import io.hekate.messaging.retry.FailedAttempt;
@@ -48,12 +49,12 @@ public class DefaultLoadBalancerTest extends HekateTestBase {
 
     private RendezvousHashMapper mapper;
 
-    private DefaultLoadBalancerCache cache;
+    private TopologyContextCache cache;
 
     @Before
     public void setUp() throws Exception {
         balancer = new DefaultLoadBalancer<>();
-        cache = new DefaultLoadBalancerCache();
+        cache = new TopologyContextCache();
 
         n1 = newNode();
         n2 = newNode();
