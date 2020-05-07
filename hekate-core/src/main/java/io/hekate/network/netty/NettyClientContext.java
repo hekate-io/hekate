@@ -437,9 +437,9 @@ class NettyClientContext<T> {
 
             if (debug) {
                 if (oldState == CONNECTING && err.isPresent()) {
-                    log.debug("Failed to connect [to={}, cause={}]", id, err.get().toString());
+                    log.debug("Failed to connect [to={}]", id, err.get());
                 } else if (oldState == CONNECTED && err.isPresent()) {
-                    log.debug("Disconnected on error [from={}, state={}, cause={}]", id, oldState, err.get().toString());
+                    log.debug("Disconnected on error [from={}, state={}]", id, oldState, err.get());
                 } else {
                     log.debug("Disconnected [from={}, state={}]", id, oldState);
                 }
