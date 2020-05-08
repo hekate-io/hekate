@@ -33,7 +33,6 @@ import io.hekate.core.ServiceInfo;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
-import io.hekate.core.internal.util.Utils;
 import io.hekate.core.report.ConfigReporter;
 import io.hekate.core.service.ConfigurationContext;
 import io.hekate.core.service.CoreService;
@@ -47,8 +46,6 @@ import io.hekate.messaging.MessagingService;
 import io.hekate.util.StateGuard;
 import io.hekate.util.async.AsyncUtils;
 import io.hekate.util.async.Waiting;
-import io.hekate.util.format.ToString;
-import io.hekate.util.format.ToStringIgnore;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -79,19 +76,14 @@ public class DefaultCoordinationService implements CoordinationService, CoreServ
 
     private final long idleSocketTimeout;
 
-    @ToStringIgnore
     private final StateGuard guard = new StateGuard(CoordinationService.class);
 
-    @ToStringIgnore
     private final List<CoordinationProcessConfig> processesConfigs = new ArrayList<>();
 
-    @ToStringIgnore
     private final Map<String, DefaultCoordinationProcess> processes = new HashMap<>();
 
-    @ToStringIgnore
     private MessagingService messaging;
 
-    @ToStringIgnore
     private CodecService defaultCodec;
 
     public DefaultCoordinationService(CoordinationServiceFactory factory) {
@@ -393,9 +385,6 @@ public class DefaultCoordinationService implements CoordinationService, CoreServ
 
     @Override
     public String toString() {
-        return CoordinationService.class.getSimpleName() + '['
-            + ToString.formatProperties(this)
-            + ", processes=" + Utils.toString(processesConfigs, CoordinationProcessConfig::getName)
-            + ']';
+        return CoordinationService.class.getSimpleName();
     }
 }

@@ -76,8 +76,6 @@ import io.hekate.network.NetworkServerHandler;
 import io.hekate.network.NetworkService;
 import io.hekate.util.StateGuard;
 import io.hekate.util.async.Waiting;
-import io.hekate.util.format.ToString;
-import io.hekate.util.format.ToStringIgnore;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -128,70 +126,48 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
     private final SplitBrainManager splitBrain;
 
-    @ToStringIgnore
     private final List<ClusterAcceptor> acceptors;
 
-    @ToStringIgnore
     private final GossipListener gossipSpy;
 
-    @ToStringIgnore
     private final StateGuard guard;
 
-    @ToStringIgnore
     private final AtomicReference<ClusterNodeId> localNodeIdRef = new AtomicReference<>();
 
-    @ToStringIgnore
     private final List<ClusterEventListener> listeners;
 
-    @ToStringIgnore
     private final List<DeferredClusterListener> deferredListeners = synchronizedList(new ArrayList<>());
 
-    @ToStringIgnore
     private final TopologyContextCache ctxCache = new TopologyContextCache();
 
-    @ToStringIgnore
     private ClusterAcceptManager acceptMgr;
 
-    @ToStringIgnore
     private SeedNodeManager seedNodeMgr;
 
-    @ToStringIgnore
     private GossipManager gossipMgr;
 
-    @ToStringIgnore
     private NetworkService net;
 
-    @ToStringIgnore
     private ClusterMetricsSink metrics;
 
-    @ToStringIgnore
     private JmxService jmx;
 
-    @ToStringIgnore
     private ScheduledExecutorService serviceThread;
 
-    @ToStringIgnore
     private ScheduledExecutorService gossipThread;
 
-    @ToStringIgnore
     private ScheduledFuture<?> heartbeatTask;
 
-    @ToStringIgnore
     private ScheduledFuture<?> gossipTask;
 
-    @ToStringIgnore
     private ScheduledFuture<?> joinTask;
 
-    @ToStringIgnore
     private String clusterName;
 
-    @ToStringIgnore
     private volatile InitializationContext ctx;
 
-    @ToStringIgnore
     private volatile GossipCommManager commMgr;
 
-    @ToStringIgnore
     private volatile ClusterNode localNode;
 
     public DefaultClusterService(ClusterServiceFactory factory, StateGuard guard, GossipListener gossipSpy) {
@@ -1349,6 +1325,6 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
     @Override
     public String toString() {
-        return ToString.format(this);
+        return ClusterService.class.getSimpleName();
     }
 }

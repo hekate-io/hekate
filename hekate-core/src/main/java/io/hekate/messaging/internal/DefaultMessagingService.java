@@ -56,8 +56,6 @@ import io.hekate.network.NetworkService;
 import io.hekate.util.StateGuard;
 import io.hekate.util.async.ExtendedScheduledExecutor;
 import io.hekate.util.async.Waiting;
-import io.hekate.util.format.ToString;
-import io.hekate.util.format.ToStringIgnore;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.io.IOException;
 import java.util.Collection;
@@ -78,32 +76,23 @@ public class DefaultMessagingService implements MessagingService, CoreService, N
 
     private static final boolean DEBUG = log.isDebugEnabled();
 
-    @ToStringIgnore
     private final MessagingServiceFactory factory;
 
-    @ToStringIgnore
     private final StateGuard guard = new StateGuard(MessagingService.class);
 
-    @ToStringIgnore
     private final Map<String, MessagingGateway<?>> gateways = new HashMap<>();
 
-    @ToStringIgnore
     private ExtendedScheduledExecutor timer;
 
-    @ToStringIgnore
     private NetworkService network;
 
-    @ToStringIgnore
     private ClusterService cluster;
 
-    @ToStringIgnore
     private CodecService codec;
 
-    @ToStringIgnore
     private JmxService jmx;
 
     // Volatile since accessed out of the guarded context.
-    @ToStringIgnore
     private volatile ClusterNodeId nodeId;
 
     public DefaultMessagingService(MessagingServiceFactory factory) {
@@ -565,6 +554,6 @@ public class DefaultMessagingService implements MessagingService, CoreService, N
 
     @Override
     public String toString() {
-        return ToString.format(this);
+        return MessagingService.class.getSimpleName();
     }
 }

@@ -54,8 +54,6 @@ import io.hekate.messaging.intercept.ClientMessageInterceptor;
 import io.hekate.messaging.intercept.ClientSendContext;
 import io.hekate.util.StateGuard;
 import io.hekate.util.async.Waiting;
-import io.hekate.util.format.ToString;
-import io.hekate.util.format.ToStringIgnore;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -80,25 +78,18 @@ public class DefaultLockService implements LockService, CoreService, MessagingCo
 
     private final long retryInterval;
 
-    @ToStringIgnore
     private final int nioThreads;
 
-    @ToStringIgnore
     private final int workerThreads;
 
-    @ToStringIgnore
     private final StateGuard guard = new StateGuard(LockService.class);
 
-    @ToStringIgnore
     private final Map<String, LockRegionProxy> regions = new HashMap<>();
 
-    @ToStringIgnore
     private ScheduledThreadPoolExecutor scheduler;
 
-    @ToStringIgnore
     private ClusterView cluster;
 
-    @ToStringIgnore
     private MessagingService messaging;
 
     public DefaultLockService(LockServiceFactory factory) {
@@ -430,6 +421,6 @@ public class DefaultLockService implements LockService, CoreService, MessagingCo
 
     @Override
     public String toString() {
-        return ToString.format(this);
+        return LockService.class.getSimpleName();
     }
 }

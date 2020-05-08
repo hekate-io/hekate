@@ -271,6 +271,6 @@ public class DefaultElectionService implements ElectionService, CoreService, Loc
 
     @Override
     public String toString() {
-        return getClass().getSimpleName();
+        return ElectionService.class.getSimpleName();
     }
 }

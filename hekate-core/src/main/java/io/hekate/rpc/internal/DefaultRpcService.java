@@ -78,7 +78,7 @@ public class DefaultRpcService implements RpcService, CoreService, MessagingConf
 
     private static final boolean DEBUG = log.isDebugEnabled();
 
-    private static final String CHANNEL_NAME = "hekate.rpc";
+    private static final String RPC_CHANNEL = "hekate.rpc";
 
     private final int workerThreads;
 
@@ -287,7 +287,7 @@ public class DefaultRpcService implements RpcService, CoreService, MessagingConf
     @Override
     public Collection<MessagingChannelConfig<?>> configureMessaging() {
         MessagingChannelConfig<RpcProtocol> cfg = MessagingChannelConfig.of(RpcProtocol.class)
-            .withName(CHANNEL_NAME)
+            .withName(RPC_CHANNEL)
             .withNioThreads(nioThreads)
             .withWorkerThreads(workerThreads)
             .withIdleSocketTimeout(idleSocketTimeout)
@@ -328,7 +328,7 @@ public class DefaultRpcService implements RpcService, CoreService, MessagingConf
 
         guard.becomeInitialized(() -> {
             // Initialize RPC messaging channel.
-            channel = messaging.channel(CHANNEL_NAME, RpcProtocol.class);
+            channel = messaging.channel(RPC_CHANNEL, RpcProtocol.class);
 
             // Initialize clients.
             clientConfigs.forEach(cfg -> {
@@ -497,6 +497,6 @@ public class DefaultRpcService implements RpcService, CoreService, MessagingConf
 
     @Override
     public String toString() {
-        return getClass().getSimpleName();
+        return RpcService.class.getSimpleName();
     }
 }

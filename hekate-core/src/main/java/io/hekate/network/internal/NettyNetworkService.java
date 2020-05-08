@@ -63,8 +63,6 @@ import io.hekate.network.netty.NettyServerHandlerConfig;
 import io.hekate.network.netty.NettyUtils;
 import io.hekate.util.StateGuard;
 import io.hekate.util.async.AsyncUtils;
-import io.hekate.util.format.ToString;
-import io.hekate.util.format.ToStringIgnore;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.Epoll;
 import io.netty.channel.epoll.EpollEventLoopGroup;
@@ -161,40 +159,28 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
 
     private final NetworkSslConfig sslConfig;
 
-    @ToStringIgnore
     private final StateGuard guard = new StateGuard(NetworkService.class);
 
-    @ToStringIgnore
     private final List<NetworkConnectorConfig<?>> connectorConfigs = new ArrayList<>();
 
-    @ToStringIgnore
     private final Map<String, ConnectorRegistration<?>> connectors = new HashMap<>();
 
-    @ToStringIgnore
     private SslContext clientSsl;
 
-    @ToStringIgnore
     private SslContext serverSsl;
 
-    @ToStringIgnore
     private CodecService codec;
 
-    @ToStringIgnore
     private ResourceService resources;
 
-    @ToStringIgnore
     private JmxService jmx;
 
-    @ToStringIgnore
     private NettyMetricsBuilder metrics;
 
-    @ToStringIgnore
     private EventLoopGroup acceptorLoop;
 
-    @ToStringIgnore
     private EventLoopGroup coreLoop;
 
-    @ToStringIgnore
     private NetworkServer server;
 
     public NettyNetworkService(NetworkServiceFactory factory) {
@@ -806,6 +792,6 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
 
     @Override
     public String toString() {
-        return ToString.format(this);
+        return NetworkService.class.getSimpleName();
     }
 }
