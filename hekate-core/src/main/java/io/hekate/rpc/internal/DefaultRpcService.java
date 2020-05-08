@@ -292,7 +292,7 @@ public class DefaultRpcService implements RpcService, CoreService, MessagingConf
             .withWorkerThreads(workerThreads)
             .withIdleSocketTimeout(idleSocketTimeout)
             .withBackPressure(backPressure)
-            .withLogCategory(RpcService.class.getName())
+            .withLogCategory(RpcProtocol.class.getName())
             .withMessageCodec(new RpcProtocolCodecFactory(codec))
             .withInterceptor(new ClientMessageInterceptor<RpcProtocol>() {
                 @Override
