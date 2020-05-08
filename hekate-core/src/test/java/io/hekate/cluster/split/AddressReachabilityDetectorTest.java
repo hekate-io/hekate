@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -22,6 +22,7 @@ import io.hekate.core.report.DefaultConfigReporter;
 import java.net.InetSocketAddress;
 import org.junit.Test;
 
+import static io.hekate.core.internal.util.Utils.NL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -54,10 +55,10 @@ public class AddressReachabilityDetectorTest extends HekateNodeTestBase {
         AddressReachabilityDetector detector = new AddressReachabilityDetector(newAddress(0).socket(), 2000);
 
         assertEquals(
-            "\n"
-                + "  address-reachability\n"
-                + "    address: " + detector.address() + "\n"
-                + "    timeout: " + detector.timeout() + "\n",
+            NL
+                + "  address-reachability:" + NL
+                + "    address: " + detector.address() + NL
+                + "    timeout: " + detector.timeout() + NL,
             DefaultConfigReporter.report(detector)
         );
     }

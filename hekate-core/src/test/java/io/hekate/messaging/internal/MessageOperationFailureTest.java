@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -35,7 +35,7 @@ public class MessageOperationFailureTest extends HekateTestBase {
     public void test() throws Exception {
         ClusterNode failedNode = newNode();
 
-        MessageOperationFailure ctx = new MessageOperationFailure(
+        MessageOperationFailure failure = new MessageOperationFailure(
             3,
             new IOException(),
             failedNode,
@@ -43,17 +43,21 @@ public class MessageOperationFailureTest extends HekateTestBase {
             RETRY_SAME_NODE
         );
 
-        assertEquals(3, ctx.attempt());
-        assertFalse(ctx.isFirstAttempt());
-        assertTrue(ctx.isCausedBy(IOException.class));
-        assertTrue(ctx.error() instanceof IOException);
-        assertEquals(failedNode, ctx.lastTriedNode());
-        assertEquals(1, ctx.allTriedNodes().size());
-        assertTrue(ctx.allTriedNodes().contains(failedNode));
-        assertTrue(ctx.hasTriedNode(failedNode));
-        assertSame(RETRY_SAME_NODE, ctx.routing());
-        assertTrue(ctx.toString(), ctx.toString().startsWith(FailedAttempt.class.getSimpleName()));
+        assertEquals(3, failure.attempt());
+        assertFalse(failure.isFirstAttempt());
+        assertTrue(failure.error() instanceof IOException);
+        assertEquals(failedNode, failure.lastTriedNode());
+        assertEquals(1, failure.allTriedNodes().size());
+        assertTrue(failure.allTriedNodes().contains(failedNode));
+        assertTrue(failure.hasTriedNode(failedNode));
+        assertSame(RETRY_SAME_NODE, failure.routing());
+        assertTrue(failure.toString(), failure.toString().startsWith(FailedAttempt.class.getSimpleName()));
 
-        assertSame(RE_ROUTE, ctx.withRouting(RE_ROUTE).routing());
+        assertTrue(failure.isCausedBy(IOException.class));
+        assertTrue(failure.isCausedBy(IOException.class, io -> true));
+        assertFalse(failure.isCausedBy(IOException.class, io -> false));
+        assertFalse(failure.isCausedBy(RuntimeException.class, io -> true));
+
+        assertSame(RE_ROUTE, failure.withRouting(RE_ROUTE).routing());
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -23,6 +23,7 @@ import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static io.hekate.core.internal.util.Utils.NL;
 import static org.junit.Assert.assertEquals;
 
 public class ConsulSeedNodeProviderTest extends PersistentSeedNodeProviderTestBase<ConsulSeedNodeProvider> {
@@ -41,14 +42,14 @@ public class ConsulSeedNodeProviderTest extends PersistentSeedNodeProviderTestBa
         ConsulSeedNodeProvider provider = createProvider();
 
         assertEquals(
-            "\n"
-                + "  consul\n"
-                + "    url: " + provider.url() + "\n"
-                + "    base-path: " + provider.basePath() + "\n"
-                + "    cleanup-interval: " + provider.cleanupInterval() + "\n"
-                + "    connect-timeout: " + provider.connectTimeout() + "\n"
-                + "    read-timeout: " + provider.readTimeout() + "\n"
-                + "    write-timeout: " + provider.writeTimeout() + "\n",
+            NL
+                + "  consul:" + NL
+                + "    url: " + provider.url() + NL
+                + "    base-path: " + provider.basePath() + NL
+                + "    cleanup-interval: " + provider.cleanupInterval() + NL
+                + "    connect-timeout: " + provider.connectTimeout() + NL
+                + "    read-timeout: " + provider.readTimeout() + NL
+                + "    write-timeout: " + provider.writeTimeout() + NL,
             DefaultConfigReporter.report(provider)
         );
     }

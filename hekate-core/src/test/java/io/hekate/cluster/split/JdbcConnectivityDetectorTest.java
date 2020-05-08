@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -27,6 +27,7 @@ import javax.sql.DataSource;
 import org.junit.Test;
 import org.mockito.InOrder;
 
+import static io.hekate.core.internal.util.Utils.NL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -43,10 +44,10 @@ public class JdbcConnectivityDetectorTest extends HekateTestBase {
         JdbcConnectivityDetector detector = new JdbcConnectivityDetector(ds, 100500);
 
         assertEquals(
-            "\n"
-                + "  jdbc-connectivity\n"
-                + "    datasource: " + detector.datasource() + "\n"
-                + "    timeout: " + detector.timeout() + "\n",
+            NL
+                + "  jdbc-connectivity:" + NL
+                + "    datasource: " + detector.datasource() + NL
+                + "    timeout: " + detector.timeout() + NL,
             DefaultConfigReporter.report(detector)
         );
     }

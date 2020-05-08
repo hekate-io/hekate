@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -36,31 +36,35 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 public class DefaultCodecService implements CodecService, EncoderDecoder<Object> {
+    /** If buffer's capacity is larger than this value then it will not be reused and will be thrown away to be collected by the GC. */
     // TODO: Configurable maximum size of recyclable buffer.
     private static final int MAX_REUSABLE_BUFFER_SIZE = Integer.getInteger("io.hekate.codec.maxReusableBufferSize", 1024 * 1024);
 
-    private final CodecFactory<Object> codecFactory;
+    /** Codec factory. */
+    private final CodecFactory<Object> factory;
 
+    /** Pool of reusable buffers for encoding/decoding. */
     @ToStringIgnore
-    private final ByteArrayOutputStreamPool bufferPool;
+    private final ByteArrayOutputStreamPool buffers;
 
+    /** Default codec for encoding/decoding objects of undefined type. */
     @ToStringIgnore
-    private final EncoderDecoder<Object> objCodec;
+    private final EncoderDecoder<Object> codec;
 
-    public DefaultCodecService(CodecFactory<Object> codecFactory) {
-        assert codecFactory != null : "Codec factory is null.";
+    public DefaultCodecService(CodecFactory<Object> factory) {
+        assert factory != null : "Codec factory is null.";
 
-        CodecFactory<Object> threadLocalCodecFactory = ThreadLocalCodecFactory.tryWrap(codecFactory);
+        CodecFactory<Object> threadLocal = ThreadLocalCodecFactory.tryWrap(factory);
 
-        this.codecFactory = threadLocalCodecFactory;
-        this.bufferPool = new ByteArrayOutputStreamPool(MAX_REUSABLE_BUFFER_SIZE);
-        this.objCodec = new DefaultEncoderDecoder<>(bufferPool, threadLocalCodecFactory);
+        this.factory = threadLocal;
+        this.buffers = new ByteArrayOutputStreamPool(MAX_REUSABLE_BUFFER_SIZE);
+        this.codec = new DefaultEncoderDecoder<>(buffers, threadLocal.createCodec());
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public <T> CodecFactory<T> codecFactory() {
-        return (CodecFactory<T>)codecFactory;
+        return (CodecFactory<T>)factory;
     }
 
     @Override
@@ -70,60 +74,69 @@ public class DefaultCodecService implements CodecService, EncoderDecoder<Object>
     }
 
     @Override
+    public <T> EncoderDecoder<T> forType(Class<T> type, EncodeFunction<T> encode, DecodeFunction<T> decode) {
+        ArgAssert.notNull(type, "Type");
+        ArgAssert.notNull(encode, "Encode function");
+        ArgAssert.notNull(decode, "Decode function");
+
+        return new DefaultEncoderDecoder<>(type, buffers, encode, decode);
+    }
+
+    @Override
     public <T> EncoderDecoder<T> forFactory(CodecFactory<T> codecFactory) {
         ArgAssert.notNull(codecFactory, "Codec factory");
 
-        return new DefaultEncoderDecoder<>(bufferPool, codecFactory);
+        return new DefaultEncoderDecoder<>(buffers, codecFactory.createCodec());
     }
 
     @Override
     public void encode(Object obj, OutputStream out) throws IOException {
-        objCodec.encode(obj, out);
+        codec.encode(obj, out);
     }
 
     @Override
     public void encode(Object obj, DataWriter out) throws IOException {
-        objCodec.encode(obj, out);
+        codec.encode(obj, out);
     }
 
     @Override
     public byte[] encode(Object obj) throws IOException {
-        return objCodec.encode(obj);
+        return codec.encode(obj);
     }
 
     @Override
     public <T> byte[] encode(T obj, EncodeFunction<T> encoder) throws IOException {
         ArgAssert.notNull(encoder, "Encode function");
 
-        ByteArrayOutputStream buf = bufferPool.acquire();
+        ByteArrayOutputStream buf = buffers.acquire();
 
         try {
             encoder.encode(obj, new StreamDataWriter(buf));
 
             return buf.toByteArray();
         } finally {
-            bufferPool.recycle(buf);
+            buffers.recycle(buf);
         }
     }
 
     @Override
     public Object decode(InputStream in) throws IOException {
-        return objCodec.decode(in);
+        return codec.decode(in);
     }
 
     @Override
     public Object decode(DataReader in) throws IOException {
-        return objCodec.decode(in);
+        return codec.decode(in);
     }
 
     @Override
     public Object decode(byte[] bytes) throws IOException {
-        return objCodec.decode(bytes);
+        return codec.decode(bytes);
     }
 
     @Override
     public Object decode(byte[] bytes, int offset, int size) throws IOException {
-        return objCodec.decode(bytes, offset, size);
+        return codec.decode(bytes, offset, size);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -17,12 +17,21 @@
 package io.hekate.core.internal.util;
 
 import io.hekate.HekateTestBase;
+import java.util.Arrays;
+import java.util.Collections;
 import org.junit.Test;
 
 import static io.hekate.core.internal.util.Utils.camelCase;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class UtilsTest extends HekateTestBase {
+    @Test
+    public void testMod() {
+        assertEquals(1, Utils.mod(6, 5));
+        assertEquals(1, Utils.mod(-6, 5));
+    }
+
     @Test
     public void testCamelCase() {
         assertEquals("TEST", camelCase("TEST"));
@@ -36,5 +45,17 @@ public class UtilsTest extends HekateTestBase {
         assertEquals("TeSt", camelCase("Te_st"));
         assertEquals("TeST", camelCase("Te_s_t_"));
         assertEquals("TeST", camelCase("te_s_t_"));
+    }
+
+    @Test
+    public void nullSafeImmutableCopy() {
+        assertTrue(Utils.nullSafeImmutableCopy(null).isEmpty());
+        assertTrue(Utils.nullSafeImmutableCopy(Collections.emptyList()).isEmpty());
+        assertTrue(Utils.nullSafeImmutableCopy(Arrays.asList(null, null, null)).isEmpty());
+        assertEquals(3, Utils.nullSafeImmutableCopy(Arrays.asList(1, 2, 3)).size());
+
+        expect(UnsupportedOperationException.class, () -> {
+            Utils.nullSafeImmutableCopy(Arrays.asList(1, 2, 3)).add(4);
+        });
     }
 }

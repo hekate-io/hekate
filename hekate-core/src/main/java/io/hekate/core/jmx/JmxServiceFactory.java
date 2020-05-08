@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -30,8 +30,10 @@ public class JmxServiceFactory implements ServiceFactory<JmxService> {
     /** Default value ({@value}) for {@link #setDomain(String)}. */
     public static final String DEFAULT_DOMAIN = "io.hekate";
 
+    /** See {@link #setDomain(String)}. */
     private String domain = DEFAULT_DOMAIN;
 
+    /** See {@link #setServer(MBeanServer)}. */
     private MBeanServer server = defaultServer();
 
     @Override

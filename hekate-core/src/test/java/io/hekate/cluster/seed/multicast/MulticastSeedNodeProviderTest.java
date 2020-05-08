@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -34,24 +34,25 @@ import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static io.hekate.core.internal.util.Utils.NL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class MulticastSeedNodeProviderTest extends SeedNodeProviderTestBase<MulticastSeedNodeProviderTest.TestProvider> {
     public static class TestProvider extends MulticastSeedNodeProvider {
-        private final AtomicInteger receivedDiscovery = new AtomicInteger();
+        private final AtomicInteger requests = new AtomicInteger();
 
         public TestProvider(MulticastSeedNodeProviderConfig cfg) throws IOException {
             super(cfg);
         }
 
-        public int getReceivedDiscovery() {
-            return receivedDiscovery.get();
+        public int getRequests() {
+            return requests.get();
         }
 
-        public void clearReceivedDiscovery() {
-            receivedDiscovery.set(0);
+        public void clearRequests() {
+            requests.set(0);
         }
 
         @Override
@@ -68,10 +69,10 @@ public class MulticastSeedNodeProviderTest extends SeedNodeProviderTestBase<Mult
         }
 
         @Override
-        void onDiscoveryMessage(InetSocketAddress address) {
-            super.onDiscoveryMessage(address);
+        void onDiscoveryRequest(InetSocketAddress address) {
+            super.onDiscoveryRequest(address);
 
-            receivedDiscovery.incrementAndGet();
+            requests.incrementAndGet();
         }
     }
 
@@ -96,13 +97,13 @@ public class MulticastSeedNodeProviderTest extends SeedNodeProviderTestBase<Mult
         MulticastSeedNodeProvider provider = createProvider();
 
         assertEquals(
-            "\n"
-                + "  multicast\n"
-                + "    group: " + provider.group() + "\n"
-                + "    ttl: " + provider.ttl() + "\n"
-                + "    interval: " + provider.interval() + "\n"
-                + "    wait-time: " + provider.waitTime() + "\n"
-                + "    loopback-disabled: " + provider.isLoopBackDisabled() + "\n",
+            NL
+                + "  multicast:" + NL
+                + "    group: " + provider.group() + NL
+                + "    ttl: " + provider.ttl() + NL
+                + "    interval: " + provider.interval() + NL
+                + "    wait-time: " + provider.waitTime() + NL
+                + "    loopback-disabled: " + provider.isLoopBackDisabled() + NL,
             DefaultConfigReporter.report(provider)
         );
     }
@@ -125,18 +126,18 @@ public class MulticastSeedNodeProviderTest extends SeedNodeProviderTestBase<Mult
             for (Map.Entry<InetSocketAddress, TestProvider> e : providers.entrySet()) {
                 TestProvider provider = e.getValue();
 
-                assertTrue(e.getKey().toString(), provider.getReceivedDiscovery() > 0);
+                assertTrue(e.getKey().toString(), provider.getRequests() > 0);
 
                 provider.suspendDiscovery();
             }
 
             sleep(DISCOVERY_INTERVAL * 4);
 
-            providers.values().forEach(TestProvider::clearReceivedDiscovery);
+            providers.values().forEach(TestProvider::clearRequests);
 
             sleep(DISCOVERY_INTERVAL * 2);
 
-            providers.values().forEach(p -> assertEquals(0, p.getReceivedDiscovery()));
+            providers.values().forEach(p -> assertEquals(0, p.getRequests()));
 
         } finally {
             for (Map.Entry<InetSocketAddress, TestProvider> e : providers.entrySet()) {

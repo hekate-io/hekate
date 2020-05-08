@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -17,7 +17,6 @@
 package io.hekate.lock.internal;
 
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterNodeFilter;
 import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterView;
 import io.hekate.cluster.event.ClusterEventType;
@@ -26,16 +25,11 @@ import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
-import io.hekate.core.internal.util.StreamUtils;
-import io.hekate.core.report.ConfigReportSupport;
 import io.hekate.core.report.ConfigReporter;
-import io.hekate.core.service.ConfigurableService;
 import io.hekate.core.service.ConfigurationContext;
+import io.hekate.core.service.CoreService;
 import io.hekate.core.service.DependencyContext;
-import io.hekate.core.service.DependentService;
 import io.hekate.core.service.InitializationContext;
-import io.hekate.core.service.InitializingService;
-import io.hekate.core.service.TerminatingService;
 import io.hekate.lock.LockConfigProvider;
 import io.hekate.lock.LockRegion;
 import io.hekate.lock.LockRegionConfig;
@@ -59,26 +53,23 @@ import io.hekate.messaging.MessagingService;
 import io.hekate.messaging.intercept.ClientMessageInterceptor;
 import io.hekate.messaging.intercept.ClientSendContext;
 import io.hekate.util.StateGuard;
-import io.hekate.util.async.AsyncUtils;
 import io.hekate.util.async.Waiting;
-import io.hekate.util.format.ToString;
-import io.hekate.util.format.ToStringIgnore;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DefaultLockService implements LockService, InitializingService, DependentService, ConfigurableService, TerminatingService,
-    MessagingConfigProvider, ConfigReportSupport {
-    static final ClusterNodeFilter HAS_SERVICE_FILTER = node -> node.hasService(LockService.class);
+import static io.hekate.core.internal.util.StreamUtils.nullSafe;
+import static io.hekate.util.async.AsyncUtils.shutdown;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singleton;
+import static java.util.Collections.singletonList;
 
+public class DefaultLockService implements LockService, CoreService, MessagingConfigProvider {
     private static final Logger log = LoggerFactory.getLogger(DefaultLockService.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
@@ -87,32 +78,22 @@ public class DefaultLockService implements LockService, InitializingService, Dep
 
     private final long retryInterval;
 
-    @ToStringIgnore
     private final int nioThreads;
 
-    @ToStringIgnore
     private final int workerThreads;
 
-    @ToStringIgnore
-    private final List<LockRegionConfig> regionsConfig = new ArrayList<>();
-
-    @ToStringIgnore
     private final StateGuard guard = new StateGuard(LockService.class);
 
-    @ToStringIgnore
-    private final Map<String, DefaultLockRegion> regions = new HashMap<>();
+    private final Map<String, LockRegionProxy> regions = new HashMap<>();
 
-    @ToStringIgnore
     private ScheduledThreadPoolExecutor scheduler;
 
-    @ToStringIgnore
     private ClusterView cluster;
 
-    @ToStringIgnore
     private MessagingService messaging;
 
     public DefaultLockService(LockServiceFactory factory) {
-        assert factory != null : "Factory is null.";
+        ArgAssert.notNull(factory, "Factory");
 
         ConfigCheck check = ConfigCheck.get(LockServiceFactory.class);
 
@@ -123,59 +104,58 @@ public class DefaultLockService implements LockService, InitializingService, Dep
         this.workerThreads = factory.getWorkerThreads();
         this.nioThreads = factory.getNioThreads();
 
-        StreamUtils.nullSafe(factory.getRegions()).forEach(regionsConfig::add);
+        nullSafe(factory.getRegions()).forEach(this::register);
 
-        StreamUtils.nullSafe(factory.getConfigProviders()).forEach(provider ->
-            StreamUtils.nullSafe(provider.configureLocking()).forEach(regionsConfig::add)
+        nullSafe(factory.getConfigProviders()).forEach(provider ->
+            nullSafe(provider.configureLocking()).forEach(this::register)
         );
     }
 
     @Override
     public void resolve(DependencyContext ctx) {
         messaging = ctx.require(MessagingService.class);
-        cluster = ctx.require(ClusterService.class).filter(HAS_SERVICE_FILTER);
+        cluster = ctx.require(ClusterService.class).filter(LockRegionNodeFilter.hasLockService());
     }
 
     @Override
     public void configure(ConfigurationContext ctx) {
         // Collect configurations from providers.
-        Collection<LockConfigProvider> providers = ctx.findComponents(LockConfigProvider.class);
-
-        StreamUtils.nullSafe(providers).forEach(provider -> {
-            Collection<LockRegionConfig> regions = provider.configureLocking();
-
-            StreamUtils.nullSafe(regions).forEach(regionsConfig::add);
-        });
-
-        // Validate configs.
-        ConfigCheck check = ConfigCheck.get(LockRegionConfig.class);
-
-        Set<String> uniqueNames = new HashSet<>();
-
-        regionsConfig.forEach(cfg -> {
-            check.notEmpty(cfg.getName(), "name");
-            check.validSysName(cfg.getName(), "name");
-
-            String name = cfg.getName().trim();
-
-            check.unique(name, uniqueNames, "name");
-
-            uniqueNames.add(name);
-        });
+        nullSafe(ctx.findComponents(LockConfigProvider.class)).forEach(provider ->
+            nullSafe(provider.configureLocking()).forEach(this::register)
+        );
 
         // Register region names as service property.
-        regionsConfig.forEach(cfg ->
-            ctx.setBoolProperty(LockRegionNodeFilter.serviceProperty(cfg.getName().trim()), true)
+        regions.values().forEach(region ->
+            ctx.setBoolProperty(LockRegionNodeFilter.serviceProperty(region.name()), true)
         );
     }
 
     @Override
+    public void report(ConfigReporter report) {
+        guard.withReadLockIfInitialized(() -> {
+            if (!regions.isEmpty()) {
+                report.section("locks", locksSec -> {
+                    locksSec.value("retry-interval", retryInterval);
+
+                    locksSec.section("regions", regionsSec ->
+                        regions.values().forEach(region ->
+                            regionsSec.section("region", regionSec ->
+                                regionSec.value("name", region.name())
+                            )
+                        )
+                    );
+                });
+            }
+        });
+    }
+
+    @Override
     public Collection<MessagingChannelConfig<?>> configureMessaging() {
-        if (regionsConfig.isEmpty()) {
-            return Collections.emptyList();
+        if (regions.isEmpty()) {
+            return emptyList();
         }
 
-        return Collections.singleton(
+        return singleton(
             MessagingChannelConfig.of(LockProtocol.class)
                 .withName(CHANNEL_NAME)
                 .withLogCategory(LockProtocol.class.getName())
@@ -204,20 +184,20 @@ public class DefaultLockService implements LockService, InitializingService, Dep
 
     @Override
     public void initialize(InitializationContext ctx) throws HekateException {
-        guard.lockWrite();
+        if (DEBUG) {
+            log.debug("Initializing...");
+        }
 
-        try {
-            guard.becomeInitialized();
-
-            if (DEBUG) {
-                log.debug("Initializing...");
-            }
-
-            if (!regionsConfig.isEmpty()) {
+        guard.becomeInitialized(() -> {
+            if (!regions.isEmpty()) {
                 ClusterNode node = ctx.localNode();
 
                 // Register cluster listener to trigger locks rebalancing.
-                cluster.addListener(evt -> processTopologyChange(), ClusterEventType.JOIN, ClusterEventType.CHANGE);
+                cluster.addListener(evt ->
+                        processTopologyChange(),
+                    ClusterEventType.JOIN,
+                    ClusterEventType.CHANGE
+                );
 
                 // Get channel for locking messages.
                 MessagingChannel<LockProtocol> channel = messaging.channel(CHANNEL_NAME, LockProtocol.class);
@@ -228,12 +208,12 @@ public class DefaultLockService implements LockService, InitializingService, Dep
                 scheduler.setRemoveOnCancelPolicy(true);
 
                 // Register lock regions.
-                regionsConfig.forEach(cfg -> {
+                regions.values().forEach(proxy -> {
                     if (DEBUG) {
-                        log.debug("Registering new lock region [config={}]", cfg);
+                        log.debug("Registering new lock region [config={}]", proxy);
                     }
 
-                    String name = cfg.getName().trim();
+                    String name = proxy.name();
 
                     DefaultLockRegion region = new DefaultLockRegion(
                         name,
@@ -243,119 +223,85 @@ public class DefaultLockService implements LockService, InitializingService, Dep
                         channel.filter(new LockRegionNodeFilter(name))
                     );
 
-                    this.regions.put(name, region);
-                });
-            }
-
-            if (DEBUG) {
-                log.debug("Initialized.");
-            }
-        } finally {
-            guard.unlockWrite();
-        }
-    }
-
-    @Override
-    public void report(ConfigReporter report) {
-        guard.withReadLockIfInitialized(() -> {
-            if (!regionsConfig.isEmpty()) {
-                report.section("locks", locksSec -> {
-                    locksSec.value("retry-interval", retryInterval);
-
-                    locksSec.section("regions", regionsSec ->
-                        regionsConfig.forEach(region ->
-                            regionsSec.section("region", regionSec ->
-                                regionSec.value("name", region.getName())
-                            )
-                        )
-                    );
+                    proxy.initialize(region);
                 });
             }
         });
+
+        if (DEBUG) {
+            log.debug("Initialized.");
+        }
     }
 
     @Override
     public void preTerminate() {
-        guard.lockWrite();
-
-        try {
-            if (guard.becomeTerminating()) {
-                regions.values().forEach(DefaultLockRegion::terminate);
-            }
-        } finally {
-            guard.unlockWrite();
-        }
+        guard.becomeTerminating(() ->
+            regions.values().forEach(LockRegionProxy::preTerminate)
+        );
     }
 
     @Override
     public void terminate() throws HekateException {
-        Waiting waiting = null;
-
-        guard.lockWrite();
-
-        try {
-            if (guard.becomeTerminated()) {
-                if (DEBUG) {
-                    log.debug("Terminating...");
-                }
-
-                // Shutdown scheduler.
-                if (scheduler != null) {
-                    waiting = AsyncUtils.shutdown(scheduler);
-
-                    scheduler = null;
-                }
-
-                regions.clear();
-            }
-        } finally {
-            guard.unlockWrite();
+        if (DEBUG) {
+            log.debug("Terminating...");
         }
 
-        if (waiting != null) {
-            waiting.awaitUninterruptedly();
+        Waiting done = guard.becomeTerminated(() -> {
+            // Shutdown scheduler.
+            Waiting waiting = shutdown(scheduler);
 
-            if (DEBUG) {
-                log.debug("Terminated.");
-            }
+            scheduler = null;
+
+            // Terminate regions.
+            regions.values().forEach(LockRegionProxy::terminate);
+
+            return singletonList(waiting);
+        });
+
+        done.awaitUninterruptedly();
+
+        if (DEBUG) {
+            log.debug("Terminated.");
         }
     }
 
     @Override
     public List<LockRegion> allRegions() {
-        guard.lockReadWithStateCheck();
-
-        try {
-            return new ArrayList<>(regions.values());
-        } finally {
-            guard.unlockRead();
-        }
+        return guard.withReadLockAndStateCheck(() ->
+            new ArrayList<>(regions.values())
+        );
     }
 
     @Override
-    public DefaultLockRegion region(String region) {
-        guard.lockReadWithStateCheck();
+    public LockRegionProxy region(String region) {
+        ArgAssert.notNull(region, "Region name");
 
-        try {
-            DefaultLockRegion lockRegion = regions.get(region);
-
-            ArgAssert.check(lockRegion != null, "Lock region is not configured [name=" + region + ']');
-
-            return lockRegion;
-        } finally {
-            guard.unlockRead();
-        }
+        return guard.withReadLockAndStateCheck(() ->
+            regions.computeIfAbsent(region, missing -> {
+                throw new IllegalArgumentException("Lock region is not configured [name=" + missing + ']');
+            })
+        );
     }
 
     @Override
     public boolean hasRegion(String region) {
-        guard.lockReadWithStateCheck();
+        return guard.withReadLockAndStateCheck(() ->
+            regions.containsKey(region)
+        );
+    }
 
-        try {
-            return regions.containsKey(region);
-        } finally {
-            guard.unlockRead();
-        }
+    private void register(LockRegionConfig cfg) {
+        // Validate configs.
+        ConfigCheck check = ConfigCheck.get(LockRegionConfig.class);
+
+        check.notEmpty(cfg.getName(), "name");
+        check.validSysName(cfg.getName(), "name");
+
+        String name = cfg.getName().trim();
+
+        check.unique(name, regions.keySet(), "name");
+
+        regions.put(name, new LockRegionProxy(name));
     }
 
     private void processMessage(Message<LockProtocol> msg) {
@@ -369,13 +315,13 @@ public class DefaultLockService implements LockService, InitializingService, Dep
                     LockRequest request = msg.payload(LockRequest.class);
 
                     if (guard.isInitialized()) {
-                        DefaultLockRegion region = regions.get(request.region());
+                        LockRegionProxy proxy = regions.get(request.region());
 
-                        if (region == null) {
-                            throw new IllegalStateException("Received lock request for unsupported region: " + request);
+                        if (proxy == null) {
+                            throw new IllegalStateException("Received lock request for an unsupported region: " + request);
                         }
 
-                        region.processLock(msg);
+                        proxy.requireRegion().processLock(msg);
                     } else {
                         msg.reply(new LockResponse(LockResponse.Status.RETRY, null, 0));
                     }
@@ -386,13 +332,13 @@ public class DefaultLockService implements LockService, InitializingService, Dep
                     UnlockRequest request = msg.payload(UnlockRequest.class);
 
                     if (guard.isInitialized()) {
-                        DefaultLockRegion region = regions.get(request.region());
+                        LockRegionProxy proxy = regions.get(request.region());
 
-                        if (region == null) {
-                            throw new IllegalStateException("Received lock request for unsupported region: " + request);
+                        if (proxy == null) {
+                            throw new IllegalStateException("Received lock request for an unsupported region: " + request);
                         }
 
-                        region.processUnlock(msg);
+                        proxy.requireRegion().processUnlock(msg);
                     } else {
                         msg.reply(new UnlockResponse(UnlockResponse.Status.RETRY));
                     }
@@ -403,13 +349,13 @@ public class DefaultLockService implements LockService, InitializingService, Dep
                     LockOwnerRequest request = msg.payload(LockOwnerRequest.class);
 
                     if (guard.isInitialized()) {
-                        DefaultLockRegion region = regions.get(request.region());
+                        LockRegionProxy proxy = regions.get(request.region());
 
-                        if (region == null) {
-                            throw new IllegalStateException("Received lock owner request for unsupported region: " + request);
+                        if (proxy == null) {
+                            throw new IllegalStateException("Received lock owner request for an unsupported region: " + request);
                         }
 
-                        region.processLockOwnerQuery(msg);
+                        proxy.requireRegion().processLockOwnerQuery(msg);
                     } else {
                         msg.reply(new LockOwnerResponse(0, null, LockOwnerResponse.Status.RETRY));
                     }
@@ -420,13 +366,13 @@ public class DefaultLockService implements LockService, InitializingService, Dep
                     MigrationPrepareRequest request = msg.payload(MigrationPrepareRequest.class);
 
                     if (guard.isInitialized()) {
-                        DefaultLockRegion region = regions.get(request.region());
+                        LockRegionProxy proxy = regions.get(request.region());
 
-                        if (region == null) {
-                            throw new IllegalStateException("Received migration prepare request for unsupported region: " + request);
+                        if (proxy == null) {
+                            throw new IllegalStateException("Received migration prepare request for an unsupported region: " + request);
                         }
 
-                        region.processMigrationPrepare(msg);
+                        proxy.requireRegion().processMigrationPrepare(msg);
                     } else {
                         msg.reply(new MigrationResponse(MigrationResponse.Status.RETRY));
                     }
@@ -437,13 +383,13 @@ public class DefaultLockService implements LockService, InitializingService, Dep
                     MigrationApplyRequest request = msg.payload(MigrationApplyRequest.class);
 
                     if (guard.isInitialized()) {
-                        DefaultLockRegion region = regions.get(request.region());
+                        LockRegionProxy proxy = regions.get(request.region());
 
-                        if (region == null) {
-                            throw new IllegalStateException("Received migration prepare request for unsupported region: " + request);
+                        if (proxy == null) {
+                            throw new IllegalStateException("Received migration prepare request for an unsupported region: " + request);
                         }
 
-                        region.processMigrationApply(msg);
+                        proxy.requireRegion().processMigrationApply(msg);
                     } else {
                         msg.reply(new MigrationResponse(MigrationResponse.Status.RETRY));
                     }
@@ -464,17 +410,15 @@ public class DefaultLockService implements LockService, InitializingService, Dep
     }
 
     private void processTopologyChange() {
-        guard.lockRead();
-
-        try {
-            regions.values().forEach(DefaultLockRegion::processTopologyChange);
-        } finally {
-            guard.unlockRead();
-        }
+        guard.withReadLockIfInitialized(() ->
+            regions.values().stream()
+                .map(LockRegionProxy::requireRegion)
+                .forEach(DefaultLockRegion::processTopologyChange)
+        );
     }
 
     @Override
     public String toString() {
-        return ToString.format(this);
+        return LockService.class.getSimpleName();
     }
 }

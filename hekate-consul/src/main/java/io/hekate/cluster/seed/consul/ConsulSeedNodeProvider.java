@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -29,6 +29,7 @@ import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.report.ConfigReportSupport;
 import io.hekate.core.report.ConfigReporter;
 import io.hekate.util.format.ToString;
+import io.hekate.util.format.ToStringIgnore;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -89,6 +90,9 @@ public class ConsulSeedNodeProvider implements SeedNodeProvider, ConfigReportSup
 
     private final Long writeTimeout;
 
+    @ToStringIgnore
+    private final String aclToken;
+
     /**
      * Initializes new consul seed node provider.
      *
@@ -107,6 +111,7 @@ public class ConsulSeedNodeProvider implements SeedNodeProvider, ConfigReportSup
         this.connectTimeout = cfg.getConnectTimeout();
         this.readTimeout = cfg.getReadTimeout();
         this.writeTimeout = cfg.getWriteTimeout();
+        this.aclToken = cfg.getAclToken();
 
         try {
             url = new URI(cfg.getUrl());
@@ -282,7 +287,13 @@ public class ConsulSeedNodeProvider implements SeedNodeProvider, ConfigReportSup
     }
 
     private void withConsul(Consumer<KeyValueClient> consumer) {
-        Consul consul = Consul.builder().withUrl(url.toString()).build();
+        Consul.Builder builder = Consul.builder().withUrl(url.toString());
+
+        if (aclToken != null && !aclToken.isEmpty()) {
+            builder.withAclToken(aclToken);
+        }
+
+        Consul consul = builder.build();
 
         try {
             consumer.accept(consul.keyValueClient());

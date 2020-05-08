@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -22,7 +22,7 @@ import io.hekate.util.format.ToString;
  * Configuration for {@link KubernetesSeedNodeProvider}.
  *
  * <p>
- * Besides those options that are provided by setters of this class it possible to specify the following system properties and/or
+ * Besides those options that are provided by setters of this class it is possible to specify the following system properties and/or
  * environment variables:
  * </p>
  * <ul>
@@ -227,7 +227,7 @@ public class KubernetesSeedNodeProviderConfig {
      *
      * @return This instance.
      */
-    public KubernetesSeedNodeProviderConfig withTrustCertificates(Boolean trustCertificates) { 
+    public KubernetesSeedNodeProviderConfig withTrustCertificates(Boolean trustCertificates) {
         setTrustCertificates(trustCertificates);
 
         return this;

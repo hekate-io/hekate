@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Copyright 2019 The Hekate Project
-
-  The Hekate Project licenses this file to you under the Apache License,
-  version 2.0 (the "License"); you may not use this file except in compliance
-  with the License. You may obtain a copy of the License at:
-
-  http://www.apache.org/licenses/LICENSE-2.0
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-  License for the specific language governing permissions and limitations
-  under the License.
+  ~ Copyright 2020 The Hekate Project
+  ~
+  ~ The Hekate Project licenses this file to you under the Apache License,
+  ~ version 2.0 (the "License"); you may not use this file except in compliance
+  ~ with the License. You may obtain a copy of the License at:
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+  ~ WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+  ~ License for the specific language governing permissions and limitations
+  ~ under the License.
   -->
 
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
@@ -21,7 +21,7 @@
     <groupId>io.hekate</groupId>
     <artifactId>hekate-parent</artifactId>
     <packaging>pom</packaging>
-    <version>3.6.0-SNAPSHOT</version>
+    <version>3.9.0</version>
 
     <name>Hekate.io</name>
     <description>Java library for cluster communications and computing.</description>
@@ -38,7 +38,7 @@
     </issueManagement>
     <organization>
         <name>The Hekate Project</name>
-        <url>http://hekate.io/</url>
+        <url>https://hekate.io/</url>
     </organization>
     <developers>
         <developer>
@@ -61,16 +61,16 @@
         <java.target>1.8</java.target>
 
         <!-- Production dependencies.-->
-        <spring.boot.version>2.1.7.RELEASE</spring.boot.version>
+        <spring.boot.version>2.1.14.RELEASE</spring.boot.version>
         <kryo.version>4.0.2</kryo.version>
         <kryo.serializers.version>0.43</kryo.serializers.version>
         <fst.version>2.57</fst.version>
         <zookeeper.curator.version>2.13.0</zookeeper.curator.version>
-        <jetcd.version>0.3.0</jetcd.version>
-        <consul.client.version>1.3.6</consul.client.version>
+        <jetcd.version>0.5.3</jetcd.version>
+        <consul.client.version>1.4.2</consul.client.version>
         <kubernetes.client.version>4.3.0</kubernetes.client.version>
         <jclouds.version>2.1.2</jclouds.version>
-        <aws.sdk.version>1.11.587</aws.sdk.version>
+        <aws.sdk.version>1.11.717</aws.sdk.version>
         <zipkin.sender.version>2.7.8</zipkin.sender.version>
         <zipkin.brave.version>5.3.3</zipkin.brave.version>
 
@@ -92,8 +92,8 @@
         <maven.source.plugin.version>3.0.1</maven.source.plugin.version>
         <maven.deploy.plugin.version>2.8.2</maven.deploy.plugin.version>
         <maven.spotbugs.plugin.version>3.1.11</maven.spotbugs.plugin.version>
-        <maven.checkstyle.plugin.version>3.0.0</maven.checkstyle.plugin.version>
-        <maven.checkstyle.plugin.lib.version>8.18</maven.checkstyle.plugin.lib.version>
+        <maven.checkstyle.plugin.version>3.1.0</maven.checkstyle.plugin.version>
+        <maven.checkstyle.plugin.lib.version>8.29</maven.checkstyle.plugin.lib.version>
         <maven.clean.plugin.version>3.0.0</maven.clean.plugin.version>
         <maven.gpg.plugin.version>1.6</maven.gpg.plugin.version>
         <maven.nexus.staging.plugin.version>1.6.8</maven.nexus.staging.plugin.version>
@@ -268,13 +268,13 @@
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>27.0.1-jre</version>
+                <version>28.1-jre</version>
             </dependency>
 
             <dependency>
                 <groupId>com.google.errorprone</groupId>
                 <artifactId>error_prone_annotations</artifactId>
-                <version>2.1.2</version>
+                <version>2.3.2</version>
             </dependency>
 
             <dependency>
@@ -712,35 +712,53 @@
                 </dependencies>
                 <executions>
                     <execution>
+                        <id>generate-spring-boot-properties-sample</id>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <phase>prepare-package</phase>
+                        <configuration>
+                            <includePluginDependencies>true</includePluginDependencies>
+                            <mainClass>io.hekate.dev.SpringBootPropertiesGeneratorMain</mainClass>
+                            <arguments>
+                                <argument>
+                                    ${project.parent.basedir}/../hekate-spring-boot/src/main/resources/META-INF/spring-configuration-metadata.json
+                                </argument>
+                                <argument>${project.build.directory}/site/apidocs/spring-boot.properties.txt</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+
+                    <execution>
                         <id>post-process-javadoc</id>
                         <goals>
                             <goal>java</goal>
                         </goals>
                         <phase>prepare-package</phase>
+                        <configuration>
+                            <includePluginDependencies>true</includePluginDependencies>
+                            <mainClass>io.hekate.dev.CodeSamplesProcessorMain</mainClass>
+                            <arguments>
+                                <argument>${project.build.directory}/site/apidocs</argument>
+                                <argument>
+                                    ${project.parent.basedir}/../src/test/java/io/hekate/javadoc;
+                                    ${project.parent.basedir}/../src/test/resources/javadoc;
+                                    ${project.parent.basedir}/../hekate-core/src/test/java/io/hekate/javadoc;
+                                    ${project.parent.basedir}/../hekate-core/src/test/resources/javadoc;
+                                    ${project.parent.basedir}/../hekate-spring/src/test/java/io/hekate/javadoc;
+                                    ${project.parent.basedir}/../hekate-spring/src/test/resources/javadoc;
+                                    ${project.parent.basedir}/../hekate-spring-boot/src/test/java/io/hekate/javadoc;
+                                    ${project.parent.basedir}/../hekate-spring-boot/src/test/resources/javadoc;
+                                    ${project.parent.basedir}/../hekate-codec-kryo/src/test/java/io/hekate/javadoc;
+                                    ${project.parent.basedir}/../hekate-codec-kryo/src/test/resources/javadoc;
+                                    ${project.parent.basedir}/../hekate-codec-fst/src/test/java/io/hekate/javadoc;
+                                    ${project.parent.basedir}/../hekate-codec-fst/src/test/resources/javadoc;
+                                    ${project.parent.basedir}/../hekate-kubernetes/src/test/resources/javadoc;
+                                </argument>
+                            </arguments>
+                        </configuration>
                     </execution>
                 </executions>
-                <configuration>
-                    <includePluginDependencies>true</includePluginDependencies>
-                    <mainClass>io.hekate.dev.CodeSamplesProcessorMain</mainClass>
-                    <arguments>
-                        <argument>${project.build.directory}/site/apidocs</argument>
-                        <argument>
-                            ${project.parent.basedir}/../src/test/java/io/hekate/javadoc;
-                            ${project.parent.basedir}/../src/test/resources/javadoc;
-                            ${project.parent.basedir}/../hekate-core/src/test/java/io/hekate/javadoc;
-                            ${project.parent.basedir}/../hekate-core/src/test/resources/javadoc;
-                            ${project.parent.basedir}/../hekate-spring/src/test/java/io/hekate/javadoc;
-                            ${project.parent.basedir}/../hekate-spring/src/test/resources/javadoc;
-                            ${project.parent.basedir}/../hekate-spring-boot/src/test/java/io/hekate/javadoc;
-                            ${project.parent.basedir}/../hekate-spring-boot/src/test/resources/javadoc;
-                            ${project.parent.basedir}/../hekate-codec-kryo/src/test/java/io/hekate/javadoc;
-                            ${project.parent.basedir}/../hekate-codec-kryo/src/test/resources/javadoc;
-                            ${project.parent.basedir}/../hekate-codec-fst/src/test/java/io/hekate/javadoc;
-                            ${project.parent.basedir}/../hekate-codec-fst/src/test/resources/javadoc;
-                            ${project.parent.basedir}/../hekate-kubernetes/src/test/resources/javadoc;
-                        </argument>
-                    </arguments>
-                </configuration>
             </plugin>
 
             <plugin>

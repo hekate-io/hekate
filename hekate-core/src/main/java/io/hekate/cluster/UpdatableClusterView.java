@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -19,6 +19,7 @@ package io.hekate.cluster;
 import io.hekate.cluster.event.ClusterEventListener;
 import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.cluster.internal.FilteredClusterView;
+import io.hekate.cluster.internal.TopologyContextCache;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.util.format.ToString;
 import java.util.Collections;
@@ -26,6 +27,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
@@ -51,6 +53,9 @@ public class UpdatableClusterView implements ClusterView {
         ClusterTopology.class,
         "topology"
     );
+
+    /** Cache for {@link #topologyContext(Function)}. */
+    private final TopologyContextCache ctxCache = new TopologyContextCache();
 
     /** Cluster topology of this view. */
     private volatile ClusterTopology topology;
@@ -164,6 +169,11 @@ public class UpdatableClusterView implements ClusterView {
     @Override
     public void removeListener(ClusterEventListener listener) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public <T> T topologyContext(Function<ClusterTopology, T> supplier) {
+        return ctxCache.get(topology(), supplier);
     }
 
     /**

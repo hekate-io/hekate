@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -22,40 +22,68 @@ import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeFilter;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
+import io.hekate.cluster.internal.TopologyContextCache;
+import io.hekate.messaging.loadbalance.LoadBalancer;
 import io.hekate.messaging.loadbalance.LoadBalancerContext;
 import io.hekate.messaging.retry.FailedAttempt;
 import io.hekate.partition.PartitionMapper;
 import io.hekate.util.format.ToString;
+import io.hekate.util.format.ToStringIgnore;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NavigableSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
+/**
+ * Default implementation of {@link LoadBalancer} interface.
+ */
 class DefaultLoadBalancerContext implements LoadBalancerContext {
+    /** See {@link #affinity()}. */
     private final int affinity;
 
+    /** See {@link #affinityKey()}. */
     private final Object affinityKey;
 
+    /** See {@link #partitions()}. */
     private final PartitionMapper partitions;
 
+    /** See {@link #topology()}. */
     private final ClusterTopology topology;
 
+    /** See {@link #failure()}. */
     private final Optional<FailedAttempt> failure;
 
+    /** See {@link #topologyContext(Function)}. */
+    @ToStringIgnore
+    private final TopologyContextCache topologyCtx;
+
+    /**
+     * Constructs a new instance.
+     *
+     * @param affinity See {@link #affinity()}.
+     * @param affinityKey See {@link #affinityKey()}.
+     * @param topology See {@link #topology()}.
+     * @param partitions See {@link #partitions()}.
+     * @param failure See {@link #failure()}.
+     * @param topologyCtx See {@link #topologyContext(Function)}.
+     */
     public DefaultLoadBalancerContext(
         int affinity,
         Object affinityKey,
         ClusterTopology topology,
         PartitionMapper partitions,
-        Optional<FailedAttempt> failure
+        Optional<FailedAttempt> failure,
+        TopologyContextCache topologyCtx
     ) {
         this.affinity = affinity;
         this.affinityKey = affinityKey;
         this.topology = topology;
         this.partitions = partitions;
         this.failure = failure;
+        this.topologyCtx = topologyCtx;
     }
 
     @Override
@@ -86,6 +114,11 @@ class DefaultLoadBalancerContext implements LoadBalancerContext {
     @Override
     public Optional<FailedAttempt> failure() {
         return failure;
+    }
+
+    @Override
+    public <T> T topologyContext(Function<ClusterTopology, T> supplier) {
+        return topologyCtx.get(topology, supplier);
     }
 
     @Override
@@ -179,25 +212,13 @@ class DefaultLoadBalancerContext implements LoadBalancerContext {
     }
 
     @Override
-    public LoadBalancerContext filterAll(ClusterFilter filter) {
-        ClusterTopology filtered = topology.filterAll(filter);
-
-        if (filtered == topology) {
-            return this;
-        }
-
-        return new DefaultLoadBalancerContext(affinity, affinityKey, filtered, partitions, failure);
+    public ClusterTopology filterAll(ClusterFilter filter) {
+        return topology.filterAll(filter);
     }
 
     @Override
-    public LoadBalancerContext filter(ClusterNodeFilter filter) {
-        ClusterTopology filtered = topology.filter(filter);
-
-        if (filtered == topology) {
-            return this;
-        }
-
-        return new DefaultLoadBalancerContext(affinity, affinityKey, filtered, partitions, failure);
+    public ClusterTopology filter(ClusterNodeFilter filter) {
+        return topology.filter(filter);
     }
 
     @Override

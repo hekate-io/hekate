@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -29,6 +29,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static io.hekate.core.internal.util.Utils.NL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -52,12 +53,12 @@ public class KubernetesSeedNodeProviderTest extends HekateTestBase {
         KubernetesSeedNodeProvider provider = createProvider(KubernetesSeedNodeProviderConfig.DEFAULT_CONTAINER_PORT_NAME);
 
         assertEquals(
-            "\n"
-                + "  kubernetes\n"
-                + "    container-port-name: " + provider.containerPortName() + "\n"
-                + "    master-url: " + provider.masterUrl() + "\n"
-                + "    namespace: " + provider.namespace() + "\n"
-                + "    trust-certificates: " + provider.trustCertificates() + "\n",
+            NL
+                + "  kubernetes:" + NL
+                + "    container-port-name: " + provider.containerPortName() + NL
+                + "    master-url: " + provider.masterUrl() + NL
+                + "    namespace: " + provider.namespace() + NL
+                + "    trust-certificates: " + provider.trustCertificates() + NL,
             DefaultConfigReporter.report(provider)
         );
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -24,15 +24,11 @@ import io.hekate.core.inject.InjectionService;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.jmx.JmxService;
-import io.hekate.core.report.ConfigReportSupport;
 import io.hekate.core.report.ConfigReporter;
-import io.hekate.core.service.ConfigurableService;
 import io.hekate.core.service.ConfigurationContext;
+import io.hekate.core.service.CoreService;
 import io.hekate.core.service.DependencyContext;
-import io.hekate.core.service.DependentService;
 import io.hekate.core.service.InitializationContext;
-import io.hekate.core.service.InitializingService;
-import io.hekate.core.service.TerminatingService;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessagingBackPressureConfig;
 import io.hekate.messaging.MessagingChannel;
@@ -77,16 +73,12 @@ import static java.util.Collections.singleton;
 import static java.util.Collections.unmodifiableList;
 import static java.util.stream.Collectors.toList;
 
-public class DefaultRpcService implements RpcService, ConfigurableService, DependentService, InitializingService, TerminatingService,
-    MessagingConfigProvider, ConfigReportSupport {
-
+public class DefaultRpcService implements RpcService, CoreService, MessagingConfigProvider {
     private static final Logger log = LoggerFactory.getLogger(DefaultRpcService.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
 
-    private static final String CHANNEL_NAME = "hekate.rpc";
-
-    private static final RpcMethodHandler[] EMPTY_HANDLERS = new RpcMethodHandler[0];
+    private static final String RPC_CHANNEL = "hekate.rpc";
 
     private final int workerThreads;
 
@@ -96,30 +88,30 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
 
     private final MessagingBackPressureConfig backPressure;
 
-    private final List<RpcServerConfig> serverConfigs = new ArrayList<>();
-
     private final StateGuard guard = new StateGuard(RpcService.class);
-
-    private final Map<RpcTypeKey, RpcClientBuilder<?>> clients = new ConcurrentHashMap<>();
 
     private final List<RpcClientConfig> clientConfigs = new ArrayList<>();
 
-    private RpcTypeAnalyzer typeAnalyzer;
+    private final List<RpcServerConfig> serverConfigs = new ArrayList<>();
+
+    private final Map<RpcTypeKey, RpcClientBuilder<?>> clients = new ConcurrentHashMap<>();
 
     private List<RpcServerInfo> servers;
 
-    private RpcMethodHandler[] methodHandlers;
+    private RpcMethodHandler[] methods;
 
-    private MessagingService messaging;
+    private RpcTypeAnalyzer types;
+
+    private JmxService jmx;
 
     private CodecFactory<Object> codec;
 
-    private JmxService jmx;
+    private MessagingService messaging;
 
     private MessagingChannel<RpcProtocol> channel;
 
     public DefaultRpcService(RpcServiceFactory factory) {
-        assert factory != null : "Factory is null.";
+        ArgAssert.notNull(factory, "Factory");
 
         workerThreads = factory.getWorkerThreads();
         nioThreads = factory.getNioThreads();
@@ -148,9 +140,9 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
         InjectionService inject = ctx.optional(InjectionService.class);
 
         if (inject == null) {
-            typeAnalyzer = new RpcTypeAnalyzer(value -> value);
+            types = new RpcTypeAnalyzer(value -> value);
         } else {
-            typeAnalyzer = new RpcTypeAnalyzer(inject);
+            types = new RpcTypeAnalyzer(inject);
         }
     }
 
@@ -177,16 +169,16 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
         // Register RPC servers.
         List<RpcServerInfo> serversInfo = new ArrayList<>();
 
-        ConfigCheck check = ConfigCheck.get(RpcServerConfig.class);
-
         Set<RpcTypeKey> uniqueRpcTypes = new HashSet<>();
 
-        List<RpcMethodHandler> allMethodsIndex = new ArrayList<>();
+        List<RpcMethodHandler> allMethods = new ArrayList<>();
 
         serverConfigs.forEach(cfg -> {
+            ConfigCheck check = ConfigCheck.get(RpcServerConfig.class);
+
             check.notNull(cfg.getHandler(), "Handler");
 
-            List<RpcInterface<?>> rpcs = typeAnalyzer.analyze(cfg.getHandler());
+            List<RpcInterface<?>> rpcs = types.analyze(cfg.getHandler());
 
             if (rpcs.isEmpty()) {
                 throw check.fail("RPC handler must implement at least one @" + Rpc.class.getSimpleName() + "-annotated public "
@@ -199,22 +191,24 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
                 .filter(tag -> !tag.isEmpty())
                 .collect(toList());
 
-            List<RpcInterfaceInfo<?>> rpcTypes = rpcs.stream().map(RpcInterface::type).collect(toList());
+            List<RpcInterfaceInfo<?>> rpcTypes = rpcs.stream()
+                .map(RpcInterface::type)
+                .collect(toList());
 
             serversInfo.add(new RpcServerInfo(cfg.getHandler(), rpcTypes, tags));
 
             rpcs.forEach(rpc -> {
                 RpcInterfaceInfo type = rpc.type();
 
-                List<Map.Entry<RpcMethodHandler, Integer>> rpcMethodsIndex = new ArrayList<>();
+                List<Map.Entry<RpcMethodHandler, Integer>> rpcMethods = new ArrayList<>();
 
                 // Index methods.
                 rpc.methods().forEach(method -> {
-                    int idx = allMethodsIndex.size();
+                    int idx = allMethods.size();
 
-                    allMethodsIndex.add(method);
+                    allMethods.add(method);
 
-                    rpcMethodsIndex.add(new SimpleEntry<>(method, idx));
+                    rpcMethods.add(new SimpleEntry<>(method, idx));
                 });
 
                 // Register RPC servers so that other nodes would be able to discover which RPCs are provided by this node.
@@ -229,7 +223,7 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
                     ctx.setIntProperty(versionProperty(type), rpc.type().minClientVersion());
 
                     // Register method indexes.
-                    rpcMethodsIndex.forEach(e ->
+                    rpcMethods.forEach(e ->
                         ctx.setIntProperty(methodProperty(type, e.getKey().method()), e.getValue())
                     );
                 } else {
@@ -247,7 +241,7 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
                         ctx.setIntProperty(taggedVersionProperty(type, tag), rpc.type().minClientVersion());
 
                         // Register method indexes.
-                        rpcMethodsIndex.forEach(e ->
+                        rpcMethods.forEach(e ->
                             ctx.setIntProperty(taggedMethodProperty(type, e.getKey().method(), tag), e.getValue())
                         );
                     });
@@ -255,27 +249,55 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
             });
         });
 
-        if (!allMethodsIndex.isEmpty()) {
-            methodHandlers = allMethodsIndex.toArray(EMPTY_HANDLERS);
+        if (!allMethods.isEmpty()) {
+            methods = allMethods.toArray(RpcMethodHandler.EMPTY_ARRAY);
         }
 
-        this.servers = unmodifiableList(serversInfo);
+        servers = unmodifiableList(serversInfo);
+    }
+
+    @Override
+    public void report(ConfigReporter report) {
+        guard.withReadLockIfInitialized(() -> {
+            if (!servers.isEmpty()) {
+                report.section("rpc", rpcSec ->
+                    rpcSec.section("servers", serversSec ->
+                        servers.forEach(server ->
+                            serversSec.section("server", serverSec -> {
+                                serverSec.value("tags", server.tags());
+                                serverSec.value("implementation", server.rpc());
+
+                                serverSec.section("interfaces", facesSec ->
+                                    server.interfaces().forEach(face ->
+                                        facesSec.section("interface", faceSec -> {
+                                            faceSec.value("type", face.javaType().getName());
+                                            faceSec.value("min-client-version", face.minClientVersion());
+                                            faceSec.value("version", face.version());
+                                        })
+                                    )
+                                );
+                            })
+                        )
+                    )
+                );
+            }
+        });
     }
 
     @Override
     public Collection<MessagingChannelConfig<?>> configureMessaging() {
         MessagingChannelConfig<RpcProtocol> cfg = MessagingChannelConfig.of(RpcProtocol.class)
-            .withName(CHANNEL_NAME)
+            .withName(RPC_CHANNEL)
             .withNioThreads(nioThreads)
             .withWorkerThreads(workerThreads)
             .withIdleSocketTimeout(idleSocketTimeout)
             .withBackPressure(backPressure)
-            .withLogCategory(RpcService.class.getName())
+            .withLogCategory(RpcProtocol.class.getName())
             .withMessageCodec(new RpcProtocolCodecFactory(codec))
             .withInterceptor(new ClientMessageInterceptor<RpcProtocol>() {
                 @Override
                 public void interceptClientSend(ClientSendContext<RpcProtocol> ctx) {
-                    // Convert method calls to compact representations.
+                    // Convert method call to its compact representations.
                     if (ctx.payload() instanceof RpcCall) {
                         RpcCall<?> req = (RpcCall<?>)ctx.payload();
 
@@ -291,7 +313,7 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
                 }
             });
 
-        if (methodHandlers != null) {
+        if (methods != null) {
             cfg.withReceiver(this::handleMessage);
         }
 
@@ -300,17 +322,13 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
 
     @Override
     public void initialize(InitializationContext ctx) throws HekateException {
-        guard.lockWrite();
+        if (DEBUG) {
+            log.debug("Initializing...");
+        }
 
-        try {
-            guard.becomeInitialized();
-
-            if (DEBUG) {
-                log.debug("Initializing...");
-            }
-
+        guard.becomeInitialized(() -> {
             // Initialize RPC messaging channel.
-            channel = messaging.channel(CHANNEL_NAME, RpcProtocol.class);
+            channel = messaging.channel(RPC_CHANNEL, RpcProtocol.class);
 
             // Initialize clients.
             clientConfigs.forEach(cfg -> {
@@ -352,31 +370,27 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
                     }
                 }
             }
+        });
 
-            if (DEBUG) {
-                log.debug("Initialized.");
-            }
-        } finally {
-            guard.unlockWrite();
+        if (DEBUG) {
+            log.debug("Initialized.");
         }
     }
 
     @Override
     public void terminate() throws HekateException {
-        guard.lockWrite();
+        if (DEBUG) {
+            log.debug("Terminating...");
+        }
 
-        try {
-            if (guard.becomeTerminated()) {
-                clients.clear();
+        guard.becomeTerminated(() -> {
+            clients.clear();
 
-                channel = null;
+            channel = null;
+        });
 
-                if (DEBUG) {
-                    log.debug("Terminated.");
-                }
-            }
-        } finally {
-            guard.unlockWrite();
+        if (DEBUG) {
+            log.debug("Terminated.");
         }
     }
 
@@ -389,20 +403,16 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
     public <T> RpcClientBuilder<T> clientFor(Class<T> type, String tag) {
         ArgAssert.notNull(type, "Type");
 
-        RpcTypeKey key = new RpcTypeKey(type, tag);
+        return guard.withReadLockAndStateCheck(() -> {
+            RpcTypeKey key = new RpcTypeKey(type, tag);
 
-        guard.lockReadWithStateCheck();
-
-        try {
             @SuppressWarnings("unchecked")
             RpcClientBuilder<T> client = (RpcClientBuilder<T>)clients.computeIfAbsent(key, missingKey ->
                 createClient(missingKey, null)
             );
 
             return client;
-        } finally {
-            guard.unlockRead();
-        }
+        });
     }
 
     @Override
@@ -414,15 +424,11 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
     public ClusterView clusterOf(Class<?> type, String tag) {
         ArgAssert.notNull(type, "Type");
 
-        guard.lockReadWithStateCheck();
-
-        try {
-            RpcInterfaceInfo<?> rpcType = typeAnalyzer.analyzeType(type);
+        return guard.withReadLockAndStateCheck(() -> {
+            RpcInterfaceInfo<?> rpcType = types.analyzeType(type);
 
             return channel.cluster().filter(filterFor(rpcType, tag));
-        } finally {
-            guard.unlockRead();
-        }
+        });
     }
 
     @Override
@@ -440,34 +446,6 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
         return workerThreads;
     }
 
-    @Override
-    public void report(ConfigReporter report) {
-        guard.withReadLockIfInitialized(() -> {
-            if (!servers.isEmpty()) {
-                report.section("rpc", rpcSec ->
-                    rpcSec.section("servers", serversSec ->
-                        servers.forEach(server ->
-                            serversSec.section("server", serverSec -> {
-                                serverSec.value("tags", server.tags());
-                                serverSec.value("implementation", server.rpc());
-
-                                serverSec.section("interfaces", facesSec ->
-                                    server.interfaces().forEach(face ->
-                                        facesSec.section("interface", faceSec -> {
-                                            faceSec.value("type", face.javaType().getName());
-                                            faceSec.value("min-client-version", face.minClientVersion());
-                                            faceSec.value("version", face.version());
-                                        })
-                                    )
-                                );
-                            })
-                        )
-                    )
-                );
-            }
-        });
-    }
-
     private void handleMessage(Message<RpcProtocol> msg) {
         RpcProtocol rpcMsg = msg.payload();
 
@@ -476,7 +454,7 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
             case COMPACT_SPLIT_CALL_REQUEST: {
                 RpcCompactCall call = (RpcCompactCall)rpcMsg;
 
-                RpcMethodHandler handler = methodHandlers[call.methodIdx()];
+                RpcMethodHandler handler = methods[call.methodIdx()];
 
                 handler.handle(msg);
 
@@ -494,12 +472,14 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
     }
 
     private RpcClientBuilder<?> createClient(RpcTypeKey key, RpcClientConfig cfg) {
-        RpcInterfaceInfo<?> type = typeAnalyzer.analyzeType(key.type());
+        RpcInterfaceInfo<?> type = types.analyzeType(key.type());
+
+        MessagingChannel<RpcProtocol> channel = channelForClient(type, key.tag());
 
         DefaultRpcClientBuilder<?> client = new DefaultRpcClientBuilder<>(
             type,
             key.tag(),
-            channelForClient(type, key.tag()),
+            channel,
             cfg != null ? cfg.getTimeout() : 0,
             cfg != null ? cfg.getRetryPolicy() : null
         );
@@ -517,6 +497,6 @@ public class DefaultRpcService implements RpcService, ConfigurableService, Depen
 
     @Override
     public String toString() {
-        return getClass().getSimpleName();
+        return RpcService.class.getSimpleName();
     }
 }

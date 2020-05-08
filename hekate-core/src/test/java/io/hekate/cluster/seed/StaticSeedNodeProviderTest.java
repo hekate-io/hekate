@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -24,6 +24,7 @@ import java.net.UnknownHostException;
 import java.util.List;
 import org.junit.Test;
 
+import static io.hekate.core.internal.util.Utils.NL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
@@ -38,9 +39,9 @@ public class StaticSeedNodeProviderTest extends HekateTestBase {
         StaticSeedNodeProvider provider = get(ADDRESS_V4 + ":10001");
 
         assertEquals(
-            "\n"
-                + "  static\n"
-                + "    addresses: " + provider.getAddresses() + "\n",
+            NL
+                + "  static:" + NL
+                + "    addresses: " + provider.getAddresses() + NL,
             DefaultConfigReporter.report(provider)
         );
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -25,6 +25,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
@@ -71,6 +72,27 @@ public interface ClusterView extends ClusterFilterSupport<ClusterView>, ClusterT
      * @param listener Listener.
      */
     void removeListener(ClusterEventListener listener);
+
+    /**
+     * Constructs a new context object or returns a cached one, based on the current cluster topology.
+     *
+     * <p>
+     * This method provides support to cache user context objects that depend on the current cluster topology and should be reconstructed
+     * whenever the cluster topology changes. Such objects are cached at the {@link ClusterView} instance level.
+     * When topology changes, a new object is constructed via the provided {@code supplier} function.
+     * </p>
+     *
+     * <p>
+     * Note that only one context object is supported per {@link ClusterView} instance. Any attempt to use different {@code supplier}
+     * functions will lead to unpredictable results.
+     * </p>
+     *
+     * @param supplier Context supplier (must be idempotent and free of side effects).
+     * @param <T> Context type.
+     *
+     * @return Context object.
+     */
+    <T> T topologyContext(Function<ClusterTopology, T> supplier);
 
     /**
      * Returns a future object that will be completed once the cluster topology matches the specified predicate. If this cluster node

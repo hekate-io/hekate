@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -78,6 +78,7 @@ import org.junit.rules.Timeout;
 import org.junit.runner.Description;
 import org.junit.runners.model.TestTimedOutException;
 
+import static io.hekate.core.internal.util.Utils.NL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -123,7 +124,7 @@ public abstract class HekateTestBase {
     }
 
     /** Maximum timeout in {@link TimeUnit#MINUTES} for each individual test case (see {@link #testTimeoutRule}). */
-    public static final int MAX_TEST_TIMEOUT = 5;
+    public static final int MAX_TEST_TIMEOUT = Integer.parseInt(System.getProperty("hekate.test.timeout.minutes", "5"));
 
     /** Maximum number of loop for {@link #busyWait(String, Callable)}. */
     public static final int BUSY_WAIT_LOOPS = 200;
@@ -319,19 +320,17 @@ public abstract class HekateTestBase {
     public static String threadDump() {
         ThreadInfo[] threads = ManagementFactory.getThreadMXBean().dumpAllThreads(true, true);
 
-        String nl = System.lineSeparator();
-
         StringBuilder buf = new StringBuilder();
 
         buf.append("----------------------- Thread dump start ")
             .append(TIMESTAMP_FORMAT.format(LocalDateTime.now()))
-            .append("---------------------------").append(nl);
+            .append("---------------------------").append(NL);
 
         for (ThreadInfo thread : threads) {
-            buf.append(toString(thread)).append(nl);
+            buf.append(toString(thread)).append(NL);
         }
 
-        buf.append("----------------------- Thread dump end -----------------------------").append(nl);
+        buf.append("----------------------- Thread dump end -----------------------------").append(NL);
 
         return buf.toString();
     }
@@ -358,27 +357,21 @@ public abstract class HekateTestBase {
     }
 
     protected static void say(Object msg) {
-        String sep = System.lineSeparator();
-
         String strMsg = msg instanceof Throwable ? ErrorUtils.stackTrace((Throwable)msg) : String.valueOf(msg);
 
-        System.out.println(sep + "*** [" + TIMESTAMP_FORMAT.format(LocalDateTime.now()) + "]: " + strMsg + sep);
+        System.out.println(NL + "*** [" + TIMESTAMP_FORMAT.format(LocalDateTime.now()) + "]: " + strMsg + NL);
     }
 
     protected static void say(Object msg, Object... args) {
-        String sep = System.lineSeparator();
-
         String strMsg = String.valueOf(msg);
 
-        System.out.println(sep + "*** [" + TIMESTAMP_FORMAT.format(LocalDateTime.now()) + "]: " + String.format(strMsg, args) + sep);
+        System.out.println(NL + "*** [" + TIMESTAMP_FORMAT.format(LocalDateTime.now()) + "]: " + String.format(strMsg, args) + NL);
     }
 
     protected static void sayHeader(Object msg) {
-        String sep = System.lineSeparator();
-
-        System.out.println(sep
-            + "***************************" + sep
-            + "*** [" + TIMESTAMP_FORMAT.format(LocalDateTime.now()) + "]: " + msg + sep
+        System.out.println(NL
+            + "***************************" + NL
+            + "*** [" + TIMESTAMP_FORMAT.format(LocalDateTime.now()) + "]: " + msg + NL
             + "***************************"
         );
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -17,19 +17,29 @@
 package io.hekate.core.internal.util;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Collection;
+import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static java.util.Collections.emptyList;
+import static java.util.Collections.unmodifiableList;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Common utilities.
  */
 public final class Utils {
+    /** Shortcut for {@link System#lineSeparator()}. */
+    public static final String NL = System.lineSeparator();
+
     /** {@link Charset} for UTF-8. */
-    public static final Charset UTF_8 = Charset.forName("UTF-8");
+    public static final Charset UTF_8 = StandardCharsets.UTF_8;
 
     /** Magic bytes that should be appended to the first packet of a network connection. */
     public static final int MAGIC_BYTES = 19800124;
@@ -82,6 +92,16 @@ public final class Utils {
         return (n & n - 1) == 0 && n > 0;
     }
 
+    /**
+     * Converts the specified collection to a comma-separated string by applying the specified mapper to each element and wrapping the
+     * resulting string with {@code {...}}.
+     *
+     * @param collection Collection.
+     * @param mapper Element mapper.
+     * @param <T> Collection type.
+     *
+     * @return String that has the following format: {@code {element1, element2, ..., elementN}}
+     */
     public static <T> String toString(Collection<T> collection, Function<? super T, String> mapper) {
         return collection.stream().map(mapper).sorted().collect(Collectors.joining(", ", "{", "}"));
     }
@@ -148,5 +168,21 @@ public final class Utils {
         }
 
         return buf.toString();
+    }
+
+    /**
+     * Returns an immutable copy of the specified list by filtering out all {@code null} elements.
+     *
+     * @param source Source list, can be {@code null} (in such case an empty list will be returned by this method).
+     * @param <T> Element type.
+     *
+     * @return Immutable copy of the specified list.
+     */
+    public static <T> List<T> nullSafeImmutableCopy(List<T> source) {
+        if (source == null || source.isEmpty()) {
+            return emptyList();
+        } else {
+            return unmodifiableList(source.stream().filter(Objects::nonNull).collect(toList()));
+        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -30,7 +30,7 @@ import java.util.List;
  */
 public class EtcdSeedNodeProviderConfig {
     /** Default value (={@value}) for {@link #setCleanupInterval(int)}. */
-    public static final int DEFAULT_CLEANUP_INTERVAL = 60 * 1000;
+    public static final int DEFAULT_CLEANUP_INTERVAL = 60_000;
 
     /** Default value (={@value}) for {@link #setBasePath(String)}. */
     public static final String DEFAULT_BASE_PATH = "/hekate/cluster";

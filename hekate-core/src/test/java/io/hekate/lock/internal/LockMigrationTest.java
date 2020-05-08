@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -451,7 +451,7 @@ public class LockMigrationTest extends LockServiceTestBase {
     }
 
     private void setSpy(HekateTestNode node, LockMigrationSpy spy) {
-        node.get(DefaultLockService.class).region(REGION_1).setMigrationSpy(spy);
+        node.get(DefaultLockService.class).region(REGION_1).requireRegion().setMigrationSpy(spy);
     }
 
     private boolean checkBusy(DistributedLock lock) {

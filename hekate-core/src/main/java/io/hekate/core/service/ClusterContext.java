@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -31,20 +31,13 @@ import java.util.concurrent.CompletableFuture;
  * Context for {@link ClusterService}.
  *
  * <p>
- * This interface is attended to providing feedback from a {@link ClusterService} back to the {@link Hekate} instance. However
- * other services can also use it in order to obtain current cluster topology or register cluster event listeners.
+ * This interface is attended to provide feedback from {@link ClusterService} to {@link Hekate} instance.
+ * Other services can also use this interface in order to obtain current cluster topology or register cluster event listeners.
  * </p>
  *
  * @see InitializationContext#cluster()
  */
 public interface ClusterContext {
-    /**
-     * Asynchronously notifies this context that {@link ClusterService} has started joining the cluster.
-     *
-     * @return Future object that gets completed once notification is processed.
-     */
-    CompletableFuture<Boolean> onStartJoining();
-
     /**
      * Asynchronously notifies this context that {@link ClusterService} has successfully joined the cluster.
      *
@@ -93,14 +86,14 @@ public interface ClusterContext {
     void addListener(ClusterEventListener listener, ClusterEventType... eventTypes);
 
     /**
-     * Asynchronously registers the specified cluster event listener without awaiting for registration to be completed.
+     * Asynchronously registers the specified cluster event listener without waiting registration to be completed.
      *
      * @param listener Cluster listener.
      */
     void addListenerAsync(ClusterEventListener listener);
 
     /**
-     * Asynchronously registers the specified cluster event listener without awaiting for registration to be completed.
+     * Asynchronously registers the specified cluster event listener without waiting for registration to be completed.
      *
      * @param listener Cluster listener.
      * @param eventTypes Event types to listen for.

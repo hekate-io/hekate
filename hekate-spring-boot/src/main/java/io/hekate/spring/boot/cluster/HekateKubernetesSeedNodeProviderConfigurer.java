@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -41,6 +41,7 @@ import org.springframework.context.annotation.Configuration;
  * <li>{@link KubernetesSeedNodeProviderConfig#setContainerPortName(String) 'hekate.cluster.seed.kubernetes.container-port-name'}</li>
  * <li>{@link KubernetesSeedNodeProviderConfig#setMasterUrl(String) 'hekate.cluster.seed.kubernetes.master-url'}</li>
  * <li>{@link KubernetesSeedNodeProviderConfig#setNamespace(String) 'hekate.cluster.seed.kubernetes.namespace'}</li>
+ * <li>{@link KubernetesSeedNodeProviderConfig#setTrustCertificates(Boolean)} 'hekate.cluster.seed.kubernetes.trust-certificates'}</li>
  * </ul>
  *
  * <p>

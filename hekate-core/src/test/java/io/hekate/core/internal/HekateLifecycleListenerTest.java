@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -23,7 +23,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 
 import static org.junit.Assert.assertFalse;
@@ -35,9 +34,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 
 public class HekateLifecycleListenerTest extends HekateNodeTestBase {
-    private HekateTestNode node;
-
     private final Hekate.LifecycleListener defaultListenerMock = mock(Hekate.LifecycleListener.class);
+
+    private HekateTestNode node;
 
     @Override
     public void setUp() throws Exception {
@@ -155,7 +154,7 @@ public class HekateLifecycleListenerTest extends HekateNodeTestBase {
     }
 
     @Test
-    public void testLeaveFromListener() throws Exception {
+    public void testChangeStateInListener() throws Exception {
         List<Hekate.State> states = Arrays.asList(
             Hekate.State.INITIALIZING,
             Hekate.State.INITIALIZED,
@@ -173,80 +172,24 @@ public class HekateLifecycleListenerTest extends HekateNodeTestBase {
 
             Hekate.LifecycleListener listener = changed -> {
                 if (changed.state() == state) {
+                    String errorMsg = "Can't change state inside of a " + Hekate.LifecycleListener.class.getName();
+
+                    expect(IllegalStateException.class, errorMsg, changed::join);
+                    expect(IllegalStateException.class, errorMsg, changed::leave);
+                    expect(IllegalStateException.class, errorMsg, changed::terminate);
+
                     notified.countDown();
-
-                    changed.leaveAsync();
                 }
             };
 
             node.addListener(listener);
 
             node.join();
-
-            if (state == Hekate.State.LEAVING || state == Hekate.State.TERMINATING || state == Hekate.State.DOWN) {
-                node.leaveAsync();
-            }
-
-            node.awaitForStatus(Hekate.State.DOWN);
+            node.leave();
 
             await(notified);
 
             assertTrue(node.removeListener(listener));
-
-            node.leave();
-        }
-    }
-
-    @Test
-    public void testTerminateFromListener() throws Throwable {
-        List<Hekate.State> states = Arrays.asList(
-            Hekate.State.INITIALIZING,
-            Hekate.State.INITIALIZED,
-            Hekate.State.JOINING,
-            Hekate.State.UP,
-            Hekate.State.LEAVING,
-            Hekate.State.TERMINATING,
-            Hekate.State.DOWN
-        );
-
-        for (Hekate.State state : states) {
-            say("Testing state: " + state);
-
-            CountDownLatch notified = new CountDownLatch(1);
-
-            AtomicReference<Throwable> errorRef = new AtomicReference<>();
-
-            Hekate.LifecycleListener listener = changed -> {
-                try {
-                    if (changed.state() == state) {
-                        notified.countDown();
-
-                        changed.terminateAsync();
-                    }
-                } catch (Throwable t) {
-                    errorRef.compareAndSet(null, t);
-                }
-            };
-
-            node.addListener(listener);
-
-            node.join();
-
-            if (state == Hekate.State.LEAVING || state == Hekate.State.TERMINATING || state == Hekate.State.DOWN) {
-                node.leaveAsync();
-            }
-
-            node.awaitForStatus(Hekate.State.DOWN);
-
-            await(notified);
-
-            assertTrue(node.removeListener(listener));
-
-            node.leave();
-
-            if (errorRef.get() != null) {
-                throw errorRef.get();
-            }
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -21,6 +21,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 
+import static io.hekate.core.internal.util.Utils.NL;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 
@@ -49,15 +50,15 @@ public final class HekateTestProps {
         }
 
         if (props.isEmpty()) {
-            throw new IllegalStateException("Failed to load test properties." + System.lineSeparator()
-                + System.lineSeparator()
+            throw new IllegalStateException("Failed to load test properties." + NL
+                + NL
                 + "     CAUSE: File '" + USER_FILE_NAME + "' couldn't be found starting at '" + base.getAbsolutePath() + "'"
                 + " location and upwards the directory tree."
-                + System.lineSeparator()
-                + System.lineSeparator()
+                + NL
+                + NL
                 + "  SOLUTION: Copy '<PROJECT_DIR>/" + USER_FILE_NAME + ".example' file to '<PROJECT_DIR>/" + USER_FILE_NAME + '\''
-                + System.lineSeparator()
-                + System.lineSeparator());
+                + NL
+                + NL);
         }
 
         PROPERTIES = props;

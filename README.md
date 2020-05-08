@@ -78,12 +78,13 @@ Open source [Apache License v2.0](http://www.apache.org/licenses/)
 
 ## Documentation
 
-For now, the most detailed documentation is provided as part of [javadocs](http://javadoc.io/doc/io.hekate/hekate-all/). 
-Complete reference guide is coming soon.
+- [Javadocs](http://javadoc.io/doc/io.hekate/hekate-all/) (Follow ~~the White Rabbit~~ `[« start here]` marks).
+- Reference Guide (coming soon...) 
+- [Spring Boot Properties Reference](http://javadoc.io/doc/io.hekate/hekate-all/latest/spring-boot.properties.txt)
 
 ## Code Examples
 
-Quickstart for Standalone Java Application
+Quickstart for **Standalone** Java Application
 ```java
 public class MyApplication{
     public static void main(String[] args) throws Exception {
@@ -98,7 +99,7 @@ public class MyApplication{
 
 ```
 
-Quickstart for Spring Boot Application
+Quickstart for **Spring Boot** Application
 ```java
 @EnableHekate // <-- Enable Hekate integration.
 @SpringBootApplication
@@ -117,7 +118,9 @@ public class MyApplication {
 }
 ```
 
-__More Examples__: Please see the **[hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examples)** project for more examples.
+__More Examples__: 
+
+Please see the **[hekate-io/hekate-examples](https://github.com/hekate-io/hekate-examples)** project for more examples.
 
 
 ## Maven artifacts
@@ -127,7 +130,7 @@ __More Examples__: Please see the **[hekate-io/hekate-examples](https://github.c
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-spring-boot</artifactId>
-    <version>3.6.0-SNAPSHOT</version>
+    <version>3.9.0</version>
 </dependency>
 ```
 
@@ -136,7 +139,7 @@ __More Examples__: Please see the **[hekate-io/hekate-examples](https://github.c
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-spring</artifactId>
-    <version>3.6.0-SNAPSHOT</version>
+    <version>3.9.0</version>
 </dependency>
 ```
 
@@ -145,7 +148,7 @@ __More Examples__: Please see the **[hekate-io/hekate-examples](https://github.c
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-core</artifactId>
-    <version>3.6.0-SNAPSHOT</version>
+    <version>3.9.0</version>
 </dependency>
 ```
 
@@ -187,6 +190,12 @@ __More Examples__: Please see the **[hekate-io/hekate-examples](https://github.c
   
 ## Release History
 
+ - v.3.8.0 (29-Feb-2020) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.3.8.0)]
+ 
+ - v.3.7.0 (3-Feb-2020) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.3.7.0)]
+
+ - v.3.6.0 (13-Oct-2019) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.3.6.0)]
+ 
  - v.3.5.0 (14-Aug-2019) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.3.5.0)]
  
  - v.3.4.1 (4-Jul-2019) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.3.4.1)]
@@ -212,9 +221,5 @@ __More Examples__: Please see the **[hekate-io/hekate-examples](https://github.c
  - v.2.3.1 (18-May-2018) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.2.3.1)]
 
  - v.2.3.0 (4-May-2018) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.2.3.0)]
-
- - v.2.2.2 (21-Apr-2018) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.2.2.2)]
-
- - v.2.2.1 (12-Apr-2018) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.2.2.1)]
 
  - [...and so on](https://github.com/hekate-io/hekate/releases)

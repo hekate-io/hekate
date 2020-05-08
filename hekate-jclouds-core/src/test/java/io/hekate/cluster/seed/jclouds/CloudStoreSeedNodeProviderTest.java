@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -26,6 +26,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+import static io.hekate.core.internal.util.Utils.NL;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
@@ -52,12 +53,12 @@ public class CloudStoreSeedNodeProviderTest extends PersistentSeedNodeProviderTe
         CloudStoreSeedNodeProvider provider = createProvider();
 
         assertEquals(
-            "\n"
-                + "  cloud-store\n"
-                + "    provider: " + provider.provider() + "\n"
-                + "    container: " + provider.container() + "\n"
-                + "    properties: " + provider.properties() + "\n"
-                + "    cleanup-interval: " + provider.cleanupInterval() + "\n",
+            NL
+                + "  cloud-store:" + NL
+                + "    provider: " + provider.provider() + NL
+                + "    container: " + provider.container() + NL
+                + "    properties: " + provider.properties() + NL
+                + "    cleanup-interval: " + provider.cleanupInterval() + NL,
             DefaultConfigReporter.report(provider)
         );
     }

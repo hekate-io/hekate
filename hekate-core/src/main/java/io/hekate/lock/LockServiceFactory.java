@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -45,14 +45,19 @@ public class LockServiceFactory implements ServiceFactory<LockService> {
     /** Default value (={@value}) for {@link #setWorkerThreads(int)}. */
     public static final int DEFAULT_WORKER_THREADS = 1;
 
+    /** See {@link #setRetryInterval(long)}. */
     private long retryInterval = DEFAULT_RETRY_INTERVAL;
 
+    /** See {@link #setWorkerThreads(int)}. */
     private int workerThreads = DEFAULT_WORKER_THREADS;
 
+    /** See {@link #setNioThreads(int)}. */
     private int nioThreads;
 
+    /** See {@link #setRegions(List)}. */
     private List<LockRegionConfig> regions;
 
+    /** See {@link #setConfigProviders(List)}. */
     private List<LockConfigProvider> configProviders;
 
     /**

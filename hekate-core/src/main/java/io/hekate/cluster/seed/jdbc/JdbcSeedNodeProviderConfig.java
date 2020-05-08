@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -59,7 +59,7 @@ import javax.sql.DataSource;
  */
 public class JdbcSeedNodeProviderConfig {
     /** Default value (={@value}) for {@link #setCleanupInterval(long)}. */
-    public static final long DEFAULT_CLEANUP_INTERVAL = 60 * 1000;
+    public static final long DEFAULT_CLEANUP_INTERVAL = 60_0000;
 
     /** Default value (={@value}) for {@link #setTable(String)}. */
     public static final String DEFAULT_TABLE = "cluster_nodes";
@@ -73,18 +73,25 @@ public class JdbcSeedNodeProviderConfig {
     /** Default value (={@value}) for {@link #setClusterColumn(String)}. */
     public static final String DEFAULT_CLUSTER_COLUMN = "cluster_name";
 
+    /** See {@link #setDataSource(DataSource)}. */
     private DataSource dataSource;
 
+    /** See {@link #setCleanupInterval(long)}. */
     private long cleanupInterval = DEFAULT_CLEANUP_INTERVAL;
 
+    /** See {@link #setQueryTimeout(int)}. */
     private int queryTimeout;
 
+    /** See {@link #setTable(String)}. */
     private String table = DEFAULT_TABLE;
 
+    /** See {@link #setHostColumn(String)}. */
     private String hostColumn = DEFAULT_HOST_COLUMN;
 
+    /** See {@link #setPortColumn(String)}. */
     private String portColumn = DEFAULT_PORT_COLUMN;
 
+    /** See {@link #setClusterColumn(String)}. */
     private String clusterColumn = DEFAULT_CLUSTER_COLUMN;
 
     /**

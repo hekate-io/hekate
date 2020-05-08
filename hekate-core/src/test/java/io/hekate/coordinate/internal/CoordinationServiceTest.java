@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -32,9 +32,11 @@ import io.hekate.core.internal.HekateTestNode;
 import io.hekate.util.format.ToString;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -50,6 +52,7 @@ import java.util.stream.Stream;
 import org.junit.Test;
 import org.mockito.InOrder;
 
+import static java.util.Collections.synchronizedSet;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -164,7 +167,9 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
     }
 
     @Test
-    public void testCoordinationRequest() throws Exception {
+    public void testCoordinationBroadcast() throws Exception {
+        Set<ClusterNode> received = synchronizedSet(new HashSet<>());
+
         CoordinationHandler handler = new CoordinationHandler() {
             @Override
             public void prepare(CoordinationContext ctx) {
@@ -173,10 +178,63 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
 
             @Override
             public void coordinate(CoordinatorContext ctx) {
+                received.clear();
+
                 String from = ctx.localMember().node().toString();
 
                 ctx.broadcast(from, responses ->
                     ctx.complete()
+                );
+            }
+
+            @Override
+            public void process(CoordinationRequest request, CoordinationContext ctx) {
+                assertTrue(request.is(String.class));
+
+                String from = request.get(String.class);
+
+                assertEquals(from, request.from().node().toString());
+                assertEquals(ToString.format(CoordinationRequest.class, request), request.toString());
+
+                received.add(ctx.localMember().node());
+
+                request.reply("ok");
+            }
+        };
+
+        HekateTestNode n1 = createCoordinationNode(handler).join();
+        HekateTestNode n2 = createCoordinationNode(handler).join();
+        HekateTestNode n3 = createCoordinationNode(handler).join();
+
+        get(n1.coordination().process("test").future());
+        get(n2.coordination().process("test").future());
+        get(n3.coordination().process("test").future());
+
+        assertEquals(toSet(n1.localNode(), n2.localNode(), n3.localNode()), received);
+    }
+
+    @Test
+    public void testCoordinationBroadcastWithFilter() throws Exception {
+        AtomicReference<ClusterNode> coordinator = new AtomicReference<>();
+        Set<ClusterNode> received = synchronizedSet(new HashSet<>());
+
+        CoordinationHandler handler = new CoordinationHandler() {
+            @Override
+            public void prepare(CoordinationContext ctx) {
+                // No-op.
+            }
+
+            @Override
+            public void coordinate(CoordinatorContext ctx) {
+                coordinator.set(ctx.localMember().node());
+                received.clear();
+
+                String from = ctx.localMember().node().toString();
+
+                ctx.broadcast(
+                    from,
+                    n -> !n.node().isLocal(), // <-- Remote nodes only.
+                    responses -> ctx.complete()
                 );
             }
 
@@ -187,15 +245,95 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
                 assertEquals(from, request.from().node().toString());
                 assertEquals(ToString.format(CoordinationRequest.class, request), request.toString());
 
+                received.add(ctx.localMember().node());
+
                 request.reply("ok");
             }
         };
 
         HekateTestNode n1 = createCoordinationNode(handler).join();
         HekateTestNode n2 = createCoordinationNode(handler).join();
+        HekateTestNode n3 = createCoordinationNode(handler).join();
 
         get(n1.coordination().process("test").future());
         get(n2.coordination().process("test").future());
+        get(n3.coordination().process("test").future());
+
+        assertNotNull(coordinator.get());
+        assertFalse(received.contains(coordinator.get()));
+        assertEquals(2, received.size());
+    }
+
+    @Test
+    public void testCoordinationBroadcastWithFilterEmpty() throws Exception {
+        AtomicInteger received = new AtomicInteger();
+
+        CoordinationHandler handler = new CoordinationHandler() {
+            @Override
+            public void prepare(CoordinationContext ctx) {
+                // No-op.
+            }
+
+            @Override
+            public void coordinate(CoordinatorContext ctx) {
+                String from = ctx.localMember().node().toString();
+
+                ctx.broadcast(from, n -> false, responses ->
+                    ctx.complete()
+                );
+            }
+
+            @Override
+            public void process(CoordinationRequest request, CoordinationContext ctx) {
+                // No-op.
+            }
+        };
+
+        HekateTestNode n1 = createCoordinationNode(handler).join();
+        HekateTestNode n2 = createCoordinationNode(handler).join();
+        HekateTestNode n3 = createCoordinationNode(handler).join();
+
+        get(n1.coordination().process("test").future());
+        get(n2.coordination().process("test").future());
+        get(n3.coordination().process("test").future());
+
+        assertEquals(0, received.get());
+    }
+
+    @Test
+    public void testCoordinationBroadcastWithPreconditionFalse() throws Exception {
+        AtomicInteger received = new AtomicInteger();
+
+        CoordinationHandler handler = new CoordinationHandler() {
+            @Override
+            public void prepare(CoordinationContext ctx) {
+                // No-op.
+            }
+
+            @Override
+            public void coordinate(CoordinatorContext ctx) {
+                String from = ctx.localMember().node().toString();
+
+                ctx.broadcast(from, () -> false, all -> true, responses ->
+                    ctx.complete()
+                );
+            }
+
+            @Override
+            public void process(CoordinationRequest request, CoordinationContext ctx) {
+                // No-op.
+            }
+        };
+
+        HekateTestNode n1 = createCoordinationNode(handler).join();
+        HekateTestNode n2 = createCoordinationNode(handler).join();
+        HekateTestNode n3 = createCoordinationNode(handler).join();
+
+        get(n1.coordination().process("test").future());
+        get(n2.coordination().process("test").future());
+        get(n3.coordination().process("test").future());
+
+        assertEquals(0, received.get());
     }
 
     @Test

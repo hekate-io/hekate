@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -34,6 +34,15 @@ public interface CoordinationRequest {
      * @return Member who sent this request.
      */
     CoordinationMember from();
+
+    /**
+     * Returns {@code true} if the request message if of the specified type.
+     *
+     * @param type Type.
+     *
+     * @return {@code true} if the request message if of the specified type.
+     */
+    boolean is(Class<?> type);
 
     /**
      * Returns the request message.

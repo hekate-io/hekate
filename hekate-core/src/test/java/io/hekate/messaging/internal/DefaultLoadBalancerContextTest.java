@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -19,6 +19,7 @@ package io.hekate.messaging.internal;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterTopologyTestBase;
 import io.hekate.cluster.internal.DefaultClusterTopology;
+import io.hekate.cluster.internal.TopologyContextCache;
 import io.hekate.messaging.loadbalance.LoadBalancerContext;
 import io.hekate.messaging.retry.FailedAttempt;
 import io.hekate.partition.PartitionMapper;
@@ -46,8 +47,6 @@ public class DefaultLoadBalancerContextTest extends ClusterTopologyTestBase {
         assertEquals("test", ctx.affinityKey());
         assertTrue(ctx.hasAffinity());
         assertSame(details, ctx.failure().get());
-        assertSame(details, ctx.filter(n -> false).failure().get());
-        assertSame(details, ctx.filter(n -> n.equals(n1)).failure().get());
     }
 
     @Override
@@ -65,7 +64,8 @@ public class DefaultLoadBalancerContextTest extends ClusterTopologyTestBase {
         DefaultClusterTopology topology = DefaultClusterTopology.of(topologyVersion, nodes);
         Optional<FailedAttempt> optFailure = Optional.ofNullable(failure);
         PartitionMapper partitions = mock(PartitionMapper.class);
+        TopologyContextCache cache = new TopologyContextCache();
 
-        return new DefaultLoadBalancerContext(affinity, affinityKey, topology, partitions, optFailure);
+        return new DefaultLoadBalancerContext(affinity, affinityKey, topology, partitions, optFailure, cache);
     }
 }

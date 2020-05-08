@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -87,7 +87,7 @@ public class RendezvousHashMapperTest extends HekateNodeTestBase {
         assertTrue(snapshot.map("key").backupNodes().isEmpty());
         assertSame(snapshot, snapshot.snapshot());
         assertEquals(topology, snapshot.topology());
-        assertEquals(ToString.format(PartitionMapper.class, snapshot), snapshot.toString());
+        assertEquals(ToString.format(RendezvousHashMapper.class, snapshot), snapshot.toString());
 
         Partition partition = mapper.map(Integer.MIN_VALUE);
 
@@ -165,7 +165,7 @@ public class RendezvousHashMapperTest extends HekateNodeTestBase {
     }
 
     @Test
-    public void testBakupsResideOnDifferentHosts() throws Exception {
+    public void testBackupsResideOnDifferentHosts() throws Exception {
         Set<ClusterNode> nodes = new HashSet<>(Arrays.asList(
             newNode("127.0.0.1", 1, "22a0310ac3b04a4a8920175d1874fba5"),
             newNode("127.0.0.1", 2, "39f2a564bcc64a40ab977deaadf1dd50"),

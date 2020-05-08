@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -56,18 +56,18 @@ import org.slf4j.LoggerFactory;
  * <li><b>!ip4~<i>regex</i></b> - any IPv4 address that does NOT match the specified regular expression</li>
  * <li><b>!ip6~<i>regex</i></b> - any IPv6 address that does NOT match the specified regular expression</li>
  *
- * <li><b>net~<i>regex</i></b> - any IP address of a network interface who's {@link NetworkInterface#getName() name} matches the specified
+ * <li><b>net~<i>regex</i></b> - any IP address of a network interface whose {@link NetworkInterface#getName() name} matches the specified
  * regular expression</li>
- * <li><b>net4~<i>regex</i></b> - IPv4 address of a network interface who's {@link NetworkInterface#getName() name} matches the specified
+ * <li><b>net4~<i>regex</i></b> - IPv4 address of a network interface whose {@link NetworkInterface#getName() name} matches the specified
  * regular expression</li>
- * <li><b>net6~<i>regex</i></b> - IPv6 address of a network interface who's {@link NetworkInterface#getName() name} matches the specified
+ * <li><b>net6~<i>regex</i></b> - IPv6 address of a network interface whose {@link NetworkInterface#getName() name} matches the specified
  * regular expression</li>
  *
- * <li><b>!net~<i>regex</i></b> - any IP address of a network interface who's {@link NetworkInterface#getName() name} does NOT match the
+ * <li><b>!net~<i>regex</i></b> - any IP address of a network interface whose {@link NetworkInterface#getName() name} does NOT match the
  * specified regular expression</li>
- * <li><b>!net4~<i>regex</i></b> - IPv4 address of a network interface who's {@link NetworkInterface#getName() name} does NOT match the
+ * <li><b>!net4~<i>regex</i></b> - IPv4 address of a network interface whose {@link NetworkInterface#getName() name} does NOT match the
  * specified regular expression</li>
- * <li><b>!net6~<i>regex</i></b> - IPv6 address of a network interface who's {@link NetworkInterface#getName() name} does NOT match the
+ * <li><b>!net6~<i>regex</i></b> - IPv6 address of a network interface whose {@link NetworkInterface#getName() name} does NOT match the
  * specified regular expression</li>
  *
  * <li>...all other values will be treated as a directly specified address (see {@link InetAddress#getByName(String)})</li>

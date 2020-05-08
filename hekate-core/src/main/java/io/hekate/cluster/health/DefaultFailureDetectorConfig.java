@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -34,12 +34,16 @@ public class DefaultFailureDetectorConfig {
     /** Default value (={@value}) for {@link #setFailureDetectionQuorum(int)}. */
     public static final int DEFAULT_FAILURE_DETECTION_QUORUM = 2;
 
+    /** See {@link #setHeartbeatInterval(long)}. */
     private long heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL;
 
+    /** See {@link #setHeartbeatLossThreshold(int)}. */
     private int heartbeatLossThreshold = DEFAULT_HEARTBEAT_LOSS_THRESHOLD;
 
+    /** See {@link #setFailureDetectionQuorum(int)}. */
     private int failureDetectionQuorum = DEFAULT_FAILURE_DETECTION_QUORUM;
 
+    /** See {@link #setFailFast(boolean)}. */
     private boolean failFast = true;
 
     /**
@@ -113,17 +117,17 @@ public class DefaultFailureDetectorConfig {
     }
 
     /**
-     * Returns the amount of nodes that should agree on some particular node failure before removing such suspected node from the cluster
+     * Returns the amount of nodes that should agree on some particular node failure before removing such a suspected node from the cluster
      * (see {@link #setFailureDetectionQuorum(int)}).
      *
-     * @return Amount of nodes that should agree on some particular node failure before removing such suspected node from the cluster.
+     * @return Amount of nodes that should agree on some particular node failure before removing such a suspected node from the cluster.
      */
     public int getFailureDetectionQuorum() {
         return failureDetectionQuorum;
     }
 
     /**
-     * Sets the amount of nodes that should agree on some particular node failure before removing such suspected node from the cluster.
+     * Sets the amount of nodes that should agree on some particular node failure before removing such a suspected node from the cluster.
      *
      * <p>
      * Value of this parameter must be above 1. Default value is {@value #DEFAULT_FAILURE_DETECTION_QUORUM}.
@@ -168,7 +172,7 @@ public class DefaultFailureDetectorConfig {
      * <p>
      * If this flag is set to {@code true} then cluster node will be immediately treated as failed in case of a {@link ConnectException}
      * while sending a gossip message to that node. If set to {@code false} then failure detector will wait for all
-     * {@link #setHeartbeatLossThreshold(int)} attempts before treating such node as failed.
+     * {@link #setHeartbeatLossThreshold(int)} attempts before treating such a node as failed.
      * </p>
      *
      * <p>

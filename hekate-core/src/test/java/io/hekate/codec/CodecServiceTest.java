@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -70,7 +70,7 @@ public class CodecServiceTest extends HekateTestBase {
     }
 
     @Test
-    public void testEncodeDecode() throws Exception {
+    public void testEncoderDecoder() throws Exception {
         encodeDecode(String.class, "some string", Assert::assertEquals);
         encodeDecode(ClusterNodeId.class, newNodeId(), Assert::assertEquals);
         encodeDecode(ClusterAddress.class, newAddress(1), Assert::assertEquals);
@@ -81,6 +81,11 @@ public class CodecServiceTest extends HekateTestBase {
         encodeDecode(List.class, Arrays.asList("one", "two", "three"), Assert::assertEquals);
         encodeDecode(ClusterTopology.class, DefaultClusterTopology.of(1, toSet(newNode(), newNode(), newNode())), Assert::assertEquals);
         encodeDecode(ClusterHash.class, new DefaultClusterHash(Arrays.asList(newNode(), newNode(), newNode())), Assert::assertEquals);
+    }
+
+    @Test
+    public void testEncodeDecode() throws Exception {
+        assertEquals("test", service.decode(service.encode("test")));
     }
 
     @Test
@@ -124,6 +129,17 @@ public class CodecServiceTest extends HekateTestBase {
     }
 
     @Test
+    public void testEncoderDecoderWithCustomFunctions() throws Exception {
+        EncoderDecoder<String> codec = service.forType(
+            String.class,
+            (str, out) -> out.writeUTF(str),
+            DataInput::readUTF
+        );
+
+        assertEquals("test", codec.decode(codec.encode("test")));
+    }
+
+    @Test
     public void testCodecFactory() {
         assertSame(codecFactory, ThreadLocalCodecFactory.tryUnwrap(service.codecFactory()));
     }
@@ -134,41 +150,41 @@ public class CodecServiceTest extends HekateTestBase {
     }
 
     private <T> void encodeDecode(Class<T> type, T before, BiConsumer<T, T> check) throws IOException {
-        EncoderDecoder<T> encodec = service.forType(type);
+        EncoderDecoder<T> codec = service.forType(type);
 
-        encodeDecode(encodec, before, check);
+        encodeDecode(codec, before, check);
     }
 
-    private <T> void encodeDecode(EncoderDecoder<T> encodec, T before, BiConsumer<T, T> check) throws IOException {
-        encodeDecodeAsStream(encodec, before, check);
+    private <T> void encodeDecode(EncoderDecoder<T> codec, T before, BiConsumer<T, T> check) throws IOException {
+        encodeDecodeAsStream(codec, before, check);
 
-        encodeDecodeAsByteArray(encodec, before, check);
+        encodeDecodeAsByteArray(codec, before, check);
 
-        encodeDecodeAsByteArrayWithOffset(encodec, before, check);
+        encodeDecodeAsByteArrayWithOffset(codec, before, check);
     }
 
-    private <T> void encodeDecodeAsStream(EncoderDecoder<T> encodec, T before, BiConsumer<T, T> check) throws IOException {
+    private <T> void encodeDecodeAsStream(EncoderDecoder<T> codec, T before, BiConsumer<T, T> check) throws IOException {
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
-        encodec.encode(before, buf);
+        codec.encode(before, buf);
 
-        T after = encodec.decode(new ByteArrayInputStream(buf.toByteArray()));
+        T after = codec.decode(new ByteArrayInputStream(buf.toByteArray()));
 
         check.accept(before, after);
     }
 
-    private <T> void encodeDecodeAsByteArray(EncoderDecoder<T> encodec, T before, BiConsumer<T, T> check) throws IOException {
-        check.accept(before, encodec.decode(encodec.encode(before)));
+    private <T> void encodeDecodeAsByteArray(EncoderDecoder<T> codec, T before, BiConsumer<T, T> check) throws IOException {
+        check.accept(before, codec.decode(codec.encode(before)));
     }
 
-    private <T> void encodeDecodeAsByteArrayWithOffset(EncoderDecoder<T> encodec, T before, BiConsumer<T, T> check) throws IOException {
-        byte[] bytes = encodec.encode(before);
+    private <T> void encodeDecodeAsByteArrayWithOffset(EncoderDecoder<T> codec, T before, BiConsumer<T, T> check) throws IOException {
+        byte[] bytes = codec.encode(before);
 
         byte[] bytesWithOffset = new byte[bytes.length + 6];
 
         System.arraycopy(bytes, 0, bytesWithOffset, 3, bytes.length);
 
-        T v = encodec.decode(bytesWithOffset, 3, bytes.length);
+        T v = codec.decode(bytesWithOffset, 3, bytes.length);
 
         check.accept(before, v);
     }

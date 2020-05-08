@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -27,13 +27,12 @@ import io.hekate.core.Hekate;
  */
 public enum SplitBrainAction {
     /**
-     * Restart node and rejoin it to the cluster. All of node service will be unavailable and will throw illegal state
-     * errors while node is rejoining.
+     * Restart the node and rejoin it to the cluster. All of the node's services will be unavailable and will throw illegal state
+     * errors while the node is rejoining.
      *
      * <p>
      * Rejoined node will have completely new identity and will be visible to other cluster members as a completely new node. After rejoin
-     * {@link Hekate#localNode()} will have new {@link ClusterNode#id() identifier} and {@link ClusterNode#joinOrder() join order
-     * index}.
+     * {@link Hekate#localNode()} will have new {@link ClusterNode#id() identifier} and {@link ClusterNode#joinOrder() join order value}.
      * </p>
      */
     REJOIN,
@@ -45,7 +44,7 @@ public enum SplitBrainAction {
 
     /**
      * Kills the JVM via {@link System#exit(int)} with exit code {@code 250}. This policy is expected to be used with some sort of a shell
-     * script or a process monitoring daemon that is capable of restarting processes.
+     * script or with a process monitoring daemon that is capable of restarting processes.
      */
     KILL_JVM
 }

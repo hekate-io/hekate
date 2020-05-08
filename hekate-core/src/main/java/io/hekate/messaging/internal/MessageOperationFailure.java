@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -17,7 +17,6 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterNode;
-import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.messaging.retry.FailedAttempt;
 import io.hekate.messaging.retry.RetryRoutingPolicy;
 import io.hekate.util.format.ToString;
@@ -83,11 +82,6 @@ class MessageOperationFailure implements FailedAttempt {
     @Override
     public RetryRoutingPolicy routing() {
         return routing;
-    }
-
-    @Override
-    public boolean isCausedBy(Class<? extends Throwable> type) {
-        return ErrorUtils.isCausedBy(type, error);
     }
 
     @Override

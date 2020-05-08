@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -226,8 +226,8 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
         MessagingChannel<String> channel = hekate.messaging().channel("example.channel", String.class);
 
         AggregateFuture<String> future = channel.newAggregate("some-message") // Some dummy message.
+            .withAffinity("100500") // Some dummy affinity key for consistent routing.
             .withTimeout(3, TimeUnit.SECONDS) // Timeout.
-            .withAffinity("100500") // Some dummy affinity key.
             .withRetry(retry -> retry
                 .whileError(err -> err.isCausedBy(IOException.class)) // Only if I/O error.
                 .withFixedDelay(100) // Delay between retries.

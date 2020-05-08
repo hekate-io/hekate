@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -21,21 +21,20 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toList;
 
 /**
  * Utility for source code examples inclusion into javadocs.
  */
 public final class CodeSamplesProcessorMain {
-    private static final Charset UTF_8 = Charset.forName("UTF-8");
-
+    /** Shortcut for new line separator. */
     private static final String NL = System.lineSeparator();
 
     private CodeSamplesProcessorMain() {
@@ -45,7 +44,7 @@ public final class CodeSamplesProcessorMain {
     /**
      * Runs this utility.
      *
-     * @param args First arg - path to javadocs folder; second arg - list of folders where to
+     * @param args First arg - path to javadocs folder; second arg - list of folders where to search for code examples.
      *
      * @throws IOException File reading error.
      */

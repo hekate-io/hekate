@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -21,7 +21,6 @@ import io.hekate.cluster.ClusterAddress;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterService;
-import io.hekate.cluster.event.ClusterEvent;
 import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.CodecService;
@@ -31,17 +30,12 @@ import io.hekate.core.ServiceInfo;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
-import io.hekate.core.internal.util.StreamUtils;
 import io.hekate.core.jmx.JmxService;
-import io.hekate.core.report.ConfigReportSupport;
 import io.hekate.core.report.ConfigReporter;
-import io.hekate.core.service.ConfigurableService;
 import io.hekate.core.service.ConfigurationContext;
+import io.hekate.core.service.CoreService;
 import io.hekate.core.service.DependencyContext;
-import io.hekate.core.service.DependentService;
 import io.hekate.core.service.InitializationContext;
-import io.hekate.core.service.InitializingService;
-import io.hekate.core.service.TerminatingService;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingBackPressureConfig;
 import io.hekate.messaging.MessagingChannel;
@@ -60,16 +54,11 @@ import io.hekate.network.NetworkMessage;
 import io.hekate.network.NetworkServerHandler;
 import io.hekate.network.NetworkService;
 import io.hekate.util.StateGuard;
-import io.hekate.util.async.AsyncUtils;
 import io.hekate.util.async.ExtendedScheduledExecutor;
 import io.hekate.util.async.Waiting;
-import io.hekate.util.format.ToString;
-import io.hekate.util.format.ToStringIgnore;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -78,53 +67,43 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.hekate.core.internal.util.StreamUtils.nullSafe;
+import static io.hekate.util.async.AsyncUtils.shutdown;
 import static java.util.stream.Collectors.toList;
 
-public class DefaultMessagingService implements MessagingService, DependentService, ConfigurableService, InitializingService,
-    TerminatingService, NetworkConfigProvider, ClusterAcceptor, ConfigReportSupport {
+public class DefaultMessagingService implements MessagingService, CoreService, NetworkConfigProvider, ClusterAcceptor {
     private static final Logger log = LoggerFactory.getLogger(DefaultMessagingService.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
 
-    private static final String MESSAGING_THREAD_PREFIX = "Messaging";
-
-    @ToStringIgnore
-    private final StateGuard guard = new StateGuard(MessagingService.class);
-
-    @ToStringIgnore
     private final MessagingServiceFactory factory;
 
-    @ToStringIgnore
+    private final StateGuard guard = new StateGuard(MessagingService.class);
+
     private final Map<String, MessagingGateway<?>> gateways = new HashMap<>();
 
-    @ToStringIgnore
     private ExtendedScheduledExecutor timer;
 
-    @ToStringIgnore
-    private CodecService codec;
+    private NetworkService network;
 
-    @ToStringIgnore
-    private NetworkService net;
-
-    @ToStringIgnore
     private ClusterService cluster;
 
-    @ToStringIgnore
+    private CodecService codec;
+
     private JmxService jmx;
 
     // Volatile since accessed out of the guarded context.
-    @ToStringIgnore
     private volatile ClusterNodeId nodeId;
 
     public DefaultMessagingService(MessagingServiceFactory factory) {
-        assert factory != null : "Factory is null.";
+        ArgAssert.notNull(factory, "Factory");
 
         this.factory = factory;
     }
 
     @Override
     public void resolve(DependencyContext ctx) {
-        net = ctx.require(NetworkService.class);
+        network = ctx.require(NetworkService.class);
         cluster = ctx.require(ClusterService.class);
         codec = ctx.require(CodecService.class);
 
@@ -133,25 +112,21 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
     @Override
     public void configure(ConfigurationContext ctx) {
-        List<MessageInterceptor> interceptors = StreamUtils.nullSafe(factory.getGlobalInterceptors()).collect(toList());
+        List<MessageInterceptor> interceptors = nullSafe(factory.getGlobalInterceptors()).collect(toList());
 
-        // Collect channel configurations.
-        StreamUtils.nullSafe(factory.getChannels()).forEach(cfg ->
+        // Collect channels configuration.
+        nullSafe(factory.getChannels()).forEach(cfg ->
             register(cfg, interceptors)
         );
 
-        StreamUtils.nullSafe(factory.getConfigProviders()).forEach(provider ->
-            StreamUtils.nullSafe(provider.configureMessaging()).forEach(cfg ->
+        nullSafe(factory.getConfigProviders()).forEach(provider ->
+            nullSafe(provider.configureMessaging()).forEach(cfg ->
                 register(cfg, interceptors)
             )
         );
 
-        Collection<MessagingConfigProvider> providers = ctx.findComponents(MessagingConfigProvider.class);
-
-        StreamUtils.nullSafe(providers).forEach(provider -> {
-            Collection<MessagingChannelConfig<?>> regions = provider.configureMessaging();
-
-            StreamUtils.nullSafe(regions).forEach(cfg ->
+        nullSafe(ctx.findComponents(MessagingConfigProvider.class)).forEach(provider -> {
+            nullSafe(provider.configureMessaging()).forEach(cfg ->
                 register(cfg, interceptors)
             );
         });
@@ -164,6 +139,32 @@ public class DefaultMessagingService implements MessagingService, DependentServi
             );
 
             ctx.setStringProperty(MessagingMetaData.propertyName(proxy.name()), meta.toString());
+        });
+    }
+
+    @Override
+    public void report(ConfigReporter report) {
+        guard.withReadLockIfInitialized(() -> {
+            if (!gateways.isEmpty()) {
+                report.section("messaging", messagingSec ->
+                    messagingSec.section("channels", channelsSec -> {
+                        gateways.values().forEach(channel ->
+                            channelsSec.section("channel", channelSec -> {
+                                channelSec.value("name", channel.name());
+                                channelSec.value("base-type", channel.baseType().getName());
+                                channelSec.value("server", channel.hasReceiver());
+                                channelSec.value("worker-threads", channel.workerThreads());
+                                channelSec.value("messaging-timeout", channel.messagingTimeout());
+                                channelSec.value("idle-socket-timeout", channel.idleSocketTimeout());
+                                channelSec.value("partitions", channel.partitions());
+                                channelSec.value("backup-nodes", channel.backupNodes());
+                                channelSec.value("send-pressure", channel.sendPressureGuard());
+                                channelSec.value("receive-pressure", channel.receivePressureGuard());
+                            })
+                        );
+                    })
+                );
+            }
         });
     }
 
@@ -198,30 +199,18 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
     @Override
     public Collection<NetworkConnectorConfig<?>> configureNetwork() {
-        if (gateways.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        List<NetworkConnectorConfig<?>> connectors = new ArrayList<>(gateways.size());
-
-        gateways.values().forEach(proxy ->
-            connectors.add(networkConfigFor(proxy))
-        );
-
-        return connectors;
+        return gateways.values().stream()
+            .map(this::networkConfig)
+            .collect(toList());
     }
 
     @Override
     public void initialize(InitializationContext ctx) throws HekateException {
-        guard.lockWrite();
+        if (DEBUG) {
+            log.debug("Initializing...");
+        }
 
-        try {
-            guard.becomeInitialized();
-
-            if (DEBUG) {
-                log.debug("Initializing...");
-            }
-
+        guard.becomeInitialized(() -> {
             if (!gateways.isEmpty()) {
                 nodeId = ctx.localNode().id();
 
@@ -231,108 +220,62 @@ public class DefaultMessagingService implements MessagingService, DependentServi
                     initializeGateway(gateway, ctx.metrics());
                 }
 
-                cluster.addListener(this::updateTopology, ClusterEventType.JOIN, ClusterEventType.CHANGE);
-            }
-
-            if (DEBUG) {
-                log.debug("Initialized.");
-            }
-        } finally {
-            guard.unlockWrite();
-        }
-    }
-
-    @Override
-    public void report(ConfigReporter report) {
-        guard.withReadLockIfInitialized(() -> {
-            if (!gateways.isEmpty()) {
-                report.section("messaging", messagingSec ->
-                    messagingSec.section("channels", channelsSec -> {
-                        gateways.values().forEach(channel ->
-                            channelsSec.section("channel", channelSec -> {
-                                channelSec.value("name", channel.name());
-                                channelSec.value("base-type", channel.baseType().getName());
-                                channelSec.value("server", channel.hasReceiver());
-                                channelSec.value("worker-threads", channel.workerThreads());
-                                channelSec.value("messaging-timeout", channel.messagingTimeout());
-                                channelSec.value("idle-socket-timeout", channel.idleSocketTimeout());
-                                channelSec.value("partitions", channel.partitions());
-                                channelSec.value("backup-nodes", channel.backupNodes());
-                                channelSec.value("send-pressure", channel.sendPressureGuard());
-                                channelSec.value("receive-pressure", channel.receivePressureGuard());
-                            })
-                        );
-                    })
+                cluster.addListener(
+                    event -> updateTopology(),
+                    ClusterEventType.JOIN,
+                    ClusterEventType.CHANGE
                 );
             }
         });
+
+        if (DEBUG) {
+            log.debug("Initialized.");
+        }
     }
 
     @Override
     public void preTerminate() throws HekateException {
-        guard.lockWrite();
-
-        try {
-            guard.becomeTerminating();
-        } finally {
-            guard.unlockWrite();
-        }
+        // Switch to the TERMINATING state in order to stop processing incoming messages.
+        guard.becomeTerminating(() -> { /* No-op. */ });
     }
 
     @Override
     public void terminate() {
-        List<Waiting> waiting = null;
-
-        guard.lockWrite();
-
-        try {
-            if (guard.becomeTerminated()) {
-                if (DEBUG) {
-                    log.debug("Terminating...");
-                }
-
-                // Close all gateways.
-                waiting = gateways.values().stream()
-                    .map(MessagingGateway::context)
-                    .filter(Objects::nonNull)
-                    .map(MessagingGatewayContext::close)
-                    .collect(toList());
-
-                // Shutdown timer.
-                if (timer != null) {
-                    waiting.add(AsyncUtils.shutdown(timer));
-
-                    timer = null;
-                }
-
-                nodeId = null;
-            }
-        } finally {
-            guard.unlockWrite();
+        if (DEBUG) {
+            log.debug("Terminating...");
         }
 
-        if (waiting != null) {
-            Waiting.awaitAll(waiting).awaitUninterruptedly();
+        Waiting done = guard.becomeTerminated(() -> {
+            // Close all gateways.
+            List<Waiting> waiting = gateways.values().stream()
+                .map(MessagingGateway::context)
+                .filter(Objects::nonNull)
+                .map(MessagingGatewayContext::close)
+                .collect(toList());
 
-            if (DEBUG) {
-                log.debug("Terminated.");
-            }
+            // Shutdown timer.
+            waiting.add(shutdown(timer));
+
+            timer = null;
+            nodeId = null;
+
+            return waiting;
+        });
+
+        done.awaitUninterruptedly();
+
+        if (DEBUG) {
+            log.debug("Terminated.");
         }
     }
 
     @Override
     public List<MessagingChannel<?>> allChannels() {
-        guard.lockReadWithStateCheck();
-
-        try {
-            List<MessagingChannel<?>> channels = new ArrayList<>(gateways.size());
-
-            gateways.values().forEach(proxy -> channels.add(proxy.context().channel()));
-
-            return channels;
-        } finally {
-            guard.unlockRead();
-        }
+        return guard.withReadLockAndStateCheck(() ->
+            gateways.values().stream()
+                .map(gateway -> gateway.context().channel())
+                .collect(toList())
+        );
     }
 
     @Override
@@ -344,13 +287,11 @@ public class DefaultMessagingService implements MessagingService, DependentServi
     public <T> DefaultMessagingChannel<T> channel(String name, Class<T> baseType) throws IllegalArgumentException {
         ArgAssert.notNull(name, "Channel name");
 
-        guard.lockReadWithStateCheck();
-
-        try {
+        return guard.withReadLockAndStateCheck(() -> {
             @SuppressWarnings("unchecked")
-            MessagingGateway<T> gateway = (MessagingGateway<T>)gateways.get(name);
-
-            ArgAssert.check(gateway != null, "No such channel [name=" + name + ']');
+            MessagingGateway<T> gateway = (MessagingGateway<T>)gateways.computeIfAbsent(name, missing -> {
+                throw new IllegalArgumentException("No such channel [name=" + missing + ']');
+            });
 
             if (baseType != null && !gateway.baseType().isAssignableFrom(baseType)) {
                 throw new ClassCastException("Messaging channel doesn't support the specified type "
@@ -358,9 +299,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
             }
 
             return gateway.context().channel();
-        } finally {
-            guard.unlockRead();
-        }
+        });
     }
 
     @Override
@@ -416,27 +355,31 @@ public class DefaultMessagingService implements MessagingService, DependentServi
     }
 
     private <T> void initializeGateway(MessagingGateway<T> gateway, MeterRegistry metrics) throws HekateException {
-        assert gateway != null : "Channel gateway is null.";
-        assert guard.isWriteLocked() : "Thread must hold a write lock.";
+        assert guard.isWriteLocked() : "Thread must hold write lock.";
 
         if (DEBUG) {
             log.debug("Initializing messaging gateway [gateway={}]", gateway);
         }
 
         // Prepare network connector.
-        NetworkConnector<MessagingProtocol> connector = net.connector(gateway.name());
+        NetworkConnector<MessagingProtocol> connector = network.connector(gateway.name());
 
         // Prepare thread pool for asynchronous messages processing.
         MessagingExecutor async;
 
         if (gateway.workerThreads() > 0) {
-            async = new MessagingExecutorAsync(gateway.workerThreads(), newThreadFactory(gateway.name()));
+            async = new MessagingExecutorAsync(gateway.workerThreads(), threadFactory(gateway.name()));
         } else {
-            async = new MessagingExecutorSync(newThreadFactory(gateway.name()));
+            async = new MessagingExecutorSync(threadFactory(gateway.name()));
         }
 
         // Prepare metrics.
-        MessagingMetrics channelMetrics = new MessagingMetrics(gateway.name(), async::activeTasks, async::completedTasks, metrics);
+        MessagingMetrics channelMetrics = new MessagingMetrics(
+            gateway.name(),
+            async::activeTasks,
+            async::completedTasks,
+            metrics
+        );
 
         // Make sure that receiver is guarded with lock.
         MessageReceiver<T> guardedReceiver = applyGuard(gateway.unguardedReceiver());
@@ -481,7 +424,7 @@ public class DefaultMessagingService implements MessagingService, DependentServi
             }, idleTimeout, idleTimeout, TimeUnit.MILLISECONDS);
         }
 
-        // Initialize the gateway with a new context.
+        // Initialize the gateway with the new context.
         gateway.init(ctx);
 
         // Register to JMX (optional).
@@ -499,16 +442,13 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         }
     }
 
-    private <T> NetworkConnectorConfig<MessagingProtocol> networkConfigFor(MessagingGateway<T> gateway) {
-        assert gateway != null : "Channel gateway is null.";
+    private <T> NetworkConnectorConfig<MessagingProtocol> networkConfig(MessagingGateway<T> gateway) {
+        CodecFactory<T> codecFactory = gateway.codecFactory();
 
         NetworkConnectorConfig<MessagingProtocol> net = new NetworkConnectorConfig<>();
 
         net.setProtocol(gateway.name());
         net.setLogCategory(gateway.logCategory());
-
-        CodecFactory<T> codecFactory = gateway.codecFactory();
-
         net.setMessageCodec(() ->
             new MessagingProtocolCodec<>(codecFactory.createCodec())
         );
@@ -580,10 +520,10 @@ public class DefaultMessagingService implements MessagingService, DependentServi
 
                 @Override
                 public void onDisconnect(NetworkEndpoint<MessagingProtocol> client) {
-                    MessagingConnectionIn<?> clientCtx = (MessagingConnectionIn<?>)client.getContext();
+                    MessagingConnectionIn<?> conn = (MessagingConnectionIn<?>)client.getContext();
 
-                    if (clientCtx != null) {
-                        clientCtx.onDisconnect();
+                    if (conn != null) {
+                        conn.onDisconnect();
                     }
                 }
             });
@@ -592,36 +532,28 @@ public class DefaultMessagingService implements MessagingService, DependentServi
         return net;
     }
 
-    private void updateTopology(ClusterEvent event) {
-        assert event != null : "Topology is null.";
-
-        guard.lockRead();
-
-        try {
-            if (guard.isInitialized()) {
-                gateways.values().forEach(proxy ->
-                    proxy.context().checkTopologyChanges()
-                );
-            }
-        } finally {
-            guard.unlockRead();
-        }
+    private void updateTopology() {
+        guard.withReadLockIfInitialized(() ->
+            gateways.values().forEach(proxy ->
+                proxy.context().checkTopologyChanges()
+            )
+        );
     }
 
     private static ExtendedScheduledExecutor newTimer() {
-        ExtendedScheduledExecutor timer = new ExtendedScheduledExecutor(1, newThreadFactory("Timer"));
+        ExtendedScheduledExecutor timer = new ExtendedScheduledExecutor(1, threadFactory("Timer"));
 
         timer.setRemoveOnCancelPolicy(true);
 
         return timer;
     }
 
-    private static HekateThreadFactory newThreadFactory(String suffix) {
-        return new HekateThreadFactory(MESSAGING_THREAD_PREFIX + '-' + suffix);
+    private static HekateThreadFactory threadFactory(String suffix) {
+        return new HekateThreadFactory("Messaging-" + suffix);
     }
 
     @Override
     public String toString() {
-        return ToString.format(this);
+        return MessagingService.class.getSimpleName();
     }
 }

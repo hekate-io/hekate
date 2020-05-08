@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -19,6 +19,7 @@ package io.hekate.coordinate.internal;
 import io.hekate.cluster.ClusterHash;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.util.format.ToString;
+import io.hekate.util.format.ToStringIgnore;
 import io.hekate.util.trace.TraceInfo;
 import io.hekate.util.trace.Traceable;
 
@@ -42,12 +43,12 @@ abstract class CoordinationProtocol implements Traceable {
 
         private final ClusterNodeId from;
 
-        private final ClusterHash topology;
+        private final CoordinationEpoch epoch;
 
-        public RequestBase(String processName, ClusterNodeId from, ClusterHash topology) {
+        public RequestBase(String processName, ClusterNodeId from, CoordinationEpoch epoch) {
             this.processName = processName;
             this.from = from;
-            this.topology = topology;
+            this.epoch = epoch;
         }
 
         public String processName() {
@@ -58,14 +59,23 @@ abstract class CoordinationProtocol implements Traceable {
             return from;
         }
 
-        public ClusterHash topology() {
-            return topology;
+        public CoordinationEpoch epoch() {
+            return epoch;
         }
     }
 
     static class Prepare extends RequestBase {
-        public Prepare(String processName, ClusterNodeId from, ClusterHash topology) {
-            super(processName, from, topology);
+        @ToStringIgnore
+        private final ClusterHash topologyHash;
+
+        public Prepare(String processName, ClusterNodeId from, CoordinationEpoch epoch, ClusterHash topologyHash) {
+            super(processName, from, epoch);
+
+            this.topologyHash = topologyHash;
+        }
+
+        public ClusterHash topologyHash() {
+            return topologyHash;
         }
 
         @Override
@@ -76,15 +86,16 @@ abstract class CoordinationProtocol implements Traceable {
         @Override
         public TraceInfo traceInfo() {
             return TraceInfo.of("/" + processName() + "/prepare")
-                .withTag("topology-hash", topology());
+                .withTag("topology-hash", topologyHash())
+                .withTag("epoch", epoch());
         }
     }
 
     static class Request extends RequestBase {
         private final Object request;
 
-        public Request(String processName, ClusterNodeId from, ClusterHash topology, Object request) {
-            super(processName, from, topology);
+        public Request(String processName, ClusterNodeId from, CoordinationEpoch epoch, Object request) {
+            super(processName, from, epoch);
 
             this.request = request;
         }
@@ -101,7 +112,7 @@ abstract class CoordinationProtocol implements Traceable {
         @Override
         public TraceInfo traceInfo() {
             return TraceInfo.of("/" + processName() + "/" + request.getClass().getSimpleName())
-                .withTag("topology-hash", topology());
+                .withTag("epoch", epoch());
         }
     }
 
@@ -171,8 +182,8 @@ abstract class CoordinationProtocol implements Traceable {
     }
 
     static class Complete extends RequestBase {
-        public Complete(String processName, ClusterNodeId from, ClusterHash topology) {
-            super(processName, from, topology);
+        public Complete(String processName, ClusterNodeId from, CoordinationEpoch epoch) {
+            super(processName, from, epoch);
         }
 
         @Override
@@ -183,7 +194,7 @@ abstract class CoordinationProtocol implements Traceable {
         @Override
         public TraceInfo traceInfo() {
             return TraceInfo.of("/" + processName() + "/complete")
-                .withTag("topology-hash", topology());
+                .withTag("epoch", epoch());
         }
     }
 

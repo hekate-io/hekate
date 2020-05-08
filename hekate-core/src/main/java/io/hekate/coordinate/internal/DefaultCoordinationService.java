@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -16,10 +16,7 @@
 
 package io.hekate.coordinate.internal;
 
-import io.hekate.cluster.ClusterNodeFilter;
-import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterTopology;
-import io.hekate.cluster.ClusterView;
 import io.hekate.cluster.event.ClusterEvent;
 import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.codec.CodecFactory;
@@ -30,23 +27,17 @@ import io.hekate.coordinate.CoordinationProcess;
 import io.hekate.coordinate.CoordinationProcessConfig;
 import io.hekate.coordinate.CoordinationService;
 import io.hekate.coordinate.CoordinationServiceFactory;
-import io.hekate.core.Hekate;
+import io.hekate.coordinate.internal.CoordinationProtocol.RequestBase;
 import io.hekate.core.HekateException;
 import io.hekate.core.ServiceInfo;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
-import io.hekate.core.internal.util.StreamUtils;
-import io.hekate.core.internal.util.Utils;
-import io.hekate.core.report.ConfigReportSupport;
 import io.hekate.core.report.ConfigReporter;
-import io.hekate.core.service.ConfigurableService;
 import io.hekate.core.service.ConfigurationContext;
+import io.hekate.core.service.CoreService;
 import io.hekate.core.service.DependencyContext;
-import io.hekate.core.service.DependentService;
 import io.hekate.core.service.InitializationContext;
-import io.hekate.core.service.InitializingService;
-import io.hekate.core.service.TerminatingService;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
@@ -55,8 +46,6 @@ import io.hekate.messaging.MessagingService;
 import io.hekate.util.StateGuard;
 import io.hekate.util.async.AsyncUtils;
 import io.hekate.util.async.Waiting;
-import io.hekate.util.format.ToString;
-import io.hekate.util.format.ToStringIgnore;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -71,17 +60,15 @@ import java.util.concurrent.Executors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.hekate.core.internal.util.StreamUtils.nullSafe;
 import static java.util.stream.Collectors.toList;
 
-public class DefaultCoordinationService implements CoordinationService, ConfigurableService, DependentService, InitializingService,
-    TerminatingService, MessagingConfigProvider, ConfigReportSupport {
+public class DefaultCoordinationService implements CoordinationService, CoreService, MessagingConfigProvider {
     private static final Logger log = LoggerFactory.getLogger(DefaultCoordinationProcess.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
 
-    private static final String CHANNEL_NAME = "hekate.coordination";
-
-    private static final ClusterNodeFilter HAS_COORDINATION_FILTER = node -> node.hasService(CoordinationService.class);
+    private static final String COORDINATION_CHANNEL = "hekate.coordination";
 
     private final long retryDelay;
 
@@ -89,29 +76,18 @@ public class DefaultCoordinationService implements CoordinationService, Configur
 
     private final long idleSocketTimeout;
 
-    @ToStringIgnore
     private final StateGuard guard = new StateGuard(CoordinationService.class);
 
-    @ToStringIgnore
-    private final List<CoordinationProcessConfig> processesConfig = new ArrayList<>();
+    private final List<CoordinationProcessConfig> processesConfigs = new ArrayList<>();
 
-    @ToStringIgnore
     private final Map<String, DefaultCoordinationProcess> processes = new HashMap<>();
 
-    @ToStringIgnore
-    private Hekate hekate;
-
-    @ToStringIgnore
     private MessagingService messaging;
 
-    @ToStringIgnore
-    private ClusterView cluster;
-
-    @ToStringIgnore
     private CodecService defaultCodec;
 
     public DefaultCoordinationService(CoordinationServiceFactory factory) {
-        assert factory != null : "Factory is null.";
+        ArgAssert.notNull(factory, "Factory");
 
         ConfigCheck check = ConfigCheck.get(CoordinationServiceFactory.class);
 
@@ -121,35 +97,28 @@ public class DefaultCoordinationService implements CoordinationService, Configur
         this.retryDelay = factory.getRetryInterval();
         this.idleSocketTimeout = factory.getIdleSocketTimeout();
 
-        StreamUtils.nullSafe(factory.getProcesses()).forEach(processesConfig::add);
+        nullSafe(factory.getProcesses()).forEach(processesConfigs::add);
     }
 
     @Override
     public void resolve(DependencyContext ctx) {
-        hekate = ctx.hekate();
-
         messaging = ctx.require(MessagingService.class);
-        cluster = ctx.require(ClusterService.class).filter(HAS_COORDINATION_FILTER);
         defaultCodec = ctx.require(CodecService.class);
     }
 
     @Override
     public void configure(ConfigurationContext ctx) {
         // Collect configurations from providers.
-        Collection<CoordinationConfigProvider> providers = ctx.findComponents(CoordinationConfigProvider.class);
-
-        StreamUtils.nullSafe(providers).forEach(provider -> {
-            Collection<CoordinationProcessConfig> processesCfg = provider.configureCoordination();
-
-            StreamUtils.nullSafe(processesCfg).forEach(processesConfig::add);
-        });
+        nullSafe(ctx.findComponents(CoordinationConfigProvider.class)).forEach(provider ->
+            nullSafe(provider.configureCoordination()).forEach(processesConfigs::add)
+        );
 
         // Validate configs.
         ConfigCheck check = ConfigCheck.get(CoordinationProcessConfig.class);
 
         Set<String> uniqueNames = new HashSet<>();
 
-        processesConfig.forEach(cfg -> {
+        processesConfigs.forEach(cfg -> {
             check.notEmpty(cfg.getName(), "name");
             check.validSysName(cfg.getName(), "name");
             check.notNull(cfg.getHandler(), "handler");
@@ -162,73 +131,73 @@ public class DefaultCoordinationService implements CoordinationService, Configur
         });
 
         // Register process names as service property.
-        processesConfig.forEach(cfg ->
+        processesConfigs.forEach(cfg ->
             ctx.setBoolProperty(propertyName(cfg.getName().trim()), true)
         );
     }
 
     @Override
     public Collection<MessagingChannelConfig<?>> configureMessaging() {
-        if (processesConfig.isEmpty()) {
+        // Skip configuration is there are no registered processes.
+        if (processesConfigs.isEmpty()) {
             return Collections.emptyList();
         }
 
-        Map<String, CodecFactory<Object>> processCodecs = new HashMap<>();
+        // Map processes to codecs.
+        Map<String, CodecFactory<Object>> codecs = new HashMap<>();
 
-        processesConfig.forEach(cfg -> {
+        processesConfigs.forEach(cfg -> {
             String name = cfg.getName().trim();
 
             if (cfg.getMessageCodec() == null) {
-                processCodecs.put(name, defaultCodec.codecFactory());
+                codecs.put(name, defaultCodec.codecFactory());
             } else {
-                processCodecs.put(name, cfg.getMessageCodec());
+                codecs.put(name, cfg.getMessageCodec());
             }
         });
 
+        // Prepare codec factory.
+        CodecFactory<CoordinationProtocol> codecFactory = () -> new CoordinationProtocolCodec(codecs);
+
+        // Messaging channel configuration.
         return Collections.singleton(
             MessagingChannelConfig.of(CoordinationProtocol.class)
-                .withName(CHANNEL_NAME)
-                .withClusterFilter(HAS_COORDINATION_FILTER)
+                .withName(COORDINATION_CHANNEL)
+                .withClusterFilter(node -> node.hasService(CoordinationService.class))
                 .withNioThreads(nioThreads)
                 .withIdleSocketTimeout(idleSocketTimeout)
-                .withRetryPolicy(retry ->
-                    retry.withFixedDelay(retryDelay)
-                )
+                .withMessageCodec(codecFactory)
                 .withLogCategory(CoordinationProtocol.class.getName())
-                .withMessageCodec(() -> new CoordinationProtocolCodec(processCodecs))
+                .withRetryPolicy(retry -> retry
+                    .withFixedDelay(retryDelay)
+                )
                 .withReceiver(this::handleMessage)
         );
     }
 
     @Override
     public void initialize(InitializationContext ctx) throws HekateException {
-        guard.lockWrite();
+        if (DEBUG) {
+            log.debug("Initializing...");
+        }
 
-        try {
-            guard.becomeInitialized();
-
-            if (DEBUG) {
-                log.debug("Initializing...");
-            }
-
-            if (!processesConfig.isEmpty()) {
-                // Register cluster listener to trigger coordination.
-                cluster.addListener(this::processTopologyChange, ClusterEventType.JOIN, ClusterEventType.CHANGE);
-
+        guard.becomeInitialized(() -> {
+            if (!processesConfigs.isEmpty()) {
                 // Get coordination messaging channel (shared among all coordination processes).
-                MessagingChannel<CoordinationProtocol> channel = messaging.channel(CHANNEL_NAME, CoordinationProtocol.class);
+                MessagingChannel<CoordinationProtocol> channel = messaging.channel(COORDINATION_CHANNEL, CoordinationProtocol.class);
+
+                // Register cluster listener to trigger coordination.
+                channel.cluster().addListener(this::processTopologyChange, ClusterEventType.JOIN, ClusterEventType.CHANGE);
 
                 // Initialize coordination processes.
-                for (CoordinationProcessConfig cfg : processesConfig) {
+                for (CoordinationProcessConfig cfg : processesConfigs) {
                     initializeProcess(cfg, ctx, channel);
                 }
             }
+        });
 
-            if (DEBUG) {
-                log.debug("Initialized.");
-            }
-        } finally {
-            guard.unlockWrite();
+        if (DEBUG) {
+            log.debug("Initialized.");
         }
     }
 
@@ -253,93 +222,69 @@ public class DefaultCoordinationService implements CoordinationService, Configur
 
     @Override
     public void preTerminate() throws HekateException {
-        Waiting waiting = guard.withWriteLock(() -> {
-            if (guard.becomeTerminating()) {
-                if (DEBUG) {
-                    log.debug("Pre-terminating.");
-                }
+        if (DEBUG) {
+            log.debug("Pre-terminating.");
+        }
 
-                return Waiting.awaitAll(processes.values().stream()
-                    .map(DefaultCoordinationProcess::terminate)
-                    .collect(toList())
-                );
-            } else {
-                return Waiting.NO_WAIT;
-            }
-        });
+        Waiting done = guard.becomeTerminating(() ->
+            processes.values().stream()
+                .map(DefaultCoordinationProcess::terminate)
+                .collect(toList())
+        );
 
-        waiting.awaitUninterruptedly();
+        done.awaitUninterruptedly();
+
+        if (DEBUG) {
+            log.debug("Pre-terminated.");
+        }
     }
 
     @Override
     public void terminate() throws HekateException {
-        Waiting waiting = null;
-
-        guard.lockWrite();
-
-        try {
-            if (guard.becomeTerminated()) {
-                if (DEBUG) {
-                    log.debug("Terminating.");
-                }
-
-                waiting = Waiting.awaitAll(processes.values().stream()
-                    .map(DefaultCoordinationProcess::terminate)
-                    .collect(toList())
-                );
-
-                processes.clear();
-            }
-        } finally {
-            guard.unlockWrite();
+        if (DEBUG) {
+            log.debug("Terminating.");
         }
 
-        if (waiting != null) {
-            waiting.awaitUninterruptedly();
+        Waiting done = guard.becomeTerminated(() -> {
+            List<Waiting> waiting = processes.values().stream()
+                .map(DefaultCoordinationProcess::terminate)
+                .collect(toList());
 
-            if (DEBUG) {
-                log.debug("Terminated.");
-            }
+            processes.clear();
+
+            return waiting;
+        });
+
+        done.awaitUninterruptedly();
+
+        if (DEBUG) {
+            log.debug("Terminated.");
         }
     }
 
     @Override
     public List<CoordinationProcess> allProcesses() {
-        guard.lockReadWithStateCheck();
-
-        try {
-            return new ArrayList<>(processes.values());
-        } finally {
-            guard.unlockRead();
-        }
+        return guard.withReadLockAndStateCheck(() ->
+            new ArrayList<>(processes.values())
+        );
     }
 
     @Override
     public CoordinationProcess process(String name) {
-        DefaultCoordinationProcess process;
+        ArgAssert.notNull(name, "Process name");
 
-        guard.lockReadWithStateCheck();
-
-        try {
-            process = processes.get(name);
-        } finally {
-            guard.unlockRead();
-        }
-
-        ArgAssert.check(process != null, "Coordination process not configured [name=" + name + ']');
-
-        return process;
+        return guard.withReadLockAndStateCheck(() ->
+            processes.computeIfAbsent(name, missing -> {
+                throw new IllegalArgumentException("Coordination process not configured [name=" + missing + ']');
+            })
+        );
     }
 
     @Override
     public boolean hasProcess(String name) {
-        guard.lockReadWithStateCheck();
-
-        try {
-            return processes.containsKey(name);
-        } finally {
-            guard.unlockRead();
-        }
+        return guard.withReadLockAndStateCheck(() ->
+            processes.containsKey(name)
+        );
     }
 
     @Override
@@ -366,7 +311,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
         // Instantiate and register.
         DefaultCoordinationProcess process = new DefaultCoordinationProcess(
             name,
-            hekate,
+            ctx.hekate(),
             cfg.getHandler(),
             cfg.isAsyncInit(),
             async,
@@ -389,18 +334,18 @@ public class DefaultCoordinationService implements CoordinationService, Configur
     }
 
     private void handleMessage(Message<CoordinationProtocol> msg) {
-        DefaultCoordinationProcess process = null;
+        RequestBase req = msg.payload(RequestBase.class);
 
-        CoordinationProtocol.RequestBase request = msg.payload(CoordinationProtocol.RequestBase.class);
+        DefaultCoordinationProcess process = null;
 
         guard.lockRead();
 
         try {
             if (guard.isInitialized()) {
-                process = processes.get(request.processName());
+                process = processes.get(req.processName());
 
                 if (process == null) {
-                    throw new IllegalStateException("Received coordination request for unknown process: " + request);
+                    throw new IllegalStateException("Received coordination request for unknown process: " + req);
                 }
             }
         } finally {
@@ -409,7 +354,7 @@ public class DefaultCoordinationService implements CoordinationService, Configur
 
         if (process == null) {
             if (DEBUG) {
-                log.debug("Rejecting coordination message since service is not initialized [message={}]", request);
+                log.debug("Rejecting coordination message since service is not initialized [message={}]", req);
             }
 
             msg.reply(CoordinationProtocol.Reject.INSTANCE);
@@ -419,23 +364,17 @@ public class DefaultCoordinationService implements CoordinationService, Configur
     }
 
     private void processTopologyChange(ClusterEvent event) {
-        guard.lockRead();
+        guard.withReadLockIfInitialized(() -> {
+            processes.values().forEach(process -> {
+                ClusterTopology topology = event.topology().filter(node -> {
+                    ServiceInfo service = node.service(CoordinationService.class);
 
-        try {
-            if (guard.isInitialized()) {
-                processes.values().forEach(process -> {
-                    ClusterTopology topology = event.topology().filter(node -> {
-                        ServiceInfo service = node.service(CoordinationService.class);
-
-                        return service.property(propertyName(process.name())) != null;
-                    });
-
-                    process.processTopologyChange(topology);
+                    return service.property(propertyName(process.name())) != null;
                 });
-            }
-        } finally {
-            guard.unlockRead();
-        }
+
+                process.processTopologyChange(topology);
+            });
+        });
     }
 
     private static String propertyName(String process) {
@@ -444,9 +383,6 @@ public class DefaultCoordinationService implements CoordinationService, Configur
 
     @Override
     public String toString() {
-        return CoordinationService.class.getSimpleName() + '['
-            + ToString.formatProperties(this)
-            + ", processes=" + Utils.toString(processesConfig, CoordinationProcessConfig::getName)
-            + ']';
+        return CoordinationService.class.getSimpleName();
     }
 }

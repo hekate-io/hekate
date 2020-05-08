@@ -1,5 +1,22 @@
+/*
+ * Copyright 2020 The Hekate Project
+ *
+ * The Hekate Project licenses this file to you under the Apache License,
+ * version 2.0 (the "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at:
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+
 package io.hekate.messaging.operation;
 
+import io.hekate.core.Hekate;
 import io.hekate.messaging.MessageTimeoutException;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
@@ -86,15 +103,53 @@ public interface Aggregate<T> {
     Aggregate<T> withTimeout(long timeout, TimeUnit unit);
 
     /**
-     * Retry policy.
+     * Retry policy for each individual message of the aggregation operation.
+     *
+     * <p>
+     * This policy gets applied to each individual (per-node) message. For example, if aggregation should be performed over 3 nodes
+     * and an error happens while sending an aggregation message to the second node then this retry policy will be applied only to that
+     * particular failed message.
+     * </p>
+     *
+     * <p>
+     * If retry logic should be implemented at the aggregation level (i.e. decide on whether to retry or not by looking at the whole
+     * {@link AggregateResult}) please see the {@link #withRepeat(AggregateRepeatCondition)} method.
+     * </p>
      *
      * @param retry Retry policy.
      *
      * @return This instance.
      *
      * @see MessagingChannelConfig#setRetryPolicy(GenericRetryConfigurer)
+     * @see #withRepeat(AggregateRepeatCondition)
      */
     Aggregate<T> withRetry(AggregateRetryConfigurer<T> retry);
+
+    /**
+     * Condition to repeat for the whole {@link Aggregate} operation.
+     *
+     * <p>
+     * If the specified condition evaluates to {@code true} then the whole {@link Aggregate} operation will be repeated from scratch,
+     * except for the following cases:
+     * </p>
+     *
+     * <ul>
+     *    <li>{@link Aggregate} operation timed out (see {@link #withTimeout(long, TimeUnit)})</li>
+     *    <li>{@link MessagingChannel}'s cluster topology is empty (i.e. no nodes to perform aggregation)</li>
+     *    <li>{@link Hekate} node is stopped</li>
+     * </ul>
+     *
+     * <p>
+     *  If one of the above is true then {@link Aggregate} will complete with whatever {@link AggregateResult} it has.
+     * </p>
+     *
+     * @param condition Condition.
+     *
+     * @return This instance.
+     *
+     * @see #withRetry(AggregateRetryConfigurer)
+     */
+    Aggregate<T> withRepeat(AggregateRepeatCondition<T> condition);
 
     /**
      * Asynchronously executes this operation.

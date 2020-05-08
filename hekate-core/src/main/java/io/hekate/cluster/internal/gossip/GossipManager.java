@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -373,17 +373,17 @@ public class GossipManager {
             return null;
         }
 
-        // Check gossip state version.
-        long thisVer = localGossip.version();
-        long otherVer = msg.gossipBase().version();
+        // Check gossip epoch.
+        long thisEpoch = localGossip.epoch();
+        long otherEpoch = msg.gossipBase().epoch();
 
-        // If versions diverge by more than 1 then we can't track causal history of the gossip state
+        // If epochs diverge by more than 1 then we can't track causal history of the gossip state
         // since some DOWN nodes could be completely purged from the gossip state.
-        if (Math.abs(thisVer - otherVer) > 1) {
-            if (thisVer < otherVer) {
+        if (Math.abs(thisEpoch - otherEpoch) > 1) {
+            if (thisEpoch < otherEpoch) {
                 // Local node is in inconsistent state.
                 if (DEBUG) {
-                    log.debug("Notifying listener on inconsistency caused by the gossip version mismatch "
+                    log.debug("Notifying listener on inconsistency caused by the gossip epoch mismatch "
                         + "[local={}, remote={}]", localGossip, msg);
                 }
 
@@ -393,7 +393,7 @@ public class GossipManager {
             } else {
                 // Remote node is in inconsistent state.
                 if (DEBUG) {
-                    log.debug("Sending the gossip update digest because of a gossip version mismatch "
+                    log.debug("Sending the gossip update digest because of a gossip epoch mismatch "
                         + "[local={}, remote={}]", localGossip, msg);
                 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -300,8 +300,8 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
     }
 
     private void encodeGossip(Gossip gossip, DataWriter out) throws IOException {
-        // Version.
-        out.writeVarLong(gossip.version());
+        // Epoch.
+        out.writeVarLong(gossip.epoch());
 
         // Max join order.
         out.writeVarInt(gossip.maxJoinOrder());
@@ -326,8 +326,8 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
     }
 
     private Gossip decodeGossip(DataReader in) throws IOException {
-        // Version.
-        long version = in.readVarLong();
+        // Epoch.
+        long epoch = in.readVarLong();
 
         // Max join order.
         int maxJoinOrder = in.readVarInt();
@@ -368,12 +368,12 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
         // Removed.
         Set<ClusterNodeId> removed = decodeNodeIdSet(in);
 
-        return new Gossip(version, members, removed, seen, maxJoinOrder);
+        return new Gossip(epoch, members, removed, seen, maxJoinOrder);
     }
 
     private void encodeGossipDigest(GossipDigest digest, DataWriter out) throws IOException {
-        // Version.
-        out.writeVarLong(digest.version());
+        // Epoch.
+        out.writeVarLong(digest.epoch());
 
         // Members.
         Map<ClusterNodeId, GossipNodeInfo> members = digest.membersInfo();
@@ -395,8 +395,8 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
     }
 
     private GossipDigest decodeGossipDigest(DataReader in) throws IOException {
-        // Version.
-        long version = in.readVarLong();
+        // Epoch.
+        long epoch = in.readVarLong();
 
         // Members.
         Map<ClusterNodeId, GossipNodeInfo> members;
@@ -434,7 +434,7 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
         // Removed.
         Set<ClusterNodeId> removed = decodeNodeIdSet(in);
 
-        return new GossipDigest(version, members, removed, seen);
+        return new GossipDigest(epoch, members, removed, seen);
     }
 
     private void encodeNodeState(GossipNodeState member, Set<ClusterNodeId> seen, DataWriter out)

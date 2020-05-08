@@ -1,5 +1,22 @@
+/*
+ * Copyright 2020 The Hekate Project
+ *
+ * The Hekate Project licenses this file to you under the Apache License,
+ * version 2.0 (the "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at:
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+
 package io.hekate.messaging.operation;
 
+import io.hekate.core.Hekate;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessageTimeoutException;
@@ -127,6 +144,17 @@ public interface Broadcast<T> {
     /**
      * Retry policy.
      *
+     * <p>
+     * This policy gets applied to each individual (per-node) message. For example, if message should be broadcasted to 3 nodes
+     * and an error happens while sending the message to the second node then this retry policy will be applied only to that
+     * particular failed message.
+     * </p>
+     *
+     * <p>
+     * If retry logic should be implemented at the broadcast level (i.e. decide on whether to retry or not by looking at the whole
+     * {@link BroadcastResult}) please see the {@link #withRepeat(BroadcastRepeatCondition)} method.
+     * </p>
+     *
      * @param retry Retry policy.
      *
      * @return This instance.
@@ -134,6 +162,32 @@ public interface Broadcast<T> {
      * @see MessagingChannelConfig#setRetryPolicy(GenericRetryConfigurer)
      */
     Broadcast<T> withRetry(BroadcastRetryConfigurer retry);
+
+    /**
+     * Condition to repeat for the whole {@link Broadcast} operation.
+     *
+     * <p>
+     * If the specified condition evaluates to {@code true} then the whole {@link Broadcast} operation will be repeated from scratch,
+     * except for the following cases:
+     * </p>
+     *
+     * <ul>
+     *    <li>{@link Broadcast} operation timed out (see {@link #withTimeout(long, TimeUnit)})</li>
+     *    <li>{@link MessagingChannel}'s cluster topology is empty (i.e. no nodes to broadcast to)</li>
+     *    <li>{@link Hekate} node is stopped</li>
+     * </ul>
+     *
+     * <p>
+     *  If one of the above is true then {@link Broadcast} will complete with whatever {@link BroadcastResult} it has.
+     * </p>
+     *
+     * @param condition Condition.
+     *
+     * @return This instance.
+     *
+     * @see #withRetry(BroadcastRetryConfigurer)
+     */
+    Broadcast<T> withRepeat(BroadcastRepeatCondition<T> condition);
 
     /**
      * Asynchronously executes this operation.

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -26,13 +26,13 @@ import io.hekate.util.format.ToString;
  */
 public class ZooKeeperSeedNodeProviderConfig {
     /** Default value (={@value}) for {@link #setConnectTimeout(int)}. */
-    public static final int DEFAULT_CONNECT_TIMEOUT = 5 * 1000;
+    public static final int DEFAULT_CONNECT_TIMEOUT = 5_000;
 
     /** Default value (={@value}) for {@link #setSessionTimeout(int)}. */
-    public static final int DEFAULT_SESSION_TIMEOUT = 10 * 1000;
+    public static final int DEFAULT_SESSION_TIMEOUT = 10_000;
 
     /** Default value (={@value}) for {@link #setCleanupInterval(int)}. */
-    public static final int DEFAULT_CLEANUP_INTERVAL = 60 * 1000;
+    public static final int DEFAULT_CLEANUP_INTERVAL = 60_000;
 
     /** Default value (={@value}) for {@link #setBasePath(String)}. */
     public static final String DEFAULT_BASE_PATH = "/hekate/cluster";
@@ -136,7 +136,7 @@ public class ZooKeeperSeedNodeProviderConfig {
      *
      * <p>
      * Note that {@link ZooKeeperSeedNodeProvider} uses short-lived connection when interacting with ZooKeeper server (i.e. it creates a
-     * new connection for each operation and then closes it once operation is completed). Thus, it is not necessary to set this parameter to
+     * new connection for each operation and then closes it once operation is complete). Thus, it is not necessary to set this parameter to
      * a large value.
      * </p>
      *

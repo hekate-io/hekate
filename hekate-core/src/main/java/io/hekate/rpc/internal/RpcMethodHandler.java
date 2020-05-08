@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -32,6 +32,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 class RpcMethodHandler {
+    public static final RpcMethodHandler[] EMPTY_ARRAY = new RpcMethodHandler[0];
+
     private static final Logger log = LoggerFactory.getLogger(RpcMethodHandler.class);
 
     private final Object target;

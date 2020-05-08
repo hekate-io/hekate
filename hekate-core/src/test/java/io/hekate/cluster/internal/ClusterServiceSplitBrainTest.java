@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -98,6 +98,10 @@ public class ClusterServiceSplitBrainTest extends HekateNodeParamTestBase {
 
     @Test
     public void testTerminateWhenOtherNodeLeaves() throws Exception {
+        // Disable failure check because of the 'leaving' node can detect failure of the 'node'
+        // while the 'node' is being terminated by the split-brain policy.
+        disableNodeFailurePostCheck();
+
         SplitBrainDetectorMock detector = new SplitBrainDetectorMock(true);
 
         HekateTestNode node = createNode(c -> {

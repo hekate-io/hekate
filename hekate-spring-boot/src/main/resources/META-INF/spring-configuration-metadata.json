@@ -1,0 +1,981 @@
+{
+  "groups": [
+    {
+      "name": "hekate",
+      "description": "Hekate Configuration"
+    },
+    {
+      "name": "hekate.jmx",
+      "description": "Hekate JMX Configuration"
+    },
+    {
+      "name": "hekate.network",
+      "description": "Hekate Network"
+    },
+    {
+      "name": "hekate.network.ssl",
+      "description": "Hekate Network SSL/TLS Configuration"
+    },
+    {
+      "name": "hekate.cluster",
+      "description": "Hekate Cluster"
+    },
+    {
+      "name": "hekate.cluster.seed.static",
+      "description": "Hekate Cluster: Known addresses"
+    },
+    {
+      "name": "hekate.cluster.seed.multicast",
+      "description": "Hekate Cluster: Multicast Discovery"
+    },
+    {
+      "name": "hekate.cluster.seed.jdbc",
+      "description": "Hekate Cluster: JDBC Discovery"
+    },
+    {
+      "name": "hekate.cluster.seed.filesystem",
+      "description": "Hekate Cluster: File System Discovery"
+    },
+    {
+      "name": "hekate.cluster.seed.zookeeper",
+      "description": "Hekate Cluster: Zookeeper Discovery"
+    },
+    {
+      "name": "hekate.cluster.seed.etcd",
+      "description": "Hekate Cluster: Etcd Discovery"
+    },
+    {
+      "name": "hekate.cluster.seed.consul",
+      "description": "Hekate Cluster: Consul Discovery"
+    },
+    {
+      "name": "hekate.cluster.seed.kubernetes",
+      "description": "Hekate Cluster: Kubernetes Discovery"
+    },
+    {
+      "name": "hekate.cluster.seed.cloud",
+      "description": "Hekate Cluster: Cloud Discovery"
+    },
+    {
+      "name": "hekate.cluster.seed.cloudstore",
+      "description": "Hekate Cluster: Cloud Store Siscovery"
+    },
+    {
+      "name": "hekate.coordination",
+      "description": "Hekate Coordination"
+    },
+    {
+      "name": "hekate.locks",
+      "description": "Hekate Locks"
+    },
+    {
+      "name": "hekate.rpc",
+      "description": "Hekate RPC"
+    }
+  ],
+  "properties": [
+    {
+      "name": "hekate.cluster-name",
+      "type": "java.lang.String",
+      "description": "Cluster name (alpha-numeric characters and non-repeating dots/hyphens).\n Only those instances that are configured with the same cluster name can form a cluster.\n Instances with different cluster names will form completely independent clusters.",
+      "defaultValue": "default"
+    },
+    {
+      "name": "hekate.node-name",
+      "type": "java.lang.String",
+      "description": "Node name (alpha-numeric characters and non-repeating dots/hyphens).",
+      "defaultValue": null
+    },
+    {
+      "name": "hekate.roles",
+      "type": "java.util.Set<java.lang.String>",
+      "description": "Roles of this node.\n Roles are string identifiers that can be used for logical grouping of cluster nodes via the cluster service API.",
+      "defaultValue": null
+    },
+    {
+      "name": "hekate.properties",
+      "type": "java.util.Map<java.lang.String,java.lang.String>",
+      "description": "Map of custom user-defined properties of this node.\n Remote nodes will be able to see those properties through the cluster service API.",
+      "defaultValue": null
+    },
+    {
+      "name": "hekate.codec",
+      "type": "java.lang.String",
+      "description": "Data serialization codec.",
+      "defaultValue": "jdk"
+    },
+    {
+      "name": "hekate.config-report",
+      "type": "java.lang.Boolean",
+      "description": "Enables/disables printing of this node's configuration details.",
+      "defaultValue": false
+    },
+    {
+      "name": "hekate.deferred-join",
+      "type": "java.lang.Boolean",
+      "description": "Enables/disables join the cluster during the Spring context initialization.\n If 'false' then Hekate node should be joined programmatically by calling Hekate#join() method.   ",
+      "defaultValue": false
+    },
+
+    {
+      "name": "hekate.jmx.enable",
+      "type": "java.lang.Boolean",
+      "description": "Enables/disables registration of Hekate components and services as JMX beans.",
+      "defaultValue": false
+    },
+    {
+      "name": "hekate.jmx.domain",
+      "type": "java.lang.String",
+      "description": "JMX domain name.",
+      "defaultValue": "io.hekate"
+    },
+
+    {
+      "name": "hekate.network.host",
+      "type": "java.lang.String",
+      "description": "Host address.\n Can be an IP address, a host name, or an address selection pattern ('any-ip4', 'ip~regex', 'net~regex', etc).",
+      "defaultValue": "any-ip4"
+    },
+    {
+      "name": "hekate.network.port",
+      "type": "java.lang.Integer",
+      "description": "Network port to accept connections from other nodes (0 to use a randomly selected port).",
+      "defaultValue": 10012
+    },
+    {
+      "name": "hekate.network.port-range",
+      "type": "java.lang.Integer",
+      "description": "Maximum value to use for port auto-incrementing if 'hekate.network.port' is busy (0 - no auto-increment).",
+      "defaultValue": 100
+    },
+    {
+      "name": "hekate.network.transport",
+      "type": "io.hekate.network.NetworkTransportType",
+      "description": "Transport type that controls which implementation of NIO API should be used.",
+      "defaultValue": "auto"
+    },
+    {
+      "name": "hekate.network.nio-threads",
+      "type": "java.lang.Integer",
+      "description": "Amount of threads for NIO event processing (defaults to the number of available CPUs).",
+      "defaultValue": null
+    },
+    {
+      "name": "hekate.network.connect-timeout",
+      "type": "java.lang.Integer",
+      "description": "Timeout in milliseconds for establishing a new TCP connections to a remote node.",
+      "defaultValue": 3000
+    },
+    {
+      "name": "hekate.network.heartbeat-interval",
+      "type": "java.lang.Integer",
+      "description": "Time interval in milliseconds for sending heartbeats in order to keep TCP socket connections alive.",
+      "defaultValue": 1000
+    },
+    {
+      "name": "hekate.network.heartbeat-loss-threshold",
+      "type": "java.lang.Integer",
+      "description": "Maximum number of lost heartbeats before considering a TCP connection to be failed.",
+      "defaultValue": 3
+    },
+    {
+      "name": "hekate.network.accept-retry-interval",
+      "type": "java.lang.Long",
+      "description": "Time in milliseconds to wait before trying to re-create a TCP socket acceptor in case of its failure.",
+      "defaultValue": 1000
+    },
+    {
+      "name": "hekate.network.tcp-no-delay",
+      "type": "java.lang.Boolean",
+      "description": "TCP_NODELAY socket option.",
+      "defaultValue": true
+    },
+    {
+      "name": "hekate.network.tcp-receive-buffer-size",
+      "type": "java.lang.Integer",
+      "description": "SO_RCVBUF socket option.",
+      "defaultValue": null
+    },
+    {
+      "name": "hekate.network.tcp-send-buffer-size",
+      "type": "java.lang.Integer",
+      "description": "SO_SNDBUF socket option.",
+      "defaultValue": null
+    },
+    {
+      "name": "hekate.network.tcp-reuse-address",
+      "type": "java.lang.Boolean",
+      "description": "SO_REUSEADDR socket option.",
+      "defaultValue": null
+    },
+    {
+      "name": "hekate.network.tcp-backlog",
+      "type": "java.lang.Integer",
+      "description": "Size of TCP acceptor's backlog queue.",
+      "defaultValue": null
+    },
+    {
+      "name": "hekate.network.ssl.enable",
+      "type": "java.lang.Boolean",
+      "description": "Enables/disables SSL/TLS for all network communications.",
+      "defaultValue": false
+    },
+    {
+      "name": "hekate.network.ssl.provider",
+      "type": "io.hekate.network.NetworkSslConfig.Provider",
+      "description": "SSL provider.",
+      "defaultValue": "auto"
+    },
+    {
+      "name": "hekate.network.ssl.key-store-path",
+      "type": "java.lang.String",
+      "description": "Keystore file location.",
+      "defaultValue": null
+    },
+    {
+      "name": "hekate.network.ssl.key-store-password",
+      "type": "java.lang.String",
+      "description": "Keystore password.",
+      "defaultValue": null
+    },
+    {
+      "name": "hekate.network.ssl.key-store-type",
+      "type": "java.lang.String",
+      "description": "Keystore type.",
+      "defaultValue": null
+    },
+    {
+      "name": "hekate.network.ssl.key-store-algorithm",
+      "type": "java.lang.String",
+      "description": "Keystore algorithm.",
+      "defaultValue": null
+    },
+    {
+      "name": "hekate.network.ssl.trust-store-path",
+      "type": "java.lang.String",
+      "description": "Trust store file location.",
+      "defaultValue": null
+    },
+    {
+      "name": "hekate.network.ssl.trust-store-password",
+      "type": "java.lang.String",
+      "description": "Trust store password.",
+      "defaultValue": null
+    },
+    {
+      "name": "hekate.network.ssl.trust-store-algorithm",
+      "type": "java.lang.String",
+      "description": "Trust store algorithm.",
+      "defaultValue": null
+    },
+    {
+      "name": "hekate.network.ssl.trust-store-type",
+      "type": "java.lang.String",
+      "description": "Trust store type.",
+      "defaultValue": null
+    },
+    {
+      "name": "hekate.network.ssl.ssl-session-cache-size",
+      "type": "java.lang.Integer",
+      "description": "Size of the cache used for storing SSL session objects (0 - use JDK defaults).",
+      "defaultValue": null
+    },
+    {
+      "name": "hekate.network.ssl.ssl-session-cache-timeout",
+      "type": "java.lang.Integer",
+      "description": "Timeout in seconds for the cached SSL session objects.",
+      "defaultValue": null
+    },
+
+    {
+      "name": "hekate.cluster.gossip-interval",
+      "type": "java.lang.Long",
+      "description": "Time interval in milliseconds between gossip rounds.",
+      "defaultValue": 1000
+    },
+    {
+      "name": "hekate.cluster.speed-up-gossip-size",
+      "type": "java.lang.Integer",
+      "description": "The maximum amount of nodes in the cluster for the gossip protocol to speed up by sending messages at a higher rate\n so that the cluster could converge faster (at the cost of higher network utilization).",
+      "defaultValue": 100
+    },
+    {
+      "name": "hekate.cluster.split-brain-action",
+      "type": "io.hekate.cluster.split.SplitBrainAction",
+      "description": "Action in case if the local node is in a split-brain state.",
+      "defaultValue": "terminate"
+    },
+    {
+      "name": "hekate.cluster.split-brain-check-interval",
+      "type": "java.lang.Long",
+      "description": "Time interval in milliseconds for split-brain checks (0 - disable periodic checks).",
+      "defaultValue": 0
+    },
+    {
+      "name": "hekate.cluster.health.heartbeat-interval",
+      "type": "java.lang.Long",
+      "description": "Time interval in milliseconds to send heartbeat messages to remote nodes.",
+      "defaultValue": 500
+    },
+    {
+      "name": "hekate.cluster.health.heartbeat-loss-threshold",
+      "type": "java.lang.Integer",
+      "description": "Amount of heartbeats that can be lost before considering a node failure.",
+      "defaultValue": 6
+    },
+    {
+      "name": "hekate.cluster.health.failure-detection-quorum",
+      "type": "java.lang.Integer",
+      "description": "Amount of nodes that should agree on some particular node failure before removing such a suspected node from the cluster.",
+      "defaultValue": 2
+    },
+    {
+      "name": "hekate.cluster.health.fail-fast",
+      "type": "java.lang.Boolean",
+      "description": "If 'true' then node will be immediately treated as failed in case of a 'java.net.ConnectException' during health checks.\n Otherwise, such a node will be treated as alive unless 'hekate.cluster.health.heartbeat-loss-threshold' is reached.",
+      "defaultValue": true
+    },
+
+    {
+      "name": "hekate.cluster.seed.policy",
+      "type": "io.hekate.cluster.seed.SeedNodeProviderGroupPolicy",
+      "description": "Error handling policy among seed node providers.",
+      "defaultValue": "fail_on_first_error"
+    },
+    {
+      "name": "hekate.cluster.seed.static.enable",
+      "type": "java.lang.Boolean",
+      "description": "Enables/disables discovery via a pre-configured list of seed node addresses.",
+      "defaultValue": false
+    },
+    {
+      "name": "hekate.cluster.seed.static.addresses",
+      "type": "java.util.List<java.lang.String>",
+      "description": "List of addresses (<host>:<port>)",
+      "defaultValue": null
+    },
+
+    {
+      "name": "hekate.cluster.seed.multicast.enable",
+      "type": "java.lang.Boolean",
+      "description": "Enables/disables IP multicast-based seed node discovery.",
+      "defaultValue": true
+    },
+    {
+      "name": "hekate.cluster.seed.multicast.group",
+      "type": "java.lang.String",
+      "description": "Multicast group address.",
+      "defaultValue": "224.1.2.12"
+    },
+    {
+      "name": "hekate.cluster.seed.multicast.port",
+      "type": "java.lang.Integer",
+      "description": "Multicast port.",
+      "defaultValue": 45454
+    },
+    {
+      "name": "hekate.cluster.seed.multicast.ttl",
+      "type": "java.lang.Integer",
+      "description": "Time to live (TTL) for multicast packets.",
+      "defaultValue": 3
+    },
+    {
+      "name": "hekate.cluster.seed.multicast.interval",
+      "type": "java.lang.Long",
+      "description": "Time interval in milliseconds between discovery messages multicast rounds.",
+      "defaultValue": 200
+    },
+    {
+      "name": "hekate.cluster.seed.multicast.wait-time",
+      "type": "java.lang.Long",
+      "description": "Time in milliseconds to await for responses from remote nodes.",
+      "defaultValue": 1000
+    },
+    {
+      "name": "hekate.cluster.seed.multicast.loop-back-disabled",
+      "type": "java.lang.Boolean",
+      "description": "Enables/disables receiving of multicast messages on the loop back address.",
+      "defaultValue": false
+    },
+
+    {
+      "name": "hekate.cluster.seed.filesystem.enable",
+      "type": "java.lang.Boolean",
+      "description": "Enables/disables file system-based seed node discovery.",
+      "defaultValue": false
+    },
+    {
+      "name": "hekate.cluster.seed.filesystem.work-dir",
+      "type": "java.lang.String",
+      "description": "Work directory to store the information about the seed nodes.",
+      "defaultValue": null
+    },
+    {
+      "name": "hekate.cluster.seed.filesystem.cleanup-interval",
+      "type": "java.lang.Long",
+      "description": "Time interval in milliseconds to clean up information about stale seed nodes.",
+      "defaultValue": 60000
+    },
+
+    {
+      "name": "hekate.cluster.seed.jdbc.enable",
+      "type": "java.lang.Boolean",
+      "description": "Enables/disables JDBC-based seed node discovery.",
+      "defaultValue": false
+    },
+    {
+      "name": "hekate.cluster.seed.jdbc.cleanup-interval",
+      "type": "java.lang.Long",
+      "description": "Time interval in milliseconds to clean up information about stale seed nodes.",
+      "defaultValue": 60000
+    },
+    {
+      "name": "hekate.cluster.seed.jdbc.table",
+      "type": "java.lang.String",
+      "description": "Table name.",
+      "defaultValue": "cluster_nodes"
+    },
+    {
+      "name": "hekate.cluster.seed.jdbc.cluster-column",
+      "type": "java.lang.String",
+      "description": "Column to store the cluster name.",
+      "defaultValue": "cluster_name"
+    },
+    {
+      "name": "hekate.cluster.seed.jdbc.host-column",
+      "type": "java.lang.String",
+      "description": "Column to store the host address of a seed node.",
+      "defaultValue": "host"
+    },
+    {
+      "name": "hekate.cluster.seed.jdbc.port-column",
+      "type": "java.lang.String",
+      "description": "Column to store the port number of a seed node.",
+      "defaultValue": "port"
+    },
+    {
+      "name": "hekate.cluster.seed.jdbc.query-timeout",
+      "type": "java.lang.Integer",
+      "description": "JDBC query timeout in seconds (0 - no timeout).",
+      "defaultValue": 0
+    },
+
+    {
+      "name": "hekate.cluster.seed.zookeeper.enable",
+      "type": "java.lang.Boolean",
+      "description": "Enables/disables Zookeeper-based discovery of seed nodes.\n Requires 'hekate.io:hekate-zookeeper' to be on the classpath.",
+      "defaultValue": false
+    },
+    {
+      "name": "hekate.cluster.seed.zookeeper.connection-string",
+      "type": "java.lang.String",
+      "description": "Comma-separated list of Zookeeper addresses (f.e. '127.0.1:2181,127.0.01:2182')",
+      "defaultValue": null
+    },
+    {
+      "name": "hekate.cluster.seed.zookeeper.base-path",
+      "type": "java.lang.String",
+      "description": "Base path to store the information about the seed nodes in ZooKeeper.",
+      "defaultValue": "/hekate/cluster"
+    },
+    {
+      "name": "hekate.cluster.seed.zookeeper.connect-timeout",
+      "type": "java.lang.Integer",
+      "description": "ZooKeeper connection timeout in milliseconds.",
+      "defaultValue": 5000
+    },
+    {
+      "name": "hekate.cluster.seed.zookeeper.session-timeout",
+      "type": "java.lang.Integer",
+      "description": "ZooKeeper session timeout in milliseconds.",
+      "defaultValue": 10000
+    },
+
+    {
+      "name": "hekate.cluster.seed.etcd.enable",
+      "type": "java.lang.Boolean",
+      "description": "Enables/disables Etcd-based discovery of seed nodes.\n Requires 'hekate.io:hekate-etcd' to be on the classpath.",
+      "defaultValue": false
+    },
+    {
+      "name": "hekate.cluster.seed.etcd.endpoints",
+      "type": "java.util.List<java.lang.String>",
+      "description": "List of Etcd endpoint addresses (URLs).",
+      "defaultValue": null
+    },
+    {
+      "name": "hekate.cluster.seed.etcd.username",
+      "type": "java.lang.String",
+      "description": "Etcd username.",
+      "defaultValue": null
+    },
+    {
+      "name": "hekate.cluster.seed.etcd.password",
+      "type": "java.lang.String",
+      "description": "Etcd password.",
+      "defaultValue": null
+    },
+    {
+      "name": "hekate.cluster.seed.etcd.base-path",
+      "type": "java.lang.String",
+      "description": "Base path to store the information about the seed nodes in Etcd.",
+      "defaultValue": "/hekate/cluster"
+    },
+    {
+      "name": "hekate.cluster.seed.etcd.cleanup-interval",
+      "type": "java.lang.Long",
+      "description": "Time interval in milliseconds to clean up information about stale seed nodes.",
+      "defaultValue": 60000
+    },
+
+    {
+      "name": "hekate.cluster.seed.consul.enable",
+      "type": "java.lang.Boolean",
+      "description": "Enables/disables Consul-based discovery of seed nodes.\n Requires 'hekate.io:hekate-consul' to be on the classpath.",
+      "defaultValue": false
+    },
+    {
+      "name": "hekate.cluster.seed.consul.url",
+      "type": "java.lang.String",
+      "description": "Consul endpoint address (URL).",
+      "defaultValue": null
+    },
+    {
+      "name": "hekate.cluster.seed.consul.base-path",
+      "type": "java.lang.String",
+      "description": "Base path to store the information about the seed nodes in Consul.",
+      "defaultValue": "/hekate/cluster"
+    },
+    {
+      "name": "hekate.cluster.seed.consul.acl-token",
+      "type": "java.lang.String",
+      "description": "Consul ACL token.",
+      "defaultValue": "/hekate/cluster"
+    },
+    {
+      "name": "hekate.cluster.seed.consul.connect-timeout",
+      "type": "java.lang.Long",
+      "description": "Consul connect timeout in milliseconds.",
+      "defaultValue": null
+    },
+    {
+      "name": "hekate.cluster.seed.consul.read-timeout",
+      "type": "java.lang.Long",
+      "description": "Consul read timeout in milliseconds.",
+      "defaultValue": null
+    },
+    {
+      "name": "hekate.cluster.seed.consul.write-timeout",
+      "type": "java.lang.Long",
+      "description": "Consul write timeout in milliseconds.",
+      "defaultValue": null
+    },
+    {
+      "name": "hekate.cluster.seed.consul.cleanup-interval",
+      "type": "java.lang.Long",
+      "description": "Time interval in milliseconds to clean up information about stale seed nodes.",
+      "defaultValue": 60000
+    },
+
+    {
+      "name": "hekate.cluster.seed.kubernetes.enable",
+      "type": "java.lang.Boolean",
+      "description": "Enables/disables Kubernetes-based discovery of seed nodes.\n Requires 'hekate.io:hekate-kubernetes' to be on the classpath.",
+      "defaultValue": false
+    },
+    {
+      "name": "hekate.cluster.seed.kubernetes.container-port-name",
+      "type": "java.lang.String",
+      "description": "Port name of a Pod's container.",
+      "defaultValue": "hekate"
+    },
+    {
+      "name": "hekate.cluster.seed.kubernetes.master-url",
+      "type": "java.lang.String",
+      "description": "URL of Kubernetes API server.",
+      "defaultValue": null
+    },
+    {
+      "name": "hekate.cluster.seed.kubernetes.namespace",
+      "type": "java.lang.String",
+      "description": "Kubernetes namespace.",
+      "defaultValue": null
+    },
+    {
+      "name": "hekate.cluster.seed.kubernetes.trust-certificates",
+      "type": "java.lang.Boolean",
+      "description": "Flag indicating that Kubernetes API must have a trusted certificate.",
+      "defaultValue": null
+    },
+
+    {
+      "name": "hekate.cluster.seed.cloud.enable",
+      "type": "java.lang.Boolean",
+      "description": "Enables/disables cloud-based seed node discovery.\n Requires 'hekate.io:hekate-jclouds-core' to be on the classpath.",
+      "defaultValue": false
+    },
+    {
+      "name": "hekate.cluster.seed.cloud.provider",
+      "type": "java.lang.String",
+      "description": "Cloud services provider.",
+      "defaultValue": null
+    },
+    {
+      "name": "hekate.cluster.seed.cloud.identity",
+      "type": "java.lang.String",
+      "description": "Cloud provider identity (f.e. AWS access key).",
+      "defaultValue": null
+    },
+    {
+      "name": "hekate.cluster.seed.cloud.credential",
+      "type": "java.lang.String",
+      "description": "Cloud provider credential (f.e. AWS secret key).",
+      "defaultValue": null
+    },
+    {
+      "name": "hekate.cluster.seed.cloud.regions",
+      "type": "java.util.Set<java.lang.String>",
+      "description": "Cloud regions to scan for seed nodes. If not specified then all regions will be scanned.",
+      "defaultValue": null
+    },
+    {
+      "name": "hekate.cluster.seed.cloud.endpoint",
+      "type": "java.lang.String",
+      "description": "Custom endpoint address to access the cloud provider's APIs.",
+      "defaultValue": null
+    },
+
+    {
+      "name": "hekate.cluster.seed.cloudstore.enable",
+      "type": "java.lang.Boolean",
+      "description": "Enables/disables cloud store-based seed node discovery. Requires 'hekate.io:hekate-jclouds-core' to be on the classpath.",
+      "defaultValue": false
+    },
+    {
+      "name": "hekate.cluster.seed.cloudstore.provider",
+      "type": "java.lang.String",
+      "description": "Cloud store provider",
+      "defaultValue": null
+    },
+    {
+      "name": "hekate.cluster.seed.cloudstore.identity",
+      "type": "java.lang.String",
+      "description": "Cloud provider identity (f.e. AWS access key).",
+      "defaultValue": null
+    },
+    {
+      "name": "hekate.cluster.seed.cloudstore.credential",
+      "type": "java.lang.String",
+      "description": "Cloud provider credential (f.e. AWS secret key).",
+      "defaultValue": null
+    },
+    {
+      "name": "hekate.cluster.seed.cloudstore.container",
+      "type": "java.lang.String",
+      "description": "Container to store the information about the seed nodes (f.e. Amazon S3 bucket name).",
+      "defaultValue": null
+    },
+    {
+      "name": "hekate.cluster.seed.cloudstore.cleanup-interval",
+      "type": "java.lang.Long",
+      "description": "Time interval in milliseconds to clean up information about stale seed nodes.",
+      "defaultValue": 60000
+    },
+
+    {
+      "name": "hekate.coordination.nio-threads",
+      "type": "java.lang.Integer",
+      "description": "Size of a dedicated thread pool for coordination-related NIO events handling (0 - do not use a dedicated thread pool).",
+      "defaultValue": 0
+    },
+    {
+      "name": "hekate.coordination.retry-interval",
+      "type": "java.lang.Long",
+      "description": "Time interval in milliseconds between retry attempts in case of network communication failures or cluster collisions.",
+      "defaultValue": 50
+    },
+    {
+      "name": "hekate.coordination.idle-socket-timeout",
+      "type": "java.lang.Long",
+      "description": "Time in milliseconds to keep idle socket connections before closing.",
+      "defaultValue": 60000
+    },
+
+    {
+      "name": "hekate.locks.nio-threads",
+      "type": "java.lang.Integer",
+      "description": "Size of a dedicated thread pool for locks-related NIO events handling (0 - do not use a dedicated thread pool).",
+      "defaultValue": 0
+    },
+    {
+      "name": "hekate.locks.worker-threads",
+      "type": "java.lang.Integer",
+      "description": "Thread pool size for handling locks-related operations.",
+      "defaultValue": 1
+    },
+    {
+      "name": "hekate.locks.retry-interval",
+      "type": "java.lang.Long",
+      "description": "Time interval in milliseconds between retry attempts in case of network communication failures or cluster collisions.",
+      "defaultValue": 50
+    },
+
+    {
+      "name": "hekate.rpc.nio-threads",
+      "type": "java.lang.Integer",
+      "description": "Size of a dedicated thread pool for RPC-related NIO events handling (0 - do not use a dedicated thread pool).",
+      "defaultValue": 0
+    },
+    {
+      "name": "hekate.rpc.worker-threads",
+      "type": "java.lang.Integer",
+      "description": "Thread pool size for RPC requests handling (defaults to the number of available CPUs).",
+      "defaultValue": null
+    },
+    {
+      "name": "hekate.rpc.idle-socket-timeout",
+      "type": "java.lang.Long",
+      "description": "Time in milliseconds to keep idle socket connections before closing (0 - do not close idle connections).",
+      "defaultValue": 0
+    },
+    {
+      "name": "hekate.rpc.back-pressure.in-low-watermark",
+      "type": "java.lang.Integer",
+      "description": "Low watermark of inbound (receiving) queue size.\n Value must be within the [0..'hekate.rpc.back-pressure.in-high-watermark') range.",
+      "defaultValue": 0
+    },
+    {
+      "name": "hekate.rpc.back-pressure.in-high-watermark",
+      "type": "java.lang.Integer",
+      "description": "High watermark of inbound (receiving) queue size (0 - no limit).",
+      "defaultValue": 0
+    },
+    {
+      "name": "hekate.rpc.back-pressure.out-low-watermark",
+      "type": "java.lang.Integer",
+      "description": "Low watermark of outbound (sending) queue size.\n Value must be within the [0..'hekate.rpc.back-pressure.out-high-watermark') range.",
+      "defaultValue": 0
+    },
+    {
+      "name": "hekate.rpc.back-pressure.out-high-watermark",
+      "type": "java.lang.Integer",
+      "description": "High watermark of outbound (sending) queue size (0 - no limit).",
+      "defaultValue": 0
+    },
+    {
+      "name": "hekate.rpc.back-pressure.out-overflow-policy",
+      "type": "io.hekate.messaging.MessagingOverflowPolicy",
+      "description": "Policy that should be applied when outbound (sending) queue size exceeds the 'hekate.rpc.back-pressure.out-high-watermark' value.",
+      "defaultValue": "IGNORE"
+    }
+  ],
+  "hints": [
+    {
+      "name": "hekate.codec",
+      "values": [
+        {
+          "value": "jdk",
+          "description": "JDK default serialization."
+        },
+        {
+          "value": "fst",
+          "description": "FST serialization (see https://github.com/RuedigerMoeller/fast-serialization).\n Requires 'io.hekate:hekate-codec-fst' to be on the classpath."
+        },
+        {
+          "value": "kryo",
+          "description": "Kryo serialization (see https://github.com/EsotericSoftware/kryo).\n Requires 'io.hekate:hekate-codec-kryo' to be on the classpath."
+        }
+      ]
+    },
+    {
+      "name": "hekate.network.transport",
+      "values": [
+        {
+          "value": "auto",
+          "description": "Try to autodetect which implementation to use depending on the runtime environment."
+        },
+        {
+          "value": "epoll",
+          "description": "Optimized Epoll-based transport (for Linux environments only).\n Requires 'netty-transport-native-epoll' to be on the classpath."
+        },
+        {
+          "value": "nio",
+          "description": "Default NIO-based implementation that is provided by the JDK."
+        }
+      ]
+    },
+    {
+      "name": "hekate.network.ssl.provider",
+      "values": [
+        {
+          "value": "auto",
+          "description": "Automatically select provider depending on what is available on the classpath."
+        },
+        {
+          "value": "jdk",
+          "description": "JDK default SSL provider."
+        },
+        {
+          "value": "open_ssl",
+          "description": "OpenSSL provider."
+        }
+      ]
+    },
+    {
+      "name": "hekate.network.host",
+      "values": [
+        {
+          "value": "any",
+          "description": "Any non-loopback address."
+        },
+        {
+          "value": "any-ip4",
+          "description": "Any IPv4 non-loopback address."
+        },
+        {
+          "value": "ip~regex",
+          "description": "Any address that matches the specified 'regex' regular expression."
+        },
+        {
+          "value": "ip4~regex",
+          "description": "Any IPv4 address that matches the specified 'regex' regular expression."
+        },
+        {
+          "value": "ip6~regex",
+          "description": "Any IPv6 address that matches the specified 'regex' regular expression."
+        },
+        {
+          "value": "!ip~regex",
+          "description": "Any address that that does NOT match the specified 'regex' regular expression."
+        },
+        {
+          "value": "!ip4~regex",
+          "description": "Any IPv4 address that does NOT that match the specified 'regex' regular expression."
+        },
+        {
+          "value": "!ip6~regex",
+          "description": "Any IPv6 address that does NOT that match the specified 'regex' regular expression."
+        },
+        {
+          "value": "net~regex",
+          "description": "Any IP address of a network interface whose name matches the specified regular expression."
+        },
+        {
+          "value": "net4~regex",
+          "description": "Any IPv4 address of a network interface whose name matches the specified regular expression."
+        },
+        {
+          "value": "net6~regex",
+          "description": "Any IPv6 address of a network interface whose name matches the specified regular expression."
+        },
+        {
+          "value": "!net~regex",
+          "description": "Any IP address of a network interface whose name does NOT match the specified regular expression."
+        },
+        {
+          "value": "!net4~regex",
+          "description": "Any IPv4 address of a network interface whose name does NOT match the specified regular expression."
+        },
+        {
+          "value": "!net6~regex",
+          "description": "Any IPv6 address of a network interface whose name does NOT match the specified regular expression."
+        }
+      ],
+      "providers": [
+        {
+          "name": "any",
+          "description": "...all other values will be treated as a directly specified address"
+        }
+      ]
+    },
+    {
+      "name": "hekate.cluster.split-brain-action",
+      "values": [
+        {
+          "value": "rejoin",
+          "description": "Try to rejoin the cluster."
+        },
+        {
+          "value": "terminate",
+          "description": "Terminate Hekate node but keep the JVM running."
+        },
+        {
+          "value": "kill_jvm",
+          "description": "Kills the JVM via System#exit() (exit code 250)."
+        }
+      ]
+    },
+    {
+      "name": "hekate.cluster.seed.policy",
+      "values": [
+        {
+          "value": "fail_on_first_error",
+          "description": "Fail if at least one of seed node providers fails."
+        },
+        {
+          "value": "ignore_partial_errors",
+          "description": "Do not fail if at least one seed node providers succeeds."
+        }
+      ]
+    },
+    {
+      "name": "hekate.cluster.seed.cloud.provider",
+      "values": [
+        {
+          "value": "aws-ec2",
+          "description": "Amazon EC2.\n Requires 'hekate.io:hekate.io:hekate-jclouds-aws' to be on the classpath."
+        },
+        {
+          "value": "google-compute-engine",
+          "description": "Google Compute Engine.\n Requires 'org.apache.jclouds.provider:google-compute-engine' to be on the classpath."
+        }
+      ],
+      "providers": [
+        {
+          "name": "any",
+          "description": "Please see the Apache JClouds documentation for the complete list of all available providers."
+        }
+      ]
+    },
+    {
+      "name": "hekate.cluster.seed.cloudstore.provider",
+      "values": [
+        {
+          "value": "aws-s3",
+          "description": "Amazon S3.\n Rrequires 'hekate.io:hekate.io:hekate-jclouds-aws' to be on the classpath."
+        },
+        {
+          "value": "google-cloud-storage",
+          "description": "Google Cloud Storage.\n Requires 'org.apache.jclouds.provider:google-cloud-storage' to be on the classpath."
+        }
+      ],
+      "providers": [
+        {
+          "name": "any",
+          "description": "Please see the Apache JClouds documentation for the complete list of all available providers."
+        }
+      ]
+    },
+    {
+      "name": "hekate.rpc.back-pressure.out-overflow-policy",
+      "values": [
+        {
+          "value": "block",
+          "description": "Block the caller thread unless the outbound queue goes down to its low watermark."
+        },
+        {
+          "value": "block_uninterruptedly",
+          "description": "Uninterruptedly block the caller thread unless the outbound queue goes down to its low watermark."
+        },
+        {
+          "value": "fail",
+          "description": "Rejects operation with queue overflow error."
+        },
+        {
+          "value": "ignore",
+          "description": "Completely ignore the queue size restrictions."
+        }
+      ]
+    }
+  ]
+}

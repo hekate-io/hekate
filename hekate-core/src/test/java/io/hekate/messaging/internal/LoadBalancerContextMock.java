@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -17,6 +17,7 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterTopology;
+import io.hekate.cluster.internal.TopologyContextCache;
 import io.hekate.partition.PartitionMapper;
 import java.util.Optional;
 
@@ -26,7 +27,11 @@ import static org.mockito.Mockito.mock;
  * Exposes the {@link DefaultLoadBalancerContext} class to other packages for testing purposes.
  */
 public class LoadBalancerContextMock extends DefaultLoadBalancerContext {
-    public LoadBalancerContextMock(int affinity, Object affinityKey, ClusterTopology topology) {
-        super(affinity, affinityKey, topology, mock(PartitionMapper.class), Optional.empty());
+    public LoadBalancerContextMock(
+        int affinity,
+        Object affinityKey,
+        ClusterTopology topology
+    ) {
+        super(affinity, affinityKey, topology, mock(PartitionMapper.class), Optional.empty(), new TopologyContextCache());
     }
 }

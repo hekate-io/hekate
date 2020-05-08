@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -42,26 +42,37 @@ public class NetworkSslConfig {
         OPEN_SSL
     }
 
+    /** See {@link #setProvider(Provider)}. */
     private Provider provider = Provider.AUTO;
 
+    /** See {@link #setKeyStoreAlgorithm(String)}. */
     private String keyStoreAlgorithm;
 
+    /** See {@link #setKeyStorePath(String)}. */
     private String keyStorePath;
 
+    /** See {@link #setKeyStoreType(String)}. */
     private String keyStoreType;
 
+    /** See {@link #setKeyStorePassword(String)}. */
     private String keyStorePassword;
 
+    /** See {@link #setTrustStoreAlgorithm(String)}. */
     private String trustStoreAlgorithm;
 
+    /** See {@link #setTrustStorePath(String)}. */
     private String trustStorePath;
 
+    /** See {@link #setKeyStoreType(String)}. */
     private String trustStoreType;
 
+    /** See {@link #setTrustStorePassword(String)}. */
     private String trustStorePassword;
 
+    /** See {@link #setSslSessionCacheSize(int)}. */
     private int sslSessionCacheSize;
 
+    /** See {@link #setSslSessionCacheTimeout(int)}. */
     private int sslSessionCacheTimeout;
 
     /**

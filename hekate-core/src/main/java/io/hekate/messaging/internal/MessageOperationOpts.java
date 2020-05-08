@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -17,15 +17,48 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterView;
+import io.hekate.cluster.internal.TopologyContextCache;
 import io.hekate.messaging.loadbalance.LoadBalancer;
 import io.hekate.partition.PartitionMapper;
 
+/**
+ * Messaging operation options.
+ *
+ * @param <T> Message type.
+ */
 interface MessageOperationOpts<T> {
+    /**
+     * Channel name.
+     *
+     * @return Channel name.
+     */
     String name();
 
+    /**
+     * Load balancer.
+     *
+     * @return Load balancer.
+     */
     LoadBalancer<T> balancer();
 
+    /**
+     * Load balancer cache.
+     *
+     * @return Load balancer cache.
+     */
+    TopologyContextCache balancerCache();
+
+    /**
+     * Cluster view of this channel.
+     *
+     * @return Cluster view of this channel.
+     */
     ClusterView cluster();
 
+    /**
+     * Partition mapper.
+     *
+     * @return Partition mapper.
+     */
     PartitionMapper partitions();
 }

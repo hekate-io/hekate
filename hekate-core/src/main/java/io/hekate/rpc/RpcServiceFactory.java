@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -39,14 +39,19 @@ import java.util.List;
  * </p>
  */
 public class RpcServiceFactory extends MessagingConfigBase<RpcServiceFactory> implements ServiceFactory<RpcService> {
+    /** See {@link #setClients(List)}. */
     private List<RpcClientConfig> clients;
 
+    /** See {@link #setClientProviders(List)}. */
     private List<RpcClientConfigProvider> clientProviders;
 
+    /** See {@link #setServers(List)}. */
     private List<RpcServerConfig> servers;
 
+    /** See {@link #setServerProviders(List)}. */
     private List<RpcServerConfigProvider> serverProviders;
 
+    /** See {@link #setWorkerThreads(int)}. */
     private int workerThreads = Runtime.getRuntime().availableProcessors();
 
     /**

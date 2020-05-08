@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -22,9 +22,11 @@ import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.util.format.ToString;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -124,6 +126,33 @@ public class UpdatableClusterViewTest extends HekateTestBase {
 
         assertEquals(topology.version(), filter.topology().version());
         assertEquals(Collections.singletonList(n2), filter.topology().nodes());
+    }
+
+    @Test
+    public void testTopologyContext() throws Exception {
+        ClusterTopology t1 = ClusterTopology.of(1, toSet(newNode()));
+        ClusterTopology t2 = ClusterTopology.of(2, toSet(newNode()));
+        ClusterTopology t3 = ClusterTopology.of(3, toSet(newNode()));
+
+        UpdatableClusterView view = UpdatableClusterView.of(t1);
+
+        Function<ClusterTopology, Object> supplier = top -> new Object();
+
+        Object o1 = view.topologyContext(supplier);
+        assertSame(o1, view.topologyContext(supplier));
+
+        view.update(t2);
+
+        Object o2 = view.topologyContext(supplier);
+        assertSame(o2, view.topologyContext(supplier));
+        assertNotSame(o1, o2);
+
+        view.update(t3);
+
+        Object o3 = view.topologyContext(supplier);
+        assertSame(o3, view.topologyContext(supplier));
+        assertNotSame(o1, o3);
+        assertNotSame(o2, o3);
     }
 
     @Test

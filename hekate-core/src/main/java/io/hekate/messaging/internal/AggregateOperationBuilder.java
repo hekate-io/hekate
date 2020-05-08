@@ -1,3 +1,19 @@
+/*
+ * Copyright 2020 The Hekate Project
+ *
+ * The Hekate Project licenses this file to you under the Apache License,
+ * version 2.0 (the "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at:
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+
 package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterNode;
@@ -5,6 +21,7 @@ import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.messaging.loadbalance.UnknownRouteException;
 import io.hekate.messaging.operation.Aggregate;
 import io.hekate.messaging.operation.AggregateFuture;
+import io.hekate.messaging.operation.AggregateRepeatCondition;
 import io.hekate.messaging.operation.AggregateRetryConfigurer;
 import io.hekate.messaging.operation.AggregateRetryPolicy;
 import io.hekate.messaging.retry.RetryBackoffPolicy;
@@ -20,6 +37,8 @@ import static io.hekate.messaging.internal.BroadcastOperationBuilder.nodesForBro
 class AggregateOperationBuilder<T> extends MessageOperationBuilder<T> implements Aggregate<T>, AggregateRetryPolicy<T> {
     private Object affinity;
 
+    private long timeout;
+
     private RetryErrorPredicate retryErr;
 
     private RetryResponsePredicate<T> retryResp;
@@ -32,7 +51,7 @@ class AggregateOperationBuilder<T> extends MessageOperationBuilder<T> implements
 
     private int maxAttempts;
 
-    private long timeout;
+    private AggregateRepeatCondition<T> repeat;
 
     public AggregateOperationBuilder(T message, MessagingGatewayContext<T> gateway, MessageOperationOpts<T> opts) {
         super(message, gateway, opts);
@@ -67,9 +86,20 @@ class AggregateOperationBuilder<T> extends MessageOperationBuilder<T> implements
     }
 
     @Override
+    public Aggregate<T> withRepeat(AggregateRepeatCondition<T> condition) {
+        ArgAssert.notNull(condition, "Repeat condition");
+
+        repeat = condition;
+
+        return this;
+    }
+
+    @Override
     public AggregateFuture<T> submit() {
+        AggregateFuture<T> future = new AggregateFuture<>();
+
         // Use a static method to make sure that we immutably capture all current settings of this operation.
-        return doSubmit(
+        doSubmit(
             message(),
             affinity,
             timeout,
@@ -79,9 +109,13 @@ class AggregateOperationBuilder<T> extends MessageOperationBuilder<T> implements
             retryCondition,
             retryBackoff,
             retryCallback,
+            repeat,
             gateway(),
-            opts()
+            opts(),
+            future
         );
+
+        return future;
     }
 
     @Override
@@ -128,7 +162,8 @@ class AggregateOperationBuilder<T> extends MessageOperationBuilder<T> implements
         return this;
     }
 
-    private static <T> AggregateFuture<T> doSubmit(
+    // Static to make sure that we capture all the parameter at once and do not depend on the operation builder's state changes.
+    private static <T> void doSubmit(
         T msg,
         Object affinity,
         long timeout,
@@ -138,11 +173,11 @@ class AggregateOperationBuilder<T> extends MessageOperationBuilder<T> implements
         RetryCondition retryCondition,
         RetryBackoffPolicy retryBackoff,
         RetryCallback retryCallback,
+        AggregateRepeatCondition<T> repeat,
         MessagingGatewayContext<T> gateway,
-        MessageOperationOpts<T> opts
+        MessageOperationOpts<T> opts,
+        AggregateFuture<T> future
     ) {
-        AggregateFuture<T> future = new AggregateFuture<>();
-
         List<ClusterNode> nodes = nodesForBroadcast(affinity, opts);
 
         if (nodes.isEmpty()) {
@@ -178,19 +213,37 @@ class AggregateOperationBuilder<T> extends MessageOperationBuilder<T> implements
                         //-----------------------------------------------
                         // Can happen in some rare cases if node leaves the cluster at the same time with this operation.
                         // We exclude such nodes from the operation's results as if it had left the cluster right before
-                        // we've started the operation.
+                        // we've started the operation (note that no messages had been submitted to that node).
                         complete = ctx.forgetNode(node);
                     } else {
                         complete = ctx.onReplyFailure(node, err);
                     }
 
                     if (complete) {
-                        ctx.complete();
+                        if (repeat == null || gateway.isClosed() || ctx.isTimedOut() || !repeat.shouldRepeat(ctx)) {
+                            // Aggregation is complete.
+                            ctx.complete();
+                        } else {
+                            // Repeat aggregation.
+                            doSubmit(
+                                msg,
+                                affinity,
+                                timeout,
+                                maxAttempts,
+                                retryErr,
+                                retryRsp,
+                                retryCondition,
+                                retryBackoff,
+                                retryCallback,
+                                repeat,
+                                gateway,
+                                opts,
+                                future
+                            );
+                        }
                     }
                 });
             });
         }
-
-        return future;
     }
 }

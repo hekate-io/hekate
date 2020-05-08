@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -18,6 +18,7 @@ package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterFilter;
 import io.hekate.cluster.ClusterView;
+import io.hekate.cluster.internal.TopologyContextCache;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelId;
@@ -33,20 +34,41 @@ import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.concurrent.Executor;
 
+/**
+ * Default implementation of {@link MessagingChannel} interface.
+ *
+ * @param <T> Message type.
+ */
 class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperationOpts<T> {
+    /** Messaging gateway. */
     private final MessagingGateway<T> gateway;
 
+    /** Cluster view of this channel. */
     @ToStringIgnore
     private final ClusterView cluster;
 
-    private final RendezvousHashMapper partitions;
+    /** Partition mapper (see {@link #withPartitions(PartitionMapper)}). */
+    private final PartitionMapper partitions;
 
+    /** Load balancer (see {@link #withLoadBalancer(LoadBalancer)}. */
     private final LoadBalancer<T> balancer;
 
+    /** Cache for load balancer. */
+    @ToStringIgnore
+    private TopologyContextCache balancerCache;
+
+    /**
+     * Constructs a new instance.
+     *
+     * @param gateway Messaging gateway.
+     * @param cluster Cluster view of this channel.
+     * @param partitions Partition mapper.
+     * @param balancer Load balancer.
+     */
     public DefaultMessagingChannel(
         MessagingGateway<T> gateway,
         ClusterView cluster,
-        RendezvousHashMapper partitions,
+        PartitionMapper partitions,
         LoadBalancer<T> balancer
     ) {
         assert gateway != null : "Gateway is null.";
@@ -125,24 +147,47 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
     }
 
     @Override
+    public TopologyContextCache balancerCache() {
+        // No synchronization here.
+        // It is ok if different threads will construct and access different cache instances in parallel.
+        if (balancerCache == null) {
+            balancerCache = new TopologyContextCache();
+        }
+
+        return balancerCache;
+    }
+
+    @Override
     public DefaultMessagingChannel<T> withPartitions(int partitions, int backupNodes) {
         if (partitions().partitions() == partitions && partitions().backupNodes() == backupNodes) {
             return this;
         }
 
-        RendezvousHashMapper newPartitions = RendezvousHashMapper.of(cluster, partitions, backupNodes);
+        RendezvousHashMapper mapper = RendezvousHashMapper.of(cluster, partitions, backupNodes);
 
         return new DefaultMessagingChannel<>(
             gateway,
             cluster,
-            newPartitions,
+            mapper,
+            balancer
+        );
+    }
+
+    @Override
+    public MessagingChannel<T> withPartitions(PartitionMapper mapper) {
+        ArgAssert.notNull(mapper, "Mapper");
+
+        return new DefaultMessagingChannel<>(
+            gateway,
+            cluster,
+            mapper,
             balancer
         );
     }
 
     @Override
     public DefaultMessagingChannel<T> withLoadBalancer(LoadBalancer<T> balancer) {
-        ArgAssert.notNull(balancer, "balancer");
+        ArgAssert.notNull(balancer, "Load balancer");
 
         return new DefaultMessagingChannel<>(
             gateway,
@@ -162,7 +207,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
         ArgAssert.notNull(filter, "Filter");
 
         ClusterView newCluster = cluster.filterAll(filter);
-        RendezvousHashMapper newPartitions = partitions.copy(newCluster);
+        PartitionMapper newPartitions = partitions.copy(newCluster);
 
         return new DefaultMessagingChannel<>(
             gateway,
@@ -182,7 +227,7 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
         ArgAssert.notNull(cluster, "Cluster");
 
         ClusterView newCluster = cluster.filter(MessagingMetaData.hasReceiver(gateway.name()));
-        RendezvousHashMapper newPartitions = partitions.copy(newCluster);
+        PartitionMapper newPartitions = partitions.copy(newCluster);
 
         return new DefaultMessagingChannel<>(
             gateway,

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -21,6 +21,9 @@ import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.core.HekateSupport;
 import java.util.List;
+import java.util.Map;
+import java.util.function.BooleanSupplier;
+import java.util.function.Predicate;
 
 /**
  * Coordination context for {@link CoordinationHandler}.
@@ -48,10 +51,10 @@ public interface CoordinationContext extends HekateSupport {
     ClusterTopology topology();
 
     /**
-     * Returns {@code true} if this coordination process is finished (either {@link CoordinatorContext#complete() successfully}
+     * Returns {@code true} if this coordination process is complete (either {@link CoordinatorContext#complete() successfully}
      * or by {@link CoordinationHandler#cancel(CoordinationContext)} cancellation).
      *
-     * @return {@code true} if this coordination process is finished.
+     * @return {@code true} if this coordination process is complete.
      */
     boolean isDone();
 
@@ -105,7 +108,7 @@ public interface CoordinationContext extends HekateSupport {
      * Asynchronously sends the specified request to all {@link #members() members} of this coordination process.
      *
      * <p>
-     * <b>Note:</b> Request will be send to all members including the local node.
+     * <b>Note:</b> Request will be sent to all members including the local node.
      * </p>
      *
      * @param request Request.
@@ -113,7 +116,53 @@ public interface CoordinationContext extends HekateSupport {
      *
      * @see CoordinationHandler#process(CoordinationRequest, CoordinationContext)
      */
-    void broadcast(Object request, CoordinationBroadcastCallback callback);
+    void broadcast(
+        Object request,
+        CoordinationBroadcastCallback callback
+    );
+
+    /**
+     * Asynchronously sends the specified request to those members that do match the specified filter.
+     *
+     * <p>
+     * If the filtered members list is empty then the message will not be submitted and the specified callback will
+     * {@link CoordinationBroadcastCallback#onResponses(Map) complete} with an empty result <b>on the caller thread</b>.
+     * </p>
+     *
+     * @param request Request.
+     * @param filter Filter.
+     * @param callback Callback to be notified once responses have been received from all members.
+     *
+     * @see CoordinationHandler#process(CoordinationRequest, CoordinationContext)
+     */
+    void broadcast(
+        Object request,
+        Predicate<CoordinationMember> filter,
+        CoordinationBroadcastCallback callback
+    );
+
+    /**
+     * Asynchronously sends the specified request to those members that do match the specified filter and only if the specified
+     * precondition is {@code true}.
+     *
+     * <p>
+     * If precondition is {@code false} or if the filtered members list is empty then the message will not be submitted and the specified
+     * callback will {@link CoordinationBroadcastCallback#onResponses(Map) complete} with an empty result <b>on the caller thread</b>.
+     * </p>
+     *
+     * @param request Request.
+     * @param preCondition Precondition.
+     * @param filter Filter.
+     * @param callback Callback to be notified once responses have been received from all members.
+     *
+     * @see CoordinationHandler#process(CoordinationRequest, CoordinationContext)
+     */
+    void broadcast(
+        Object request,
+        BooleanSupplier preCondition,
+        Predicate<CoordinationMember> filter,
+        CoordinationBroadcastCallback callback
+    );
 
     /**
      * Returns a user-defined object that is attached to this context (see {@link #setAttachment(Object)}).

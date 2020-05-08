@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -27,7 +27,6 @@ import io.hekate.core.report.ConfigReportSupport;
 import io.hekate.core.report.ConfigReporter;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -311,10 +310,6 @@ public class JdbcSeedNodeProvider implements SeedNodeProvider, JmxSupport<JdbcSe
     }
 
     private void doRegister(String cluster, InetSocketAddress node) throws HekateException {
-        InetAddress address = node.getAddress();
-
-        ArgAssert.check(address != null, "Host address can't be resolved [address=" + node + ']');
-
         try (Connection conn = ds.getConnection()) {
             conn.setAutoCommit(false);
 
@@ -327,7 +322,7 @@ public class JdbcSeedNodeProvider implements SeedNodeProvider, JmxSupport<JdbcSe
                     insSt.setQueryTimeout(queryTimeout);
                 }
 
-                String host = address.getHostAddress();
+                String host = node.getAddress().getHostAddress();
                 int port = node.getPort();
 
                 if (DEBUG) {

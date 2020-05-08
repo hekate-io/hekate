@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -26,6 +26,9 @@ import io.hekate.codec.DataWriter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+
+import static io.hekate.codec.CodecUtils.writeNodeId;
+import static io.hekate.codec.CodecUtils.writeTopologyHash;
 
 class CoordinationProtocolCodec implements Codec<CoordinationProtocol> {
     private static final CoordinationProtocol.Type[] TYPES_CACHE = CoordinationProtocol.Type.values();
@@ -58,37 +61,30 @@ class CoordinationProtocolCodec implements Codec<CoordinationProtocol> {
             case PREPARE: {
                 CoordinationProtocol.Prepare request = (CoordinationProtocol.Prepare)msg;
 
-                String process = request.processName();
-
-                out.writeUTF(process);
-
-                CodecUtils.writeNodeId(request.from(), out);
-                CodecUtils.writeTopologyHash(request.topology(), out);
+                out.writeUTF(request.processName());
+                writeEpoch(request.epoch(), out);
+                writeNodeId(request.from(), out);
+                writeTopologyHash(request.topologyHash(), out);
 
                 break;
             }
             case REQUEST: {
                 CoordinationProtocol.Request request = (CoordinationProtocol.Request)msg;
 
-                String process = request.processName();
+                out.writeUTF(request.processName());
+                writeEpoch(request.epoch(), out);
+                writeNodeId(request.from(), out);
 
-                out.writeUTF(process);
-
-                CodecUtils.writeNodeId(request.from(), out);
-                CodecUtils.writeTopologyHash(request.topology(), out);
-
-                codecFor(process).encode(request.request(), out);
+                codecFor(request.processName()).encode(request.request(), out);
 
                 break;
             }
             case RESPONSE: {
                 CoordinationProtocol.Response response = (CoordinationProtocol.Response)msg;
 
-                String process = response.processName();
+                out.writeUTF(response.processName());
 
-                out.writeUTF(process);
-
-                codecFor(process).encode(response.response(), out);
+                codecFor(response.processName()).encode(response.response(), out);
 
                 break;
             }
@@ -101,12 +97,9 @@ class CoordinationProtocolCodec implements Codec<CoordinationProtocol> {
             case COMPLETE: {
                 CoordinationProtocol.Complete request = (CoordinationProtocol.Complete)msg;
 
-                String process = request.processName();
-
-                out.writeUTF(process);
-
-                CodecUtils.writeNodeId(request.from(), out);
-                CodecUtils.writeTopologyHash(request.topology(), out);
+                out.writeUTF(request.processName());
+                writeEpoch(request.epoch(), out);
+                writeNodeId(request.from(), out);
 
                 break;
             }
@@ -123,21 +116,20 @@ class CoordinationProtocolCodec implements Codec<CoordinationProtocol> {
         switch (type) {
             case PREPARE: {
                 String process = in.readUTF();
-
+                CoordinationEpoch epoch = readEpoch(in);
                 ClusterNodeId from = CodecUtils.readNodeId(in);
                 ClusterHash hash = CodecUtils.readTopologyHash(in);
 
-                return new CoordinationProtocol.Prepare(process, from, hash);
+                return new CoordinationProtocol.Prepare(process, from, epoch, hash);
             }
             case REQUEST: {
                 String process = in.readUTF();
-
+                CoordinationEpoch epoch = readEpoch(in);
                 ClusterNodeId from = CodecUtils.readNodeId(in);
-                ClusterHash hash = CodecUtils.readTopologyHash(in);
 
                 Object request = codecFor(process).decode(in);
 
-                return new CoordinationProtocol.Request(process, from, hash, request);
+                return new CoordinationProtocol.Request(process, from, epoch, request);
             }
             case RESPONSE: {
                 String process = in.readUTF();
@@ -154,11 +146,10 @@ class CoordinationProtocolCodec implements Codec<CoordinationProtocol> {
             }
             case COMPLETE: {
                 String process = in.readUTF();
-
+                CoordinationEpoch epoch = readEpoch(in);
                 ClusterNodeId from = CodecUtils.readNodeId(in);
-                ClusterHash hash = CodecUtils.readTopologyHash(in);
 
-                return new CoordinationProtocol.Complete(process, from, hash);
+                return new CoordinationProtocol.Complete(process, from, epoch);
             }
             default: {
                 throw new IllegalArgumentException("Unexpected message type: " + type);
@@ -169,6 +160,19 @@ class CoordinationProtocolCodec implements Codec<CoordinationProtocol> {
     private Codec<Object> codecFor(String process) {
         return codecs.computeIfAbsent(process, k ->
             codecFactories.get(process).createCodec()
+        );
+    }
+
+    private void writeEpoch(CoordinationEpoch epoch, DataWriter out) throws IOException {
+        writeNodeId(epoch.coordinator(), out);
+
+        out.writeVarLong(epoch.id());
+    }
+
+    private CoordinationEpoch readEpoch(DataReader in) throws IOException {
+        return new CoordinationEpoch(
+            CodecUtils.readNodeId(in),
+            in.readVarLong()
         );
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -61,16 +61,12 @@ import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.internal.util.Jvm;
 import io.hekate.core.jmx.JmxService;
 import io.hekate.core.jmx.JmxSupport;
-import io.hekate.core.report.ConfigReportSupport;
 import io.hekate.core.report.ConfigReporter;
 import io.hekate.core.service.ClusterServiceManager;
-import io.hekate.core.service.ConfigurableService;
 import io.hekate.core.service.ConfigurationContext;
+import io.hekate.core.service.CoreService;
 import io.hekate.core.service.DependencyContext;
-import io.hekate.core.service.DependentService;
 import io.hekate.core.service.InitializationContext;
-import io.hekate.core.service.InitializingService;
-import io.hekate.core.service.TerminatingService;
 import io.hekate.network.NetworkConfigProvider;
 import io.hekate.network.NetworkConnector;
 import io.hekate.network.NetworkConnectorConfig;
@@ -79,10 +75,7 @@ import io.hekate.network.NetworkMessage;
 import io.hekate.network.NetworkServerHandler;
 import io.hekate.network.NetworkService;
 import io.hekate.util.StateGuard;
-import io.hekate.util.async.AsyncUtils;
 import io.hekate.util.async.Waiting;
-import io.hekate.util.format.ToString;
-import io.hekate.util.format.ToStringIgnore;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -103,18 +96,20 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static io.hekate.core.internal.util.StreamUtils.nullSafe;
+import static io.hekate.util.async.AsyncUtils.shutdown;
 import static java.util.Collections.synchronizedList;
 import static java.util.Collections.unmodifiableList;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toSet;
 
-public class DefaultClusterService implements ClusterService, ClusterServiceManager, DependentService, ConfigurableService,
-    InitializingService, TerminatingService, NetworkConfigProvider, JmxSupport<ClusterServiceJmx>, ConfigReportSupport {
+public class DefaultClusterService implements ClusterService, ClusterServiceManager, CoreService, NetworkConfigProvider,
+    JmxSupport<ClusterServiceJmx> {
     private static final Logger log = LoggerFactory.getLogger(DefaultClusterService.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
@@ -131,70 +126,53 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
     private final SplitBrainManager splitBrain;
 
-    @ToStringIgnore
     private final List<ClusterAcceptor> acceptors;
 
-    @ToStringIgnore
     private final GossipListener gossipSpy;
 
-    @ToStringIgnore
     private final StateGuard guard;
 
-    @ToStringIgnore
     private final AtomicReference<ClusterNodeId> localNodeIdRef = new AtomicReference<>();
 
-    @ToStringIgnore
     private final List<ClusterEventListener> listeners;
 
-    @ToStringIgnore
     private final List<DeferredClusterListener> deferredListeners = synchronizedList(new ArrayList<>());
 
-    @ToStringIgnore
+    private final TopologyContextCache ctxCache = new TopologyContextCache();
+
     private ClusterAcceptManager acceptMgr;
 
-    @ToStringIgnore
     private SeedNodeManager seedNodeMgr;
 
-    @ToStringIgnore
     private GossipManager gossipMgr;
 
-    @ToStringIgnore
     private NetworkService net;
 
-    @ToStringIgnore
-    private ClusterMetricsSink metricsSink;
+    private ClusterMetricsSink metrics;
 
-    @ToStringIgnore
     private JmxService jmx;
 
-    @ToStringIgnore
     private ScheduledExecutorService serviceThread;
 
-    @ToStringIgnore
     private ScheduledExecutorService gossipThread;
 
-    @ToStringIgnore
     private ScheduledFuture<?> heartbeatTask;
 
-    @ToStringIgnore
     private ScheduledFuture<?> gossipTask;
 
-    @ToStringIgnore
     private ScheduledFuture<?> joinTask;
 
-    @ToStringIgnore
     private String clusterName;
 
-    @ToStringIgnore
     private volatile InitializationContext ctx;
 
-    @ToStringIgnore
     private volatile GossipCommManager commMgr;
 
-    @ToStringIgnore
     private volatile ClusterNode localNode;
 
     public DefaultClusterService(ClusterServiceFactory factory, StateGuard guard, GossipListener gossipSpy) {
+        ArgAssert.notNull(factory, "Factory");
+
         ConfigCheck check = ConfigCheck.get(ClusterServiceFactory.class);
 
         check.notNull(factory, "configuration");
@@ -277,6 +255,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
         netCfg.setServerHandler(new NetworkServerHandler<GossipProtocol>() {
             @Override
             public void onConnect(GossipProtocol login, NetworkEndpoint<GossipProtocol> client) {
+                // Volatile read.
                 GossipCommManager localCommMgr = commMgr;
 
                 if (localCommMgr != null) {
@@ -286,6 +265,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
             @Override
             public void onMessage(NetworkMessage<GossipProtocol> msg, NetworkEndpoint<GossipProtocol> from) throws IOException {
+                // Volatile read.
                 GossipCommManager localCommMgr = commMgr;
 
                 if (localCommMgr != null) {
@@ -295,6 +275,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
             @Override
             public void onDisconnect(NetworkEndpoint<GossipProtocol> client) {
+                // Volatile read.
                 GossipCommManager localCommMgr = commMgr;
 
                 if (localCommMgr != null) {
@@ -308,11 +289,11 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
     @Override
     public void initialize(InitializationContext initCtx) throws HekateException {
-        guard.lockWrite();
+        if (DEBUG) {
+            log.debug("Initializing...");
+        }
 
-        try {
-            guard.becomeInitialized();
-
+        guard.becomeInitialized(() -> {
             ctx = initCtx;
             localNode = initCtx.localNode();
             localNodeIdRef.set(initCtx.localNode().id());
@@ -349,11 +330,6 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                 @Override
                 public void onReceive(GossipProtocol msg) {
                     process(msg);
-                }
-
-                @Override
-                public void onSendSuccess(GossipProtocol msg) {
-                    // No-op.
                 }
 
                 @Override
@@ -396,7 +372,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             });
 
             // Prepare metrics sink.
-            metricsSink = new ClusterMetricsSink(ctx.metrics());
+            metrics = new ClusterMetricsSink(ctx.metrics());
 
             // Register JMX beans (optional).
             if (jmx != null) {
@@ -409,8 +385,10 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                     jmx.register(splitBrain.detector());
                 }
             }
-        } finally {
-            guard.unlockWrite();
+        });
+
+        if (DEBUG) {
+            log.debug("Initialized.");
         }
     }
 
@@ -427,11 +405,9 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
     @Override
     public void joinAsync() {
-        guard.lockReadWithStateCheck();
-
-        try {
-            ctx.cluster().onStartJoining().thenAcceptAsync(proceed -> {
-                if (proceed && guard.isInitialized()) {
+        guard.withReadLockAndStateCheck(() ->
+            runOnServiceThread(() -> {
+                if (guard.isInitialized()) {
                     if (log.isInfoEnabled()) {
                         log.info("Joining cluster [cluster={}, local-node={}]", ctx.clusterName(), ctx.localNode());
                     }
@@ -477,18 +453,11 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                                     localSeedNodeMgr.startDiscovery(address.socket());
                                 } catch (HekateException e) {
                                     // Try to schedule a new join attempt.
-                                    boolean scheduled = guard.withReadLock(() -> {
-                                        // Check that there were no concurrent leave/terminate events.
-                                        if (guard.isInitialized()) {
-                                            log.error("Failed to start seed nodes discovery "
-                                                + "...will wait for {}ms before making another attempt.", gossipInterval, e);
+                                    boolean scheduled = guard.withReadLockIfInitialized(() -> {
+                                        log.error("Failed to start seed nodes discovery "
+                                            + "...will wait for {}ms before making another attempt.", gossipInterval, e);
 
-                                            serviceThread.schedule(this, gossipInterval, TimeUnit.MILLISECONDS);
-
-                                            return true;
-                                        } else {
-                                            return false;
-                                        }
+                                        serviceThread.schedule(this, gossipInterval, TimeUnit.MILLISECONDS);
                                     });
 
                                     if (!scheduled) {
@@ -512,8 +481,6 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
                                 // Schedule asynchronous join task.
                                 if (!scheduleAsyncJoin()) {
-                                    // Operation was rejected.
-                                    // Stop components (in unlocked context in order to prevent thread blocking).
                                     if (DEBUG) {
                                         log.debug("Stopped initialization sequence due to a concurrent leave/terminate event.");
                                     }
@@ -536,67 +503,72 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
                     repeatableJoinTask.run();
                 }
-            }, serviceThread);
-        } finally {
-            guard.unlockRead();
-        }
+            })
+        );
     }
 
     @Override
-    public void preTerminate() {
+    public void leaveAsync() {
         guard.withReadLockIfInitialized(() -> {
-            if (ctx.state() == Hekate.State.LEAVING) {
-                runOnGossipThread(this::doLeave);
-            }
+            runOnGossipThread(this::doLeave);
         });
     }
 
     @Override
     public void terminate() throws HekateException {
-        List<Waiting> waiting = new ArrayList<>();
+        if (DEBUG) {
+            log.debug("Terminating.");
+        }
 
-        guard.withWriteLock(() -> {
-            if (guard.becomeTerminated()) {
-                acceptMgr.terminate();
-                splitBrain.terminate();
+        Waiting done = guard.becomeTerminated(() -> {
+            acceptMgr.terminate();
+            splitBrain.terminate();
 
-                if (seedNodeMgr != null) {
-                    waiting.add(seedNodeMgr.stopCleaning());
+            List<Waiting> waiting = new ArrayList<>();
 
-                    InetSocketAddress localAddress = localNode.socket();
+            if (seedNodeMgr != null) {
+                waiting.add(seedNodeMgr.stopCleaning());
 
-                    SeedNodeManager localSeedNodeMgr = seedNodeMgr;
+                InetSocketAddress localAddress = localNode.socket();
+                SeedNodeManager localSeedNodeMgr = seedNodeMgr;
 
-                    waiting.add(() -> localSeedNodeMgr.stopDiscovery(localAddress));
-                }
-
-                waiting.add(AsyncUtils.shutdown(gossipThread));
-                waiting.add(AsyncUtils.shutdown(serviceThread));
-
-                if (commMgr != null) {
-                    GossipCommManager localCommMgr = commMgr;
-
-                    waiting.add(localCommMgr::stop);
-                }
-
-                if (failureDetector != null) {
-                    waiting.add(failureDetector::terminate);
-                }
-
-                localNodeIdRef.set(null);
-
-                localNode = null;
-                commMgr = null;
-                gossipMgr = null;
-                acceptMgr = null;
-                serviceThread = null;
-                gossipThread = null;
-                seedNodeMgr = null;
-                metricsSink = null;
+                waiting.add(() ->
+                    localSeedNodeMgr.stopDiscovery(localAddress)
+                );
             }
+
+            waiting.add(shutdown(gossipThread));
+            waiting.add(shutdown(serviceThread));
+
+            if (commMgr != null) {
+                GossipCommManager localCommMgr = commMgr;
+
+                waiting.add(localCommMgr::stop);
+            }
+
+            if (failureDetector != null) {
+                waiting.add(failureDetector::terminate);
+            }
+
+            localNodeIdRef.set(null);
+
+            localNode = null;
+            commMgr = null;
+            gossipMgr = null;
+            acceptMgr = null;
+            serviceThread = null;
+            gossipThread = null;
+            seedNodeMgr = null;
+            metrics = null;
+
+            return waiting;
         });
 
-        Waiting.awaitAll(waiting).awaitUninterruptedly();
+        done.awaitUninterruptedly();
+
+        if (DEBUG) {
+            log.debug("Terminated.");
+        }
     }
 
     @Override
@@ -643,11 +615,16 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
     }
 
     @Override
+    public <T> T topologyContext(Function<ClusterTopology, T> supplier) {
+        return ctxCache.get(topology(), supplier);
+    }
+
+    @Override
     public CompletableFuture<ClusterTopology> futureOf(Predicate<ClusterTopology> predicate) {
         ArgAssert.notNull(predicate, "Predicate");
 
         return guard.withReadLock(() -> {
-            // Completable future that gets completed upon a cluster event that has a matching topology.
+            // Completable future that completes upon a cluster event with the matching topology.
             class PredicateFuture extends CompletableFuture<ClusterTopology> implements ClusterEventListener {
                 public PredicateFuture() {
                     // Unregister listener when this future gets completed.
@@ -762,37 +739,31 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
     }
 
     private boolean scheduleAsyncJoin() {
-        return guard.withWriteLock(() -> {
-            if (guard.isInitialized()) {
-                if (DEBUG) {
-                    log.debug("Scheduling a periodic gossip task [interval={}]", gossipInterval);
-                }
-
-                // Schedule gossip task.
-                gossipTask = scheduleOn(gossipThread, DefaultClusterService.this::gossip, gossipInterval);
-
-                // Schedule heartbeat task.
-                long hbInterval = failureDetector.heartbeatInterval();
-
-                if (hbInterval > 0) {
-                    if (DEBUG) {
-                        log.debug("Scheduling a periodic heartbeat task [interval={}]", hbInterval);
-                    }
-
-                    heartbeatTask = scheduleOn(gossipThread, DefaultClusterService.this::heartbeat, hbInterval);
-                }
-
-                if (DEBUG) {
-                    log.debug("Scheduling an asynchronous join task [interval={}]", gossipInterval);
-                }
-
-                // Schedule task for asynchronous join.
-                joinTask = scheduleOn(serviceThread, DefaultClusterService.this::doJoin, 0, gossipInterval);
-
-                return true;
-            } else {
-                return false;
+        return guard.withWriteLockIfInitialized(() -> {
+            if (DEBUG) {
+                log.debug("Scheduling a periodic gossip task [interval={}]", gossipInterval);
             }
+
+            // Schedule gossip task.
+            gossipTask = scheduleOn(gossipThread, DefaultClusterService.this::gossip, gossipInterval);
+
+            // Schedule heartbeat task.
+            long hbInterval = failureDetector.heartbeatInterval();
+
+            if (hbInterval > 0) {
+                if (DEBUG) {
+                    log.debug("Scheduling a periodic heartbeat task [interval={}]", hbInterval);
+                }
+
+                heartbeatTask = scheduleOn(gossipThread, DefaultClusterService.this::heartbeat, hbInterval);
+            }
+
+            if (DEBUG) {
+                log.debug("Scheduling an asynchronous join task [interval={}]", gossipInterval);
+            }
+
+            // Schedule the asynchronous join task.
+            joinTask = scheduleOn(serviceThread, DefaultClusterService.this::doJoin, 0, gossipInterval);
         });
     }
 
@@ -801,7 +772,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             try {
                 List<InetSocketAddress> nodes = seedNodeMgr.getSeedNodes();
 
-                // Schedule join task to run on the gossip thread.
+                // Schedule the join task to run on the gossip thread.
                 runOnGossipThread(() ->
                     guard.withReadLockIfInitialized(() -> {
                         JoinRequest msg = gossipMgr.join(nodes);
@@ -869,7 +840,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
         assert msg != null : "Message is null.";
 
         guard.withReadLockIfInitialized(() -> {
-            metricsSink.onGossipMessage(msg.type());
+            metrics.onGossipMessage(msg.type());
 
             if (msg instanceof GossipMessage) {
                 GossipMessage gossipMsg = (GossipMessage)msg;
@@ -1070,7 +1041,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                                     guard.withReadLockIfInitialized(() -> {
                                         ClusterTopology topology = event.topology();
 
-                                        metricsSink.onTopologyChange(topology);
+                                        metrics.onTopologyChange(topology);
 
                                         if (isCoordinator(topology)) {
                                             startSeedNodeCleaner();
@@ -1147,7 +1118,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                             try {
                                 ClusterTopology topology = event.topology();
 
-                                metricsSink.onTopologyChange(topology);
+                                metrics.onTopologyChange(topology);
 
                                 if (isCoordinator(topology)) {
                                     startSeedNodeCleaner();
@@ -1256,9 +1227,11 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
             private void startPeriodicSplitBrainChecks() {
                 if (splitBrain.hasDetector() && splitBrain.checkInterval() > 0) {
-                    scheduleOn(serviceThread, () -> {
-                        guard.withReadLockIfInitialized(splitBrain::checkAsync);
-                    }, 0, splitBrain.checkInterval());
+                    scheduleOn(
+                        serviceThread,
+                        () -> guard.withReadLockIfInitialized(splitBrain::checkAsync),
+                        0, splitBrain.checkInterval()
+                    );
                 }
             }
         };
@@ -1352,6 +1325,6 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
     @Override
     public String toString() {
-        return ToString.format(this);
+        return ClusterService.class.getSimpleName();
     }
 }

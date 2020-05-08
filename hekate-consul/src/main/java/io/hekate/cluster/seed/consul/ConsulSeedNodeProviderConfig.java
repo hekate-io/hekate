@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -27,7 +27,7 @@ import java.net.URI;
  */
 public class ConsulSeedNodeProviderConfig {
     /** Default value (={@value}) for {@link #setCleanupInterval(long)}. */
-    public static final long DEFAULT_CLEANUP_INTERVAL = 60 * 1000;
+    public static final long DEFAULT_CLEANUP_INTERVAL = 60_000;
 
     /** Default value (={@value}) for {@link #setBasePath(String)}. */
     public static final String DEFAULT_BASE_PATH = "/hekate/cluster";
@@ -49,6 +49,9 @@ public class ConsulSeedNodeProviderConfig {
 
     /** See {@link #setWriteTimeout(Long)}. */
     private Long writeTimeout;
+
+    /** See {@link #setAclToken(String)}. */
+    private String aclToken;
 
     /**
      * Returns url of the Consul (see {@link #setUrl(String)} (String)}).
@@ -260,6 +263,37 @@ public class ConsulSeedNodeProviderConfig {
      */
     public ConsulSeedNodeProviderConfig withWriteTimeout(Long writeTimeout) {
         setWriteTimeout(writeTimeout);
+
+        return this;
+    }
+
+    /**
+     * Returns the ACL token to access Consul (see {@link #setAclToken(String)}).
+     *
+     * @return ACL token to access Consul.
+     */
+    public String getAclToken() {
+        return aclToken;
+    }
+
+    /**
+     * Sets ACL token to access Consul.
+     *
+     * @param aclToken ACL token.
+     */
+    public void setAclToken(String aclToken) {
+        this.aclToken = aclToken;
+    }
+
+    /**
+     * Fluent style version of {@link #setAclToken(String)} .
+     *
+     * @param aclToken ACL token.
+     *
+     * @return This instance.
+     */
+    public ConsulSeedNodeProviderConfig withAclToken(String aclToken) {
+        setAclToken(aclToken);
 
         return this;
     }

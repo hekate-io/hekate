@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -29,18 +29,14 @@ import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.internal.util.StreamUtils;
 import io.hekate.core.jmx.JmxService;
 import io.hekate.core.jmx.JmxSupport;
-import io.hekate.core.report.ConfigReportSupport;
 import io.hekate.core.report.ConfigReporter;
 import io.hekate.core.resource.ResourceService;
-import io.hekate.core.service.ConfigurableService;
 import io.hekate.core.service.ConfigurationContext;
+import io.hekate.core.service.CoreService;
 import io.hekate.core.service.DependencyContext;
-import io.hekate.core.service.DependentService;
 import io.hekate.core.service.InitializationContext;
-import io.hekate.core.service.InitializingService;
 import io.hekate.core.service.NetworkBindCallback;
 import io.hekate.core.service.NetworkServiceManager;
-import io.hekate.core.service.TerminatingService;
 import io.hekate.network.NetworkClient;
 import io.hekate.network.NetworkClientCallback;
 import io.hekate.network.NetworkConfigProvider;
@@ -67,8 +63,6 @@ import io.hekate.network.netty.NettyServerHandlerConfig;
 import io.hekate.network.netty.NettyUtils;
 import io.hekate.util.StateGuard;
 import io.hekate.util.async.AsyncUtils;
-import io.hekate.util.format.ToString;
-import io.hekate.util.format.ToStringIgnore;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.Epoll;
 import io.netty.channel.epoll.EpollEventLoopGroup;
@@ -90,8 +84,7 @@ import org.slf4j.LoggerFactory;
 
 import static java.util.stream.Collectors.toList;
 
-public class NettyNetworkService implements NetworkService, NetworkServiceManager, DependentService, ConfigurableService,
-    InitializingService, TerminatingService, JmxSupport<NetworkServiceJmx>, ConfigReportSupport {
+public class NettyNetworkService implements NetworkService, NetworkServiceManager, CoreService, JmxSupport<NetworkServiceJmx> {
     private static class ConnectorRegistration<T> {
         private final EventLoopGroup eventLoop;
 
@@ -123,8 +116,9 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
             return serverHandler;
         }
 
-        public DefaultNetworkConnector<T> connector() {
-            return connector;
+        @SuppressWarnings("unchecked")
+        public <R> DefaultNetworkConnector<R> connector() {
+            return (DefaultNetworkConnector<R>)connector;
         }
     }
 
@@ -166,44 +160,32 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
 
     private final NetworkSslConfig sslConfig;
 
-    @ToStringIgnore
     private final StateGuard guard = new StateGuard(NetworkService.class);
 
-    @ToStringIgnore
     private final List<NetworkConnectorConfig<?>> connectorConfigs = new ArrayList<>();
 
-    @ToStringIgnore
     private final Map<String, ConnectorRegistration<?>> connectors = new HashMap<>();
 
-    @ToStringIgnore
     private SslContext clientSsl;
 
-    @ToStringIgnore
     private SslContext serverSsl;
 
-    @ToStringIgnore
     private CodecService codec;
 
-    @ToStringIgnore
     private ResourceService resources;
 
-    @ToStringIgnore
     private JmxService jmx;
 
-    @ToStringIgnore
     private NettyMetricsBuilder metrics;
 
-    @ToStringIgnore
     private EventLoopGroup acceptorLoop;
 
-    @ToStringIgnore
     private EventLoopGroup coreLoop;
 
-    @ToStringIgnore
     private NetworkServer server;
 
     public NettyNetworkService(NetworkServiceFactory factory) {
-        assert factory != null : "Factory is null.";
+        ArgAssert.notNull(factory, "Factory");
 
         ConfigCheck check = ConfigCheck.get(NetworkServiceFactory.class);
 
@@ -270,6 +252,53 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
     }
 
     @Override
+    public void report(ConfigReporter report) {
+        report.section("network", net -> {
+            net.value("address-selector", addressSelector);
+            net.value("transport", transport);
+            net.value("init-port", initPort);
+            net.value("port-range", portRange);
+            net.value("acceptor-retry-interval", acceptorRetryInterval);
+            net.value("connect-timeout", connectTimeout);
+            net.value("heartbeat-interval", heartbeatInterval);
+            net.value("heartbeat-loss-threshold", heartbeatLossThreshold);
+            net.value("nio-thread-pool-size", nioThreadPoolSize);
+            net.value("tcp-no-delay", tcpNoDelay);
+            net.value("so-receive-buffer-size", soReceiveBufferSize);
+            net.value("so-send-buffer-size", soSendBufferSize);
+            net.value("so-reuse-address", soReuseAddress);
+            net.value("so-backlog", soBacklog);
+
+            if (sslConfig != null) {
+                net.section("ssl", ssl -> {
+                    ssl.value("provider", sslConfig.getProvider());
+                    ssl.value("key-store-path", sslConfig.getKeyStorePath());
+                    ssl.value("key-store-type", sslConfig.getKeyStoreType());
+                    ssl.value("key-store-type", sslConfig.getKeyStoreAlgorithm());
+                    ssl.value("trust-store-path", sslConfig.getTrustStorePath());
+                    ssl.value("trust-store-type", sslConfig.getTrustStoreType());
+                    ssl.value("trust-store-type", sslConfig.getTrustStoreAlgorithm());
+                    ssl.value("session-cache-size", sslConfig.getSslSessionCacheSize());
+                    ssl.value("session-cache-timeout", sslConfig.getSslSessionCacheTimeout());
+                });
+            }
+
+            if (!connectors.isEmpty()) {
+                net.section("connectors", css ->
+                    connectors.values().forEach(c ->
+                        css.section("connector", cs -> {
+                            cs.value("protocol", c.connector().protocol());
+                            cs.value("server", c.connector().isServer());
+                            cs.value("nio-threads", c.hasEventLoop() ? c.connector().nioThreads() : "shared");
+                            cs.value("idle-timeout", c.connector().idleSocketTimeout());
+                        })
+                    )
+                );
+            }
+        });
+    }
+
+    @Override
     public NetworkServerFuture bind(NetworkBindCallback callback) throws HekateException {
         ArgAssert.notNull(callback, "Callback");
 
@@ -284,7 +313,7 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
         }
 
         if (log.isInfoEnabled()) {
-            log.info("Selected public address [address={}, selector={}]", publicIp, addressSelector);
+            log.info("Network address selected [address={}, selector={}]", publicIp, addressSelector);
 
             log.info("Binding network acceptor [port={}]", initPort);
         }
@@ -346,13 +375,13 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
                             // Try to increment the port.
                             int prevPort = err.lastTriedAddress().getPort();
 
-                            int newPort = prevPort + 1;
+                            int nextPort = prevPort + 1;
 
-                            if (newPort < initPort + portRange) {
-                                InetSocketAddress newAddress = new InetSocketAddress(err.lastTriedAddress().getAddress(), newPort);
+                            if (nextPort < initPort + portRange) {
+                                InetSocketAddress newAddress = new InetSocketAddress(err.lastTriedAddress().getAddress(), nextPort);
 
                                 if (log.isInfoEnabled()) {
-                                    log.info("Couldn't bind on port {} ...will try next port [new-address={}]", prevPort, newAddress);
+                                    log.info("Couldn't bind on port {} ...will try next port [next-port={}]", prevPort, nextPort);
                                 }
 
                                 // Retry with the next port.
@@ -380,15 +409,11 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
 
     @Override
     public void initialize(InitializationContext ctx) throws HekateException {
-        guard.lockWrite();
+        if (DEBUG) {
+            log.debug("Initializing...");
+        }
 
-        try {
-            guard.becomeInitialized();
-
-            if (DEBUG) {
-                log.debug("Initializing...");
-            }
-
+        guard.becomeInitialized(() -> {
             // Register connectors.
             if (!connectorConfigs.isEmpty()) {
                 connectorConfigs.forEach(cfg -> {
@@ -408,76 +433,21 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
                     jmx.register(conn.connector(), conn.connector().protocol());
                 }
             }
+        });
 
-            if (DEBUG) {
-                log.debug("Initialized.");
-            }
-        } finally {
-            guard.unlockWrite();
+        if (DEBUG) {
+            log.debug("Initialized.");
         }
     }
 
     @Override
     public void postInitialize(InitializationContext ctx) {
-        guard.lockRead();
-
-        try {
-            if (guard.isInitialized()) {
-                if (log.isInfoEnabled()) {
-                    log.info("Started accepting network connections [address={}]", server.address());
-                }
-
-                server.startAccepting();
-            }
-        } finally {
-            guard.unlockRead();
-        }
-    }
-
-    @Override
-    public void report(ConfigReporter report) {
-        report.section("network", net -> {
-            net.value("address-selector", addressSelector);
-            net.value("transport", transport);
-            net.value("init-port", initPort);
-            net.value("port-range", portRange);
-            net.value("acceptor-retry-interval", acceptorRetryInterval);
-            net.value("connect-timeout", connectTimeout);
-            net.value("heartbeat-interval", heartbeatInterval);
-            net.value("heartbeat-loss-threshold", heartbeatLossThreshold);
-            net.value("nio-thread-pool-size", nioThreadPoolSize);
-            net.value("tcp-no-delay", tcpNoDelay);
-            net.value("so-receive-buffer-size", soReceiveBufferSize);
-            net.value("so-send-buffer-size", soSendBufferSize);
-            net.value("so-reuse-address", soReuseAddress);
-            net.value("so-backlog", soBacklog);
-
-            if (sslConfig != null) {
-                net.section("ssl", ssl -> {
-                    ssl.value("provider", sslConfig.getProvider());
-                    ssl.value("key-store-path", sslConfig.getKeyStorePath());
-                    ssl.value("key-store-type", sslConfig.getKeyStoreType());
-                    ssl.value("key-store-type", sslConfig.getKeyStoreAlgorithm());
-                    ssl.value("trust-store-path", sslConfig.getTrustStorePath());
-                    ssl.value("trust-store-type", sslConfig.getTrustStoreType());
-                    ssl.value("trust-store-type", sslConfig.getTrustStoreAlgorithm());
-                    ssl.value("session-cache-size", sslConfig.getSslSessionCacheSize());
-                    ssl.value("session-cache-timeout", sslConfig.getSslSessionCacheTimeout());
-                });
+        guard.withWriteLockIfInitialized(() -> {
+            if (log.isInfoEnabled()) {
+                log.info("Started accepting network connections [address={}]", server.address());
             }
 
-            if (!connectors.isEmpty()) {
-                net.section("connectors", css ->
-                    connectors.values().forEach(c ->
-                        css.section("connector", cs -> {
-                            cs.value("protocol", c.connector().protocol());
-                            cs.value("server", c.connector().isServer());
-                            cs.value("nio-threads", c.hasEventLoop() ? c.connector().nioThreads() : "shared");
-                            cs.value("idle-timeout", c.connector().idleSocketTimeout());
-                        })
-                    )
-                );
-            }
+            server.startAccepting();
         });
     }
 
@@ -549,31 +519,20 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
     public <T> NetworkConnector<T> connector(String protocol) throws IllegalArgumentException {
         ArgAssert.notNull(protocol, "Protocol");
 
-        guard.lockReadWithStateCheck();
+        return guard.withReadLockAndStateCheck(() -> {
+            ConnectorRegistration<?> module = connectors.computeIfAbsent(protocol, missing -> {
+                throw new IllegalArgumentException("Unknown protocol [name=" + missing + ']');
+            });
 
-        try {
-            ConnectorRegistration<?> module = connectors.get(protocol);
-
-            ArgAssert.check(module != null, "Unknown protocol [name=" + protocol + ']');
-
-            @SuppressWarnings("unchecked")
-            NetworkConnector<T> connector = (NetworkConnector<T>)module.connector();
-
-            return connector;
-        } finally {
-            guard.unlockRead();
-        }
+            return module.connector();
+        });
     }
 
     @Override
     public boolean hasConnector(String protocol) {
-        guard.lockReadWithStateCheck();
-
-        try {
-            return connectors.containsKey(protocol);
-        } finally {
-            guard.unlockRead();
-        }
+        return guard.withReadLockAndStateCheck(() ->
+            connectors.containsKey(protocol)
+        );
     }
 
     @Override
@@ -831,6 +790,6 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
 
     @Override
     public String toString() {
-        return ToString.format(this);
+        return NetworkService.class.getSimpleName();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -26,6 +26,7 @@ import org.junit.Test;
 
 import static io.hekate.core.internal.util.AddressUtils.FILE_PREFIX;
 import static io.hekate.core.internal.util.AddressUtils.PORT_SEPARATOR;
+import static io.hekate.core.internal.util.Utils.NL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -51,10 +52,10 @@ public class FsSeedNodeProviderTest extends PersistentSeedNodeProviderTestBase<F
         FsSeedNodeProvider provider = createProvider();
 
         assertEquals(
-            "\n"
-                + "  shared-folder\n"
-                + "    work-dir: " + provider.getWorkDir() + "\n"
-                + "    cleanup-interval: " + provider.cleanupInterval() + "\n",
+            NL
+                + "  shared-folder:" + NL
+                + "    work-dir: " + provider.getWorkDir() + NL
+                + "    cleanup-interval: " + provider.cleanupInterval() + NL,
             DefaultConfigReporter.report(provider)
         );
     }

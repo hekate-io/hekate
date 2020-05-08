@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Hekate Project
+ * Copyright 2020 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -66,11 +66,11 @@ import org.springframework.stereotype.Component;
  * <li>{@link RpcServiceFactory#setNioThreads(int) 'hekate.rpc.nio-threads'}</li>
  * <li>{@link RpcServiceFactory#setWorkerThreads(int) 'hekate.rpc.worker-threads'}</li>
  * <li>{@link RpcServiceFactory#setIdleSocketTimeout(long) 'hekate.rpc.idle-socket-timeout'}</li>
- * <li>{@link MessagingBackPressureConfig#setInLowWatermark(int) 'hekate.rpc.back-bressure.in-low-watermark'}</li>
- * <li>{@link MessagingBackPressureConfig#setInHighWatermark(int) 'hekate.rpc.back-bressure.in-high-watermark'}</li>
- * <li>{@link MessagingBackPressureConfig#setOutLowWatermark(int) 'hekate.rpc.back-bressure.out-low-watermark'}</li>
- * <li>{@link MessagingBackPressureConfig#setOutHighWatermark(int) 'hekate.rpc.back-bressure.out-high-watermark'}</li>
- * <li>{@link MessagingBackPressureConfig#setOutOverflowPolicy(MessagingOverflowPolicy) 'hekate.rpc.back-bressure.out-overflow-policy'}</li>
+ * <li>{@link MessagingBackPressureConfig#setInLowWatermark(int) 'hekate.rpc.back-pressure.in-low-watermark'}</li>
+ * <li>{@link MessagingBackPressureConfig#setInHighWatermark(int) 'hekate.rpc.back-pressure.in-high-watermark'}</li>
+ * <li>{@link MessagingBackPressureConfig#setOutLowWatermark(int) 'hekate.rpc.back-pressure.out-low-watermark'}</li>
+ * <li>{@link MessagingBackPressureConfig#setOutHighWatermark(int) 'hekate.rpc.back-pressure.out-high-watermark'}</li>
+ * <li>{@link MessagingBackPressureConfig#setOutOverflowPolicy(MessagingOverflowPolicy) 'hekate.rpc.back-pressure.out-overflow-policy'}</li>
  * </ul>
  *
  * <h2>Injection of RPC Client Proxies</h2>
@@ -128,7 +128,7 @@ public class HekateRpcServiceConfigurer {
     private final List<RpcServerConfig> servers;
 
     /**
-     * Constructs new instance.
+     * Constructs a new instance.
      *
      * @param clients {@link RpcClientConfig}s that were found in the application context.
      * @param servers {@link RpcServerConfig}s that were found in the application context.
