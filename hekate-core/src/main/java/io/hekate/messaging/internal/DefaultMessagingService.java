@@ -285,13 +285,13 @@ public class DefaultMessagingService implements MessagingService, CoreService, N
 
     @Override
     public <T> DefaultMessagingChannel<T> channel(String name, Class<T> baseType) throws IllegalArgumentException {
+        ArgAssert.notNull(name, "Channel name");
+
         return guard.withReadLockAndStateCheck(() -> {
-            ArgAssert.notNull(name, "Channel name");
-
             @SuppressWarnings("unchecked")
-            MessagingGateway<T> gateway = (MessagingGateway<T>)gateways.get(name);
-
-            ArgAssert.check(gateway != null, "No such channel [name=" + name + ']');
+            MessagingGateway<T> gateway = (MessagingGateway<T>)gateways.computeIfAbsent(name, missing -> {
+                throw new IllegalArgumentException("No such channel [name=" + missing + ']');
+            });
 
             if (baseType != null && !gateway.baseType().isAssignableFrom(baseType)) {
                 throw new ClassCastException("Messaging channel doesn't support the specified type "

@@ -401,9 +401,9 @@ public class DefaultRpcService implements RpcService, CoreService, MessagingConf
 
     @Override
     public <T> RpcClientBuilder<T> clientFor(Class<T> type, String tag) {
-        return guard.withReadLockAndStateCheck(() -> {
-            ArgAssert.notNull(type, "Type");
+        ArgAssert.notNull(type, "Type");
 
+        return guard.withReadLockAndStateCheck(() -> {
             RpcTypeKey key = new RpcTypeKey(type, tag);
 
             @SuppressWarnings("unchecked")
@@ -422,9 +422,9 @@ public class DefaultRpcService implements RpcService, CoreService, MessagingConf
 
     @Override
     public ClusterView clusterOf(Class<?> type, String tag) {
-        return guard.withReadLockAndStateCheck(() -> {
-            ArgAssert.notNull(type, "Type");
+        ArgAssert.notNull(type, "Type");
 
+        return guard.withReadLockAndStateCheck(() -> {
             RpcInterfaceInfo<?> rpcType = types.analyzeType(type);
 
             return channel.cluster().filter(filterFor(rpcType, tag));

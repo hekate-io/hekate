@@ -273,13 +273,11 @@ public class DefaultCoordinationService implements CoordinationService, CoreServ
     public CoordinationProcess process(String name) {
         ArgAssert.notNull(name, "Process name");
 
-        return guard.withReadLockAndStateCheck(() -> {
-            DefaultCoordinationProcess process = processes.get(name);
-
-            ArgAssert.check(process != null, "Coordination process not configured [name=" + name + ']');
-
-            return process;
-        });
+        return guard.withReadLockAndStateCheck(() ->
+            processes.computeIfAbsent(name, missing -> {
+                throw new IllegalArgumentException("Coordination process not configured [name=" + missing + ']');
+            })
+        );
     }
 
     @Override

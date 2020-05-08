@@ -116,8 +116,9 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
             return serverHandler;
         }
 
-        public DefaultNetworkConnector<T> connector() {
-            return connector;
+        @SuppressWarnings("unchecked")
+        public <R> DefaultNetworkConnector<R> connector() {
+            return (DefaultNetworkConnector<R>)connector;
         }
     }
 
@@ -516,17 +517,14 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
 
     @Override
     public <T> NetworkConnector<T> connector(String protocol) throws IllegalArgumentException {
+        ArgAssert.notNull(protocol, "Protocol");
+
         return guard.withReadLockAndStateCheck(() -> {
-            ArgAssert.notNull(protocol, "Protocol");
+            ConnectorRegistration<?> module = connectors.computeIfAbsent(protocol, missing -> {
+                throw new IllegalArgumentException("Unknown protocol [name=" + missing + ']');
+            });
 
-            ConnectorRegistration<?> module = connectors.get(protocol);
-
-            ArgAssert.check(module != null, "Unknown protocol [name=" + protocol + ']');
-
-            @SuppressWarnings("unchecked")
-            NetworkConnector<T> connector = (NetworkConnector<T>)module.connector();
-
-            return connector;
+            return module.connector();
         });
     }
 

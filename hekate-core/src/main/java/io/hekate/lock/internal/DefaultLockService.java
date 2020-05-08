@@ -274,15 +274,13 @@ public class DefaultLockService implements LockService, CoreService, MessagingCo
 
     @Override
     public LockRegionProxy region(String region) {
-        return guard.withReadLockAndStateCheck(() -> {
-            ArgAssert.notNull(region, "Region name");
+        ArgAssert.notNull(region, "Region name");
 
-            LockRegionProxy proxy = regions.get(region);
-
-            ArgAssert.check(proxy != null, "Lock region is not configured [name=" + region + ']');
-
-            return proxy;
-        });
+        return guard.withReadLockAndStateCheck(() ->
+            regions.computeIfAbsent(region, missing -> {
+                throw new IllegalArgumentException("Lock region is not configured [name=" + missing + ']');
+            })
+        );
     }
 
     @Override

@@ -61,13 +61,13 @@ public class DefaultElectionService implements ElectionService, CoreService, Loc
 
     private static final boolean DEBUG = log.isDebugEnabled();
 
-    private static final String LOCK_REGION = "hekate.election";
+    private static final String ELECTION_LOCK_REGION = "hekate.election";
 
     private final StateGuard guard = new StateGuard(ElectionService.class);
 
-    private final List<CandidateConfig> candidatesConfig = new ArrayList<>();
+    private final List<CandidateConfig> candidateConfigs = new ArrayList<>();
 
-    private final Map<String, CandidateHandler> handlers = new HashMap<>();
+    private final Map<String, CandidateHandler> candidates = new HashMap<>();
 
     private JmxService jmx;
 
@@ -76,10 +76,10 @@ public class DefaultElectionService implements ElectionService, CoreService, Loc
     public DefaultElectionService(ElectionServiceFactory factory) {
         ArgAssert.notNull(factory, "Factory");
 
-        nullSafe(factory.getCandidates()).forEach(candidatesConfig::add);
+        nullSafe(factory.getCandidates()).forEach(candidateConfigs::add);
 
         nullSafe(factory.getConfigProviders()).forEach(provider ->
-            nullSafe(provider.configureElection()).forEach(candidatesConfig::add)
+            nullSafe(provider.configureElection()).forEach(candidateConfigs::add)
         );
     }
 
@@ -94,7 +94,7 @@ public class DefaultElectionService implements ElectionService, CoreService, Loc
     public void configure(ConfigurationContext ctx) {
         // Collect configurations from providers.
         nullSafe(ctx.findComponents(CandidateConfigProvider.class)).forEach(provider ->
-            nullSafe(provider.configureElection()).forEach(candidatesConfig::add)
+            nullSafe(provider.configureElection()).forEach(candidateConfigs::add)
         );
 
         // Validate configs.
@@ -102,7 +102,7 @@ public class DefaultElectionService implements ElectionService, CoreService, Loc
 
         Set<String> uniqueGroups = new HashSet<>();
 
-        candidatesConfig.forEach(cfg -> {
+        candidateConfigs.forEach(cfg -> {
             check.notEmpty(cfg.getGroup(), "group");
             check.validSysName(cfg.getGroup(), "group");
             check.notNull(cfg.getCandidate(), "candidate");
@@ -117,11 +117,11 @@ public class DefaultElectionService implements ElectionService, CoreService, Loc
 
     @Override
     public Collection<LockRegionConfig> configureLocking() {
-        if (candidatesConfig.isEmpty()) {
+        if (candidateConfigs.isEmpty()) {
             return Collections.emptyList();
         }
 
-        return Collections.singletonList(new LockRegionConfig().withName(LOCK_REGION));
+        return Collections.singletonList(new LockRegionConfig(ELECTION_LOCK_REGION));
     }
 
     @Override
@@ -131,24 +131,25 @@ public class DefaultElectionService implements ElectionService, CoreService, Loc
         }
 
         guard.becomeInitialized(() -> {
-            if (!candidatesConfig.isEmpty()) {
-                // Register handlers.
-                candidatesConfig.forEach(cfg ->
-                    doRegister(cfg, ctx.hekate())
+            if (!candidateConfigs.isEmpty()) {
+                // Register candidates.
+                candidateConfigs.forEach(cfg ->
+                    registerCandidate(cfg, ctx.hekate())
                 );
 
-                // Register JMX for handlers.
+                // Register JMX for candidates.
                 if (jmx != null) {
-                    for (CandidateHandler handler : handlers.values()) {
-                        jmx.register(handler, handler.group());
+                    for (CandidateHandler candidate : candidates.values()) {
+                        jmx.register(candidate, candidate.group());
                     }
                 }
 
-                // Initialize handlers after joining the cluster.
-                ctx.cluster().addListener(event ->
-                    guard.withReadLockIfInitialized(() ->
-                        handlers.values().forEach(CandidateHandler::initialize)
-                    ), ClusterEventType.JOIN
+                // Initialize handlers after we join the cluster.
+                ctx.cluster().addListener(
+                    event -> guard.withReadLockIfInitialized(() ->
+                        candidates.values().forEach(CandidateHandler::initialize)
+                    ),
+                    ClusterEventType.JOIN
                 );
             }
         });
@@ -161,10 +162,10 @@ public class DefaultElectionService implements ElectionService, CoreService, Loc
     @Override
     public void report(ConfigReporter report) {
         guard.withReadLockIfInitialized(() -> {
-            if (!handlers.isEmpty()) {
+            if (!candidates.isEmpty()) {
                 report.section("election", election ->
                     election.section("candidates", candidates ->
-                        handlers.values().forEach(h ->
+                        this.candidates.values().forEach(h ->
                             candidates.section("candidate", candidate -> {
                                 candidate.value("group", h.group());
                                 candidate.value("candidate", h.candidate());
@@ -179,7 +180,7 @@ public class DefaultElectionService implements ElectionService, CoreService, Loc
     @Override
     public void preTerminate() throws HekateException {
         Waiting done = guard.becomeTerminating(() ->
-            handlers.values().stream()
+            candidates.values().stream()
                 .map(CandidateHandler::terminate)
                 .collect(toList())
         );
@@ -201,11 +202,11 @@ public class DefaultElectionService implements ElectionService, CoreService, Loc
         }
 
         Waiting done = guard.becomeTerminated(() -> {
-            List<Waiting> waiting = handlers.values().stream()
+            List<Waiting> waiting = candidates.values().stream()
                 .map(CandidateHandler::shutdown)
                 .collect(toList());
 
-            handlers.clear();
+            candidates.clear();
 
             return waiting;
         });
@@ -219,44 +220,40 @@ public class DefaultElectionService implements ElectionService, CoreService, Loc
 
     @Override
     public LeaderFuture leader(String group) {
-        return handler(group).leaderFuture();
+        return candidate(group).leaderFuture();
     }
 
-    private CandidateHandler handler(String group) {
-        return guard.withReadLockAndStateCheck(() -> {
-            ArgAssert.notNull(group, "Group name");
+    private CandidateHandler candidate(String group) {
+        ArgAssert.notNull(group, "Group name");
 
-            CandidateHandler handler = handlers.get(group);
-
-            if (handler == null) {
-                throw new IllegalArgumentException("Unknown group [name=" + group + ']');
-            }
-
-            return handler;
-        });
+        return guard.withReadLockAndStateCheck(() ->
+            candidates.computeIfAbsent(group, missing -> {
+                throw new IllegalArgumentException("Unknown group [name=" + missing + ']');
+            })
+        );
     }
 
-    private void doRegister(CandidateConfig cfg, Hekate hekate) {
+    private void registerCandidate(CandidateConfig cfg, Hekate hekate) {
         assert guard.isWriteLocked() : "Thread must hold a write lock.";
         assert guard.isInitialized() : "Service must be initialized.";
         assert cfg != null : "Configuration is null.";
         assert hekate != null : "Hekate is null.";
 
         if (DEBUG) {
-            log.debug("Registering new configuration [config={}]", cfg);
+            log.debug("Registering new candidate [config={}]", cfg);
         }
 
         // Prepare configuration values.
         String group = cfg.getGroup().trim();
         Candidate candidate = cfg.getCandidate();
 
-        // Coordination lock.
-        DistributedLock lock = locks.region(LOCK_REGION).get(group);
+        // Election lock.
+        DistributedLock lock = locks.region(ELECTION_LOCK_REGION).get(group);
 
-        // Coordination thread.
+        // Election thread.
         ExecutorService worker = Executors.newSingleThreadExecutor(new HekateThreadFactory("Election-" + group));
 
-        // Register coordination handler.
+        // Register candidate.
         CandidateHandler handler = new CandidateHandler(
             group,
             candidate,
@@ -266,7 +263,7 @@ public class DefaultElectionService implements ElectionService, CoreService, Loc
             hekate
         );
 
-        handlers.put(group, handler);
+        candidates.put(group, handler);
     }
 
     @Override

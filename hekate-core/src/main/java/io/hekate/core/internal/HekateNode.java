@@ -502,7 +502,9 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
     public <T extends Service> T get(Class<T> type) {
         T service = services.findService(type);
 
-        ArgAssert.check(service != null, "No such service: " + type.getName());
+        if (service == null) {
+            throw new IllegalArgumentException("No such service: " + type.getName());
+        }
 
         return service;
     }
