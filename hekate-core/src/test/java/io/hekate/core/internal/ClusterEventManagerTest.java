@@ -83,6 +83,80 @@ public class ClusterEventManagerTest extends HekateTestBase {
     }
 
     @Test
+    public void testFilterByEventTypeBeforeStart() throws Exception {
+        for (int i = 1; i <= 3; i++) {
+            threads.reset();
+
+            TestListener join = new TestListener();
+            TestListener change = new TestListener();
+            TestListener leave = new TestListener();
+
+            mgr.addListener(join, ClusterEventType.JOIN);
+            mgr.addListener(change, ClusterEventType.CHANGE);
+            mgr.addListener(leave, ClusterEventType.LEAVE);
+
+            mgr.start(threads);
+
+            get(mgr.fireAsync(newJoinEvent()));
+
+            assertEquals(1, join.getEvents().size());
+            assertEquals(0, change.getEvents().size());
+            assertEquals(0, leave.getEvents().size());
+
+            get(mgr.fireAsync(newChangeEvent()));
+
+            assertEquals(1, join.getEvents().size());
+            assertEquals(1, change.getEvents().size());
+            assertEquals(0, leave.getEvents().size());
+
+            get(mgr.fireAsync(newLeaveEvent()));
+
+            assertEquals(1, join.getEvents().size());
+            assertEquals(1, change.getEvents().size());
+            assertEquals(1, leave.getEvents().size());
+
+            mgr.stop();
+        }
+    }
+
+    @Test
+    public void testFilterByEventTypeAfterStart() throws Exception {
+        for (int i = 1; i <= 3; i++) {
+            threads.reset();
+
+            mgr.start(threads);
+
+            TestListener join = new TestListener();
+            TestListener change = new TestListener();
+            TestListener leave = new TestListener();
+
+            mgr.addListener(join, ClusterEventType.JOIN);
+            mgr.addListener(change, ClusterEventType.CHANGE);
+            mgr.addListener(leave, ClusterEventType.LEAVE);
+
+            get(mgr.fireAsync(newJoinEvent()));
+
+            assertEquals(1, join.getEvents().size());
+            assertEquals(0, change.getEvents().size());
+            assertEquals(0, leave.getEvents().size());
+
+            get(mgr.fireAsync(newChangeEvent()));
+
+            assertEquals(1, join.getEvents().size());
+            assertEquals(1, change.getEvents().size());
+            assertEquals(0, leave.getEvents().size());
+
+            get(mgr.fireAsync(newLeaveEvent()));
+
+            assertEquals(1, join.getEvents().size());
+            assertEquals(1, change.getEvents().size());
+            assertEquals(1, leave.getEvents().size());
+
+            mgr.stop();
+        }
+    }
+
+    @Test
     public void testAddRemoveListenersBeforeStart() throws Exception {
         TestListener listener = new TestListener();
 

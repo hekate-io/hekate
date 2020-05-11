@@ -594,7 +594,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
         guard.withReadLock(() -> {
             if (guard.isInitialized()) {
-                requireContext().cluster().addListener(listener);
+                requireContext().cluster().addListener(listener, eventTypes);
             } else {
                 deferredListeners.add(new DeferredClusterListener(listener, eventTypes));
             }

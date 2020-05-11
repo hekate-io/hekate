@@ -85,7 +85,7 @@ public class ClusterServiceSingleNodeTest extends HekateNodeParamTestBase {
     }
 
     @Test
-    public void testJoinLeaveEventsWithListenerBeforeJoin() throws Exception {
+    public void testJoinLeaveEventsBeforeJoin() throws Exception {
         repeat(50, i -> {
             List<ClusterEvent> events = new CopyOnWriteArrayList<>();
 
@@ -95,7 +95,7 @@ public class ClusterServiceSingleNodeTest extends HekateNodeParamTestBase {
 
             node.join();
 
-            ClusterNode clusterNode = this.node.localNode();
+            ClusterNode clusterNode = node.localNode();
 
             node.leave();
 
@@ -125,7 +125,80 @@ public class ClusterServiceSingleNodeTest extends HekateNodeParamTestBase {
     }
 
     @Test
-    public void testJoinLeaveEventsWithListenerAfterJoin() throws Exception {
+    public void testJoinLeaveEventsWithFilterBeforeJoin() throws Exception {
+        repeat(50, i -> {
+            List<ClusterEvent> joinEvents = new CopyOnWriteArrayList<>();
+            List<ClusterEvent> leaveEvents = new CopyOnWriteArrayList<>();
+
+            ClusterEventListener join = joinEvents::add;
+            ClusterEventListener leave = leaveEvents::add;
+
+            node.cluster().addListener(join, ClusterEventType.JOIN);
+            node.cluster().addListener(leave, ClusterEventType.LEAVE);
+
+            assertTrue(joinEvents.isEmpty());
+            assertTrue(leaveEvents.isEmpty());
+
+            node.join();
+
+            assertEquals(1, joinEvents.size());
+            assertSame(ClusterEventType.JOIN, joinEvents.get(0).type());
+            assertTrue(leaveEvents.isEmpty());
+
+            node.leave();
+
+            assertEquals(1, joinEvents.size());
+            assertSame(ClusterEventType.JOIN, joinEvents.get(0).type());
+            assertEquals(1, leaveEvents.size());
+            assertSame(ClusterEventType.LEAVE, leaveEvents.get(0).type());
+
+            node.cluster().removeListener(join);
+            node.cluster().removeListener(leave);
+
+            assertEquals(1, joinEvents.size());
+            assertSame(ClusterEventType.JOIN, joinEvents.get(0).type());
+            assertEquals(1, leaveEvents.size());
+            assertSame(ClusterEventType.LEAVE, leaveEvents.get(0).type());
+        });
+    }
+
+    @Test
+    public void testJoinLeaveEventsWithFilterAfterJoin() throws Exception {
+        repeat(50, i -> {
+            List<ClusterEvent> joinEvents = new CopyOnWriteArrayList<>();
+            List<ClusterEvent> leaveEvents = new CopyOnWriteArrayList<>();
+
+            ClusterEventListener join = joinEvents::add;
+            ClusterEventListener leave = leaveEvents::add;
+
+            node.join();
+
+            node.cluster().addListener(join, ClusterEventType.JOIN);
+            node.cluster().addListener(leave, ClusterEventType.LEAVE);
+
+            assertEquals(1, joinEvents.size());
+            assertSame(ClusterEventType.JOIN, joinEvents.get(0).type());
+            assertTrue(leaveEvents.isEmpty());
+
+            node.leave();
+
+            assertEquals(1, joinEvents.size());
+            assertSame(ClusterEventType.JOIN, joinEvents.get(0).type());
+            assertEquals(1, leaveEvents.size());
+            assertSame(ClusterEventType.LEAVE, leaveEvents.get(0).type());
+
+            node.cluster().removeListener(join);
+            node.cluster().removeListener(leave);
+
+            assertEquals(1, joinEvents.size());
+            assertSame(ClusterEventType.JOIN, joinEvents.get(0).type());
+            assertEquals(1, leaveEvents.size());
+            assertSame(ClusterEventType.LEAVE, leaveEvents.get(0).type());
+        });
+    }
+
+    @Test
+    public void testJoinLeaveEventsAfterJoin() throws Exception {
         repeat(50, i -> {
             node.join();
 
