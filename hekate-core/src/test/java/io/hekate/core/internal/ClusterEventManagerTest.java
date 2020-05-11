@@ -29,6 +29,7 @@ import io.hekate.cluster.internal.DefaultClusterTopology;
 import io.hekate.core.Hekate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -501,6 +502,27 @@ public class ClusterEventManagerTest extends HekateTestBase {
                 assertEquals(4, listener.getEvents().size());
             }
         }
+    }
+
+    @Test
+    public void testEventSynchronization() throws Exception {
+        CompletableFuture<?> sync1 = new CompletableFuture<>();
+        CompletableFuture<?> sync2 = new CompletableFuture<>();
+        CompletableFuture<?> sync3 = new CompletableFuture<>();
+
+        mgr.addListener(event -> event.attach(sync1));
+        mgr.addListener(event -> event.attach(sync2));
+        mgr.addListener(event -> event.attach(sync3));
+
+        mgr.start(threads);
+
+        CompletableFuture<Void> future = mgr.fireAsync(newJoinEvent());
+
+        sync1.complete(null);
+        sync2.complete(null);
+        sync3.complete(null);
+
+        get(future);
     }
 
     private ClusterJoinEvent newJoinEvent() throws Exception {

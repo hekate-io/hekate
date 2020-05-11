@@ -157,11 +157,11 @@ class ClusterEventManager implements HekateSupport {
                         }
                     }
 
-                    try {
-                        future.complete(null);
-                    } catch (Throwable t) {
-                        log.error("Failed to notify cluster event processing future [event={}]", event, t);
-                    }
+                    event.future().whenComplete((ignore, err) ->
+                        future.complete(null)
+                    );
+                } catch (Throwable t) {
+                    log.error("Failed to notify on cluster event [event={}]", event, t);
                 } finally {
                     insideWorker.remove();
                 }

@@ -322,7 +322,10 @@ public class DefaultCoordinationService implements CoordinationService, CoreServ
 
         // Register initial coordination future.
         if (!process.isAsyncInit()) {
-            ctx.cluster().addSyncFuture(process.future());
+            ctx.cluster().addListener(
+                evt -> evt.attach(process.future()),
+                ClusterEventType.JOIN
+            );
         }
 
         // Initialize.
@@ -364,7 +367,7 @@ public class DefaultCoordinationService implements CoordinationService, CoreServ
     }
 
     private void processTopologyChange(ClusterEvent event) {
-        guard.withReadLockIfInitialized(() -> {
+        guard.withReadLockIfInitialized(() ->
             processes.values().forEach(process -> {
                 ClusterTopology topology = event.topology().filter(node -> {
                     ServiceInfo service = node.service(CoordinationService.class);
@@ -373,8 +376,8 @@ public class DefaultCoordinationService implements CoordinationService, CoreServ
                 });
 
                 process.processTopologyChange(topology);
-            });
-        });
+            })
+        );
     }
 
     private static String propertyName(String process) {

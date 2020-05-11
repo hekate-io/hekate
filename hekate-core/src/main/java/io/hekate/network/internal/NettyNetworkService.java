@@ -452,11 +452,6 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
     }
 
     @Override
-    public void preTerminate() {
-        // No-op.
-    }
-
-    @Override
     public void terminate() {
         // No-op.
     }
