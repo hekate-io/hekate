@@ -102,6 +102,7 @@ public abstract class HekateNodeTestBase extends HekateTestBase {
 
         boot.setClusterName("test");
         boot.setNodeName("node-" + address.getPort() + '-' + allNodes.size());
+        boot.setConfigReport(true);
         boot.setDefaultCodec(defaultCodec());
 
         if (ctx.resources() != null) {
