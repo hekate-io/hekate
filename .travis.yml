@@ -22,7 +22,7 @@ env:
   # Epoll + JDK SSL
   - TRANSPORT=EPOLL SSL=JDK
   # Epoll + OpenSSL
-  - TRANSPORT=EPOLL SSL=OPEN_JDK
+  - TRANSPORT=EPOLL SSL=OPEN_SSL
 
 services:
   - docker
