@@ -23,7 +23,6 @@ import io.hekate.network.NetworkTransportType;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringFormat;
 import io.hekate.util.format.ToStringIgnore;
-import io.netty.channel.epoll.Epoll;
 import io.netty.handler.ssl.OpenSsl;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -106,12 +105,12 @@ public class HekateTestContext {
         List<NetworkSslConfig> sslProvider = new ArrayList<>();
 
         // SSL disabled.
-        if (HekateTestProps.is("NO_SSL_ENABLED")) {
+        if (HekateTestProps.has("SSL", "NO")) {
             sslProvider.add(null);
         }
 
         // JDK SSL provider.
-        if (HekateTestProps.is("SSL_JDK_ENABLED")) {
+        if (HekateTestProps.has("SSL", "JDK")) {
             sslProvider.add(new NetworkSslConfig()
                 .withProvider(NetworkSslConfig.Provider.JDK)
                 .withKeyStorePath(KEY_STORE_PATH)
@@ -122,7 +121,7 @@ public class HekateTestContext {
         }
 
         // OpenSSL provider.
-        if (HekateTestProps.is("SSL_OPENSSL_ENABLED") && OpenSsl.isAvailable()) {
+        if (HekateTestProps.has("SSL", "OPEN_SSL") && OpenSsl.isAvailable()) {
             sslProvider.add(new NetworkSslConfig()
                 .withProvider(NetworkSslConfig.Provider.OPEN_SSL)
                 .withKeyStorePath(KEY_STORE_PATH)
@@ -134,11 +133,11 @@ public class HekateTestContext {
 
         List<NetworkTransportType> transports = new ArrayList<>();
 
-        if (HekateTestProps.is("NIO_ENABLED")) {
+        if (HekateTestProps.has("TRANSPORT", "NIO")) {
             transports.add(NetworkTransportType.NIO);
         }
 
-        if (HekateTestProps.is("EPOLL_ENABLED") && Epoll.isAvailable()) {
+        if (HekateTestProps.has("TRANSPORT", "EPOLL")) {
             transports.add(NetworkTransportType.EPOLL);
         }
 

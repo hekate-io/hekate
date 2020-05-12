@@ -2,7 +2,7 @@ dist: xenial
 
 branches:
   except:
-  - /experimental-.*/
+    - /experimental-.*/
 
 language: java
 
@@ -12,17 +12,17 @@ jdk:
 
 env:
   # NIO + No SSL
-  - NIO_ENABLED=true   EPOLL_ENABLED=false  NO_SSL_ENABLED=true   SSL_JDK_ENABLED=false  SSL_OPENSSL_ENABLED=false  LOG_LEVEL=OFF
+  - TRANSPORT=NIO SSL=NO  LOG_LEVEL=OFF
   # NIO + JDK SSL
-  - NIO_ENABLED=true   EPOLL_ENABLED=false  NO_SSL_ENABLED=false  SSL_JDK_ENABLED=true   SSL_OPENSSL_ENABLED=false
+  - TRANSPORT=NIO SSL=JDK
   # NIO + OpenSSL
-  - NIO_ENABLED=true   EPOLL_ENABLED=false  NO_SSL_ENABLED=false  SSL_JDK_ENABLED=false  SSL_OPENSSL_ENABLED=true
+  - TRANSPORT=NIO SSL=OPEN_SSL
   # Epoll + No SSL
-  - NIO_ENABLED=false  EPOLL_ENABLED=true   NO_SSL_ENABLED=true   SSL_JDK_ENABLED=false  SSL_OPENSSL_ENABLED=false  LOG_LEVEL=WARN
+  - TRANSPORT=EPOLL SSL=NO  LOG_LEVEL=WARN
   # Epoll + JDK SSL
-  - NIO_ENABLED=false  EPOLL_ENABLED=true   NO_SSL_ENABLED=false  SSL_JDK_ENABLED=true   SSL_OPENSSL_ENABLED=false
+  - TRANSPORT=EPOLL SSL=JDK
   # Epoll + OpenSSL
-  - NIO_ENABLED=false  EPOLL_ENABLED=true   NO_SSL_ENABLED=false  SSL_JDK_ENABLED=false  SSL_OPENSSL_ENABLED=true
+  - TRANSPORT=EPOLL SSL=OPEN_JDK
 
 services:
   - docker
