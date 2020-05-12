@@ -52,7 +52,7 @@ import java.util.concurrent.CompletableFuture;
  * <li><a href="#retrying_on_error">Retrying on Error</a></li>
  * </ul>
  *
- * <a name="service_configuration"></a>
+ * <a id="service_configuration"></a>
  * <h2>Service Configuration</h2>
  * <p>
  * {@link RpcService} can be configured and registered in {@link HekateBootstrap} with the help of {@link RpcServiceFactory} as shown in
@@ -80,7 +80,7 @@ import java.util.concurrent.CompletableFuture;
  * </div>
  * </div>
  *
- * <a name="rpc_interface"></a>
+ * <a id="rpc_interface"></a>
  * <h2>RPC Interface</h2>
  * <p>
  * Every object that is exposed for RPC access must implement at least one @{@link Rpc}-annotated interface.
@@ -163,7 +163,7 @@ import java.util.concurrent.CompletableFuture;
  * will still be able to route requests to the new server.</li>
  * </ol>
  *
- * <a name="rpc_server"></a>
+ * <a id="rpc_server"></a>
  * <h2>RPC Server</h2>
  * <p>
  * RPC server is a Java class that implements one or more @{@link Rpc}-annotated interfaces. Below is the example of such class:
@@ -191,7 +191,7 @@ import java.util.concurrent.CompletableFuture;
  * and communicate with that server.
  * </p>
  *
- * <a name="rpc_client"></a>
+ * <a id="rpc_client"></a>
  * <h2>RPC Client</h2>
  * <p>
  * The client side of RPC communication is represented by a Java reflections proxy of an @{@link Rpc}-annotated interface. Such proxies can
@@ -217,7 +217,7 @@ import java.util.concurrent.CompletableFuture;
  * For the complete list of pre-configurable options please see the documentation of {@link RpcClientConfig} class.
  * </p>
  *
- * <a name="routing_and_load_balancing"></a>
+ * <a id="routing_and_load_balancing"></a>
  * <h2>Routing and Load Balancing</h2>
  * <p>
  * Every RPC client proxy uses an instance of {@link RpcLoadBalancer} interface to perform routing of RPC unicast operations. Load balancer
@@ -259,7 +259,7 @@ import java.util.concurrent.CompletableFuture;
  * {@link CompletableFuture#complete(Object) completed} on a thread that is mapped to the value of {@link RpcAffinityKey}.
  * </p>
  *
- * <a name="topology_filterring"></a>
+ * <a id="topology_filterring"></a>
  * <h3>Cluster Topology Filtering</h3>
  * <p>
  * Routing of RPC operations among the cluster nodes is based on the RPC client's cluster view. By default, it includes all of the cluster
@@ -284,7 +284,7 @@ import java.util.concurrent.CompletableFuture;
  * that do match the filtering criteria.
  * </p>
  *
- * <a name="retrying_on_error"></a>
+ * <a id="retrying_on_error"></a>
  * <h2>Retrying on Error</h2>
  * <p>
  * RPC service provides support for specifying a retry behavior in case of a remote invocation error.

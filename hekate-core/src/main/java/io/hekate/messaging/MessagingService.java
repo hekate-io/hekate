@@ -55,7 +55,7 @@ import java.util.List;
  * <li><a href="#thread_pooling">Thread Pooling</a></li>
  * </ul>
  *
- * <a name="messaging_channels"></a>
+ * <a id="messaging_channels"></a>
  * <h2>Messaging Channels</h2>
  * <p>
  * Messaging channel is a communication unit that can act as a sender, as a receiver or perform both of those roles simultaneously.
@@ -64,7 +64,7 @@ import java.util.List;
  * the communication patterns.
  * </p>
  *
- * <a name="configuring_channels"></a>
+ * <a id="configuring_channels"></a>
  * <h2>Configuring Channels</h2>
  * <p>
  * Configuration of a messaging channel is represented by the {@link MessagingChannelConfig} class.
@@ -103,7 +103,7 @@ import java.util.List;
  * For more details about the configuration options please see the documentation of {@link MessagingChannelConfig} class.
  * </p>
  *
- * <a name="accessing_channels"></a>
+ * <a id="accessing_channels"></a>
  * <h2>Accessing Channels</h2>
  * <p>
  * Channel can be accessed via the {@link MessagingService#channel(String, Class)} method, with the first parameter being the
@@ -112,7 +112,7 @@ import java.util.List;
  * ${source: messaging/MessagingServiceJavadocTest.java#access_channel}
  * </p>
  *
- * <a name="sending_messages"></a>
+ * <a id="sending_messages"></a>
  * <h2>Sending Messages</h2>
  * <p>
  * {@link MessagingChannel} provides API for the following communication patterns:
@@ -125,7 +125,7 @@ import java.util.List;
  * <li><a href="#broadcast">Broadcast</a> - Submit a request to multiple nodes simultaneously and aggregate their responses</li>
  * </ul>
  *
- * <a name="request"></a>
+ * <a id="request"></a>
  * <h3>Request</h3>
  * <p>
  * {@link Request} interface can be used for bidirectional communications with remote nodes using the request-response
@@ -142,7 +142,7 @@ import java.util.List;
  * For more details please see the documentation of {@link Request} interface.
  * </p>
  *
- * <a name="send"></a>
+ * <a id="send"></a>
  * <h3>Send</h3>
  * <p>
  * {@link Send} interface provides support for unidirectional communications (i.e. when remote node doesn't need to send
@@ -159,7 +159,7 @@ import java.util.List;
  * For more details please see the documentation of {@link Send} interface.
  * </p>
  *
- * <a name="subscribe"></a>
+ * <a id="subscribe"></a>
  * <h3>Subscribe</h3>
  * <p>
  * {@link Subscribe} interface can be used for bidirectional communications with remote nodes using the request-response pattern.
@@ -172,7 +172,7 @@ import java.util.List;
  * For more details please see the documentation of {@link Subscribe} interface.
  * </p>
  *
- * <a name="aggregate"></a>
+ * <a id="aggregate"></a>
  * <h3>Aggregate</h3>
  * <p>
  * {@link Aggregate} interface can be used for bidirectional communications by submitting a message to multiple nodes and
@@ -194,7 +194,7 @@ import java.util.List;
  * For more details please see the documentation of {@link Aggregate} interface.
  * </p>
  *
- * <a name="broadcast"></a>
+ * <a id="broadcast"></a>
  * <h3>Broadcast</h3>
  * <p>
  * {@link Broadcast} interface provides support for unidirectional broadcasting (i.e. when remote nodes do not need to
@@ -214,7 +214,7 @@ import java.util.List;
  * For more details please see the documentation of {@link Broadcast} interface.
  * </p>
  *
- * <a name="receiving_messages"></a>
+ * <a id="receiving_messages"></a>
  * <h2>Receiving Messages</h2>
  * <p>
  * Messaging channel can receive messages from remote nodes by registering an instance of {@link MessageReceiver} interface via the {@link
@@ -236,7 +236,7 @@ import java.util.List;
  * ${source: messaging/MessagingServiceJavadocTest.java#message_receiver}
  * </p>
  *
- * <a name="roouting_and_load_balancing"></a>
+ * <a id="roouting_and_load_balancing"></a>
  * <h2>Routing and Load Balancing</h2>
  * <p>
  * Every messaging channel uses an instance of {@link LoadBalancer} interface to perform routing of unicast operations
@@ -253,7 +253,7 @@ import java.util.List;
  * channel's cluster topology.
  * </p>
  *
- * <a name="consistent_routing"></a>
+ * <a id="consistent_routing"></a>
  * <h3>Consistent Routing</h3>
  * <p>
  * Applications can provide an affinity key to the {@link LoadBalancer} so that it could perform consistent routing based on some
@@ -287,7 +287,7 @@ import java.util.List;
  * {@link Partition#backupNodes() backup nodes}).
  * </p>
  *
- * <a name="thread_affinity"></a>
+ * <a id="thread_affinity"></a>
  * <h3>Thread Affinity</h3>
  * <p>
  * Besides providing a hint to the {@link LoadBalancer}, specifying an affinity key also instructs the messaging channel to process all
@@ -295,7 +295,7 @@ import java.util.List;
  * RequestCallback}) and to receiving a message (see {@link MessageReceiver#receive(Message)}).
  * </p>
  *
- * <a name="cluster_topology_filtering"></a>
+ * <a id="cluster_topology_filtering"></a>
  * <h3>Cluster Topology Filtering</h3>
  * <p>
  * It is possible to narrow down the list of nodes that are visible to the {@link MessagingChannel} by setting a {@link ClusterNodeFilter}.
@@ -321,7 +321,7 @@ import java.util.List;
  * If filter is specified then all messaging operations will be distributed among only those nodes that match the filter's criteria.
  * </p>
  *
- * <a name="thread_pooling"></a>
+ * <a id="thread_pooling"></a>
  * <h2>Thread Pooling</h2>
  * <p>
  * Messaging service manages a pool of threads for each of its registered channels. The following  thread pools are managed:

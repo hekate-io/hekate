@@ -63,7 +63,7 @@ import java.util.List;
  * <li><a href="#gossip_protocol">Gossip Protocol</a></li>
  * </ul>
  *
- * <a name="service_configuration"></a>
+ * <a id="service_configuration"></a>
  * <h2>Service Configuration</h2>
  * <p>
  * {@link ClusterService} can be configured and registered within the {@link HekateBootstrap} via the {@link ClusterServiceFactory} class
@@ -96,7 +96,7 @@ import java.util.List;
  * For more details about the configuration options please see the documentation of {@link ClusterServiceFactory} class.
  * </p>
  *
- * <a name="cluster_topology"></a>
+ * <a id="cluster_topology"></a>
  * <h2>Cluster Topology</h2>
  * <p>
  * Cluster membership information (aka cluster topology) is represented by the {@link ClusterTopology} interface. Instances of this
@@ -132,7 +132,7 @@ import java.util.List;
  * counter).
  * </p>
  *
- * <a name="cluster_event_listeners"></a>
+ * <a id="cluster_event_listeners"></a>
  * <h2>Cluster Event Listener</h2>
  * <p>
  * Listening for cluster events can be implemented by registering an instance of {@link ClusterEventListener} interface. This can be done
@@ -156,7 +156,7 @@ import java.util.List;
  *
  * <p>For more details of cluster events processing please see the documentation of {@link ClusterEventListener} interface.</p>
  *
- * <a name="seed_nodes_discovery"></a>
+ * <a id="seed_nodes_discovery"></a>
  * <h2>Seed Nodes Discovery</h2>
  * <p>
  * Whenever local node starts joining the cluster it tries to discover nodes that are already running. If none of such nodes could be
@@ -184,7 +184,7 @@ import java.util.List;
  *
  * <p>Please see the documentation of {@link SeedNodeProvider} for more details on providing custom implementations of this interface.</p>
  *
- * <a name="failure_detection"></a>
+ * <a id="failure_detection"></a>
  * <h2>Failure Detection</h2>
  * <p>
  * Cluster service relies on {@link FailureDetector} interface for node failure detection. Implementations of this interface are typically
@@ -205,7 +205,7 @@ import java.util.List;
  * Please see the documentation of {@link FailureDetector} interface for more details on implementing  custom failure detection logic.
  * </p>
  *
- * <a name="split_brain_detection"></a>
+ * <a id="split_brain_detection"></a>
  * <h2>Split-brain Detection</h2>
  * <p>
  * Cluster service can be configured to automatically detect and perform appropriate actions in case if
@@ -233,7 +233,7 @@ import java.util.List;
  * documentation of {@link SplitBrainAction} for details about the available options.
  * </p>
  *
- * <a name="cluster_acceptors"></a>
+ * <a id="cluster_acceptors"></a>
  * <h2>Cluster Acceptors</h2>
  * <p>
  * Whenever a new node tries joins the cluster it can be verified based on some custom application-specific rules (f.e. authorization and
@@ -252,7 +252,7 @@ import java.util.List;
  * Please see the documentation of {@link ClusterAcceptor} interface for mode details.
  * </p>
  *
- * <a name="gossip_protocol"></a>
+ * <a id="gossip_protocol"></a>
  * <h2>Gossip Protocol</h2>
  * <p>
  * Cluster service uses a push-pull <a href="https://en.wikipedia.org/wiki/Gossip_protocol" target="_blank">gossip protocol</a> for

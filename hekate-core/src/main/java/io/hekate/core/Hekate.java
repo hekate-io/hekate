@@ -134,7 +134,7 @@ import java.util.Set;
  * </div>
  * </div>
  *
- * <a name="service_factories"></a>
+ * <a id="service_factories"></a>
  * <h2>Service Factories</h2>
  * <p>
  * Each service has a configurable {@link ServiceFactory} that can be registered within a {@link HekateBootstrap} instance via {@link
@@ -157,7 +157,7 @@ import java.util.Set;
  * </ul>
  *
  *
- * <a name="lifecycle"></a>
+ * <a id="lifecycle"></a>
  * <h2>Lifecycle</h2>
  * <p>
  * The lifecycle of each {@link Hekate} instance is controlled by the following methods:

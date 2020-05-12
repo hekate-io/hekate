@@ -44,7 +44,7 @@ import java.util.List;
  * <li><a href="#example">Example</a></li>
  * </ul>
  *
- * <a name="service_configuration"></a>
+ * <a id="service_configuration"></a>
  * <h2>Service Configuration</h2>
  * <p>
  * {@link NetworkService} can be configured and registered within the {@link HekateBootstrap} via the {@link NetworkServiceFactory} class
@@ -76,7 +76,7 @@ import java.util.List;
  * Please see the documentation of {@link NetworkServiceFactory} class for more details about the available configuration options.
  * </p>
  *
- * <a name="connectors"></a>
+ * <a id="connectors"></a>
  * <h2>Connectors</h2>
  * <p>
  * Communication units in the {@link NetworkService} are represented by the {@link NetworkConnector} interface. This interface provides API
@@ -101,7 +101,7 @@ import java.util.List;
  * will act in a pure client mode and will not be able to accept connections from remote addresses.
  * </p>
  *
- * <a name="connectors_configuration"></a>
+ * <a id="connectors_configuration"></a>
  * <h2>Connectors Configuration</h2>
  * <p>
  * {@link NetworkConnector} configuration is represented by the {@link NetworkConnectorConfig} class. Please see its documentation for the
@@ -113,7 +113,7 @@ import java.util.List;
  * method.
  * </p>
  *
- * <a name="protocol_identifier"></a>
+ * <a id="protocol_identifier"></a>
  * <h2>Protocol Identifier</h2>
  * <p>
  * Each connector must have a protocol identifier. This identifier is used by the {@link NetworkService} to select which {@link
@@ -124,7 +124,7 @@ import java.util.List;
  * handled by its {@link NetworkServerHandler}. If such instance can't be found then connection will be rejected.
  * </p>
  *
- * <a name="ssl_encryption"></a>
+ * <a id="ssl_encryption"></a>
  * <h2>SSL Encryption</h2>
  * <p>
  * It is possible to configure {@link NetworkService} to use secure communications by setting {@link
@@ -143,7 +143,7 @@ import java.util.List;
  * NetworkConnectorConfig#setProtocol(String)} method.
  * </p>
  *
- * <a name="data_serialization"></a>
+ * <a id="data_serialization"></a>
  * <h2>Data Serialization</h2>
  * <p>
  * Data serialization and deserialization within connectors is handled by the {@link Codec} interface. Instances of this interface can
@@ -156,7 +156,7 @@ import java.util.List;
  * Please see the documentation of {@link Codec} interface for more details about data serialization.
  * </p>
  *
- * <a name="thread_management"></a>
+ * <a id="thread_management"></a>
  * <h2>Thread Management</h2>
  * <p>
  * {@link NetworkService} manages a core NIO thread pool of {@link NetworkServiceFactory#setNioThreads(int)} size. This thread pools
@@ -179,7 +179,7 @@ import java.util.List;
  * unregisters itself from its worker thread.
  * </p>
  *
- * <a name="example"></a>
+ * <a id="example"></a>
  * <h2>Example</h2>
  * <p>
  * The code example below shows how {@link NetworkService} can be used to implement client/server communications. For the sake of brevity
@@ -188,14 +188,14 @@ import java.util.List;
  * speed and to support a more complex application logic.
  * </p>
  *
- * <a name="server_example"></a>
+ * <a id="server_example"></a>
  * <h3>Server Example</h3>
  * <p>
  * 1) Prepare server handler.
  * ${source: network/NetworkServiceJavadocTest.java#server_handler_example}
  * </p>
  *
- * <a name="server_example_connector"></a>
+ * <a id="server_example_connector"></a>
  * <p>
  * 2) Prepare connector configuration.
  * ${source: network/NetworkServiceJavadocTest.java#server_handler_config_example}
@@ -206,7 +206,7 @@ import java.util.List;
  * ${source: network/NetworkServiceJavadocTest.java#server_example}
  * </p>
  *
- * <a name="client_example"></a>
+ * <a id="client_example"></a>
  * <h3>Client Example</h3>
  * <p>
  * <b>Note:</b> This example uses the same connector configuration as in the <a href="#server_example_connector">server example.</a>

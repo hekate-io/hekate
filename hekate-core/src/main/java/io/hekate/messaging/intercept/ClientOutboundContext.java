@@ -76,9 +76,9 @@ public interface ClientOutboundContext<T> {
     ClusterTopology topology();
 
     /**
-     * Returns <tt>true</tt> if the messaging operation has an affinity key (see {@link #affinityKey()}).
+     * Returns {@code true} if the messaging operation has an affinity key (see {@link #affinityKey()}).
      *
-     * @return <tt>true</tt> if the messaging operation has an affinity key.
+     * @return {@code true} if the messaging operation has an affinity key.
      */
     boolean hasAffinity();
 

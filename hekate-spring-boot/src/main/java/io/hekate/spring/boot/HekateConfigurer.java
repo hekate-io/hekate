@@ -92,7 +92,7 @@ import org.springframework.stereotype.Component;
  * </div>
  * </div>
  *
- * <a name="usage_example"></a>
+ * <a id="usage_example"></a>
  * <h2>Usage Example</h2>
  * <p>
  * The code example below shows how {@link Hekate} auto-configuration can be used in a Spring Boot-enabled applications.
