@@ -68,8 +68,6 @@ public class DefaultJmxService implements JmxService, InitializingService, Termi
     private final List<ObjectName> names = new ArrayList<>();
 
     public DefaultJmxService(JmxServiceFactory factory) {
-        assert factory != null : "Service factory is null.";
-
         server = factory.getServer();
         domain = factory.getDomain();
 

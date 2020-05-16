@@ -27,7 +27,6 @@ import io.hekate.core.service.Service;
 import io.hekate.core.service.ServiceFactory;
 import io.hekate.network.NetworkService;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.junit.Test;
@@ -37,6 +36,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
+import static java.util.Collections.synchronizedList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -50,7 +50,7 @@ public class HekateConfigurerTest extends HekateAutoConfigurerTestBase {
     public static class DefaultTestConfig extends HekateTestConfigBase {
         @Component
         public static class TestClusterListener {
-            private final List<ClusterEvent> events = Collections.synchronizedList(new ArrayList<>());
+            private final List<ClusterEvent> events = synchronizedList(new ArrayList<>());
 
             @EventListener
             public void onJoin(ClusterJoinEvent evt) {
@@ -65,7 +65,7 @@ public class HekateConfigurerTest extends HekateAutoConfigurerTestBase {
 
         @Component
         public static class TestLifecycleListener implements Hekate.LifecycleListener {
-            private final List<Hekate.State> states = Collections.synchronizedList(new ArrayList<>());
+            private final List<Hekate.State> states = synchronizedList(new ArrayList<>());
 
             @Override
             public void onStateChanged(Hekate changed) {

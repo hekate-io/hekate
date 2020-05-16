@@ -23,12 +23,12 @@ import io.hekate.network.NetworkMessage;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -93,7 +93,7 @@ public class NetworkClientCallbackMock<T> implements NetworkClientCallback<T> {
         List<T> expected = new ArrayList<>();
 
         for (int i = 0; i < messages.length; i++) {
-            expected.addAll(Arrays.asList(messages[i]));
+            expected.addAll(asList(messages[i]));
         }
 
         HekateTestBase.busyWait("messages [expected=" + expected + ", received=" + this.messages + ']', () ->

@@ -243,8 +243,6 @@ public class SeedNodeProviderGroup implements SeedNodeProvider, JmxSupport<Colle
     }
 
     private void withPolicy(String taskName, List<SeedNodeProvider> providers, SeedNodeProviderTask task) throws HekateException {
-        assert task != null : "Task is null.";
-
         if (!providers.isEmpty()) {
             int success = 0;
 

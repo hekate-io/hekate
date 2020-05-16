@@ -28,9 +28,6 @@ class DefaultMessagingEndpoint<T> implements MessagingEndpoint<T> {
     private volatile Object userContext;
 
     public DefaultMessagingEndpoint(ClusterAddress address, MessagingChannel<T> channel) {
-        assert address != null : "Remote address is null.";
-        assert channel != null : "Channel is null.";
-
         this.address = address;
         this.channel = channel;
     }

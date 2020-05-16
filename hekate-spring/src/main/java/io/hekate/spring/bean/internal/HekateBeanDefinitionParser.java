@@ -73,7 +73,6 @@ import io.hekate.spring.bean.network.NetworkConnectorBean;
 import io.hekate.spring.bean.network.NetworkServiceBean;
 import io.hekate.spring.bean.rpc.RpcClientBean;
 import io.hekate.spring.bean.rpc.RpcServiceBean;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -92,6 +91,7 @@ import org.springframework.beans.factory.xml.ParserContext;
 import org.springframework.util.xml.DomUtils;
 import org.w3c.dom.Element;
 
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toSet;
 import static org.springframework.util.xml.DomUtils.getChildElementByTagName;
 import static org.springframework.util.xml.DomUtils.getChildElements;
@@ -1118,7 +1118,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
             return getChildElementsByTagName(elem, subName);
         }
 
-        return Collections.emptyList();
+        return emptyList();
     }
 
     private Optional<Element> setBeanOrRef(BeanDefinitionBuilder def, Element parent, String propName, String elemName, ParserContext ctx) {

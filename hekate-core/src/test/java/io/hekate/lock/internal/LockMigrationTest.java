@@ -25,7 +25,6 @@ import io.hekate.lock.internal.LockProtocol.MigrationApplyRequest;
 import io.hekate.lock.internal.LockProtocol.MigrationPrepareRequest;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -37,13 +36,15 @@ import java.util.stream.Stream;
 import org.junit.Test;
 import org.junit.runners.Parameterized.Parameters;
 
+import static java.util.Collections.synchronizedList;
+import static java.util.Collections.synchronizedMap;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class LockMigrationTest extends LockServiceTestBase {
-    private final List<HekateTestNode> nodes = Collections.synchronizedList(new ArrayList<>());
+    private final List<HekateTestNode> nodes = synchronizedList(new ArrayList<>());
 
-    private final Map<ClusterNode, List<DistributedLock>> liveLocks = Collections.synchronizedMap(new HashMap<>());
+    private final Map<ClusterNode, List<DistributedLock>> liveLocks = synchronizedMap(new HashMap<>());
 
     private HekateTestNode coordinator;
 

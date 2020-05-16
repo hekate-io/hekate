@@ -18,10 +18,11 @@ package io.hekate.cluster.internal;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterTopologyTestBase;
-import java.util.Collections;
 import java.util.Set;
 import org.junit.Test;
 
+import static java.util.Collections.emptySet;
+import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -35,9 +36,9 @@ public class DefaultClusterTopologyTest extends ClusterTopologyTestBase {
         ClusterNode n2 = newNode(n -> n.withJoinOrder(2));
         ClusterNode n3 = newNode(n -> n.withJoinOrder(3));
 
-        DefaultClusterTopology t1 = newTopology(1, Collections.singleton(n1));
+        DefaultClusterTopology t1 = newTopology(1, singleton(n1));
 
-        assertSame(t1, t1.updateIfModified(Collections.singleton(n1)));
+        assertSame(t1, t1.updateIfModified(singleton(n1)));
 
         DefaultClusterTopology t2 = t1.updateIfModified(toSet(n1, n2, n3));
 
@@ -92,7 +93,7 @@ public class DefaultClusterTopologyTest extends ClusterTopologyTestBase {
 
         // Other node set.
         DefaultClusterTopology t4 = newTopology(1, toSet(n1, n2));
-        DefaultClusterTopology t5 = newTopology(1, Collections.emptySet());
+        DefaultClusterTopology t5 = newTopology(1, emptySet());
 
         assertEquals(t1, t1);
         assertEquals(t1, t2);

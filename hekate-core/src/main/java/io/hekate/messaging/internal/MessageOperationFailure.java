@@ -40,14 +40,6 @@ class MessageOperationFailure implements FailedAttempt {
         Set<ClusterNode> triedNodes,
         RetryRoutingPolicy routing
     ) {
-        assert attempt >= 0 : "Attempt must be >= 0";
-        assert error != null : "Error is null.";
-        assert lastTriedNode != null : "Last tried node is null.";
-        assert triedNodes != null : "Tried node set is null.";
-        assert !triedNodes.isEmpty() : "Tried node set is empty.";
-        assert triedNodes.contains(lastTriedNode) : "Tried node set doesn't contain the last tried node.";
-        assert routing != null : "Retry routing policy is null.";
-
         this.attempt = attempt;
         this.error = error;
         this.lastTriedNode = lastTriedNode;

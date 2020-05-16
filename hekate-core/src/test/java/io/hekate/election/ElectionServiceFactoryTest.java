@@ -17,9 +17,9 @@
 package io.hekate.election;
 
 import io.hekate.HekateTestBase;
-import java.util.Arrays;
 import org.junit.Test;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -36,7 +36,7 @@ public class ElectionServiceFactoryTest extends HekateTestBase {
 
         assertNull(factory.getCandidates());
 
-        factory.setCandidates(Arrays.asList(cfg1, cfg2));
+        factory.setCandidates(asList(cfg1, cfg2));
 
         assertEquals(2, factory.getCandidates().size());
         assertTrue(factory.getCandidates().contains(cfg1));
@@ -67,7 +67,7 @@ public class ElectionServiceFactoryTest extends HekateTestBase {
 
         assertNull(factory.getConfigProviders());
 
-        factory.setConfigProviders(Arrays.asList(p1, p2));
+        factory.setConfigProviders(asList(p1, p2));
 
         assertEquals(2, factory.getConfigProviders().size());
         assertTrue(factory.getConfigProviders().contains(p1));

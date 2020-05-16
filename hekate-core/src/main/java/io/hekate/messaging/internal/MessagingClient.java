@@ -22,10 +22,11 @@ import io.hekate.network.NetworkConnector;
 import io.hekate.network.NetworkFuture;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
-import java.util.Collections;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static java.util.Collections.singletonList;
 
 class MessagingClient<T> {
     private static final Logger log = LoggerFactory.getLogger(MessagingClient.class);
@@ -59,10 +60,6 @@ class MessagingClient<T> {
         MessagingGatewayContext<T> ctx,
         boolean trackIdle
     ) {
-        assert remoteNode != null : "Remote node is null.";
-        assert net != null : "Network connector is null.";
-        assert ctx != null : "Messaging context is null.";
-
         if (DEBUG) {
             log.debug("Creating new connection [channel={}, node={}]", ctx.channel().name(), remoteNode);
         }
@@ -104,7 +101,7 @@ class MessagingClient<T> {
             // Mark as closed.
             state = STATE_CLOSED;
 
-            return Collections.singletonList(conn.disconnect());
+            return singletonList(conn.disconnect());
         }
     }
 

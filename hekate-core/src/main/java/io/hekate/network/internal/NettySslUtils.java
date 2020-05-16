@@ -143,10 +143,6 @@ final class NettySslUtils {
         String type,
         ResourceService resources
     ) throws IOException, GeneralSecurityException, ResourceLoadingException {
-        assert path != null : "Key store path null.";
-        assert password != null : "Key store password is null.";
-        assert resources != null : "Resource service is null.";
-
         KeyStore store;
 
         if (type == null || type.isEmpty()) {

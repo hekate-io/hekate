@@ -43,21 +43,18 @@ class DefaultEncoderDecoder<T> implements EncoderDecoder<T> {
     private final DecodeFunction<T> decoder;
 
     public DefaultEncoderDecoder(ByteArrayOutputStreamPool buffers, Codec<T> codec) {
-        assert buffers != null : "Buffer pool is null.";
-        assert codec != null : "Codec is null.";
-
         this.type = codec.baseType();
         this.buffers = buffers;
         this.encoder = codec;
         this.decoder = codec;
     }
 
-    public DefaultEncoderDecoder(Class<T> type, ByteArrayOutputStreamPool buffers, EncodeFunction<T> encoder, DecodeFunction<T> decoder) {
-        assert type != null : "Type is null.";
-        assert buffers != null : "Buffer pool is null.";
-        assert encoder != null : "Encode function is null.";
-        assert decoder != null : "Decode function is null.";
-
+    public DefaultEncoderDecoder(
+        Class<T> type,
+        ByteArrayOutputStreamPool buffers,
+        EncodeFunction<T> encoder,
+        DecodeFunction<T> decoder
+    ) {
         this.type = type;
         this.buffers = buffers;
         this.encoder = encoder;

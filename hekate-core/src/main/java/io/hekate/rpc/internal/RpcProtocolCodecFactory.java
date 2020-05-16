@@ -24,8 +24,6 @@ class RpcProtocolCodecFactory implements CodecFactory<RpcProtocol> {
     private final CodecFactory<Object> delegate;
 
     public RpcProtocolCodecFactory(CodecFactory<Object> delegate) {
-        assert delegate != null : "Delegate is null.";
-
         this.delegate = delegate;
     }
 

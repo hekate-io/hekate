@@ -71,18 +71,18 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
     ) {
         super(rpc, tag, method, channel);
 
-        assert method.aggregate().isPresent() : "Not an aggregate method [rpc=" + rpc + ", method=" + method + ']';
-        assert method.splitArg().isPresent() : "Split argument index is not defined.";
-        assert method.splitArgType().isPresent() : "Split argument index is not defined.";
-
         this.timeout = timeout;
         this.retryPolicy = retryPolicy;
-        this.splitArgIdx = method.splitArg().getAsInt();
+        this.splitArgIdx = method.splitArg().orElseThrow(() ->
+            new AssertionError("Split argument index is not defined.")
+        );
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // Splitting.
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        Class<?> splitArgType = method.splitArgType().get();
+        Class<?> splitArgType = method.splitArgType().orElseThrow(() ->
+            new AssertionError("Split argument index is not defined.")
+        );
 
         if (splitArgType.equals(Map.class)) {
             // Map.
@@ -153,7 +153,11 @@ class RpcSplitAggregateMethodClient<T> extends RpcMethodClientBase<T> {
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // Error handling.
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        RpcAggregate.RemoteErrors policy = method.aggregate().get().remoteErrors();
+        RpcAggregate.RemoteErrors policy = method.aggregate()
+            .orElseThrow(() ->
+                new AssertionError("Not an aggregate method [rpc=" + rpc + ", method=" + method + ']')
+            )
+            .remoteErrors();
 
         if (policy == RpcAggregate.RemoteErrors.IGNORE) {
             errorPolicy = err -> {

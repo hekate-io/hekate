@@ -41,7 +41,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -51,6 +50,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 
+import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -496,7 +496,7 @@ public class ClusterServiceSingleNodeTest extends HekateNodeParamTestBase {
             seedNodes.setDelegate(new SeedNodeProviderAdaptor() {
                 @Override
                 public List<InetSocketAddress> findSeedNodes(String cluster) {
-                    return Collections.emptyList();
+                    return emptyList();
                 }
 
                 @Override
@@ -526,7 +526,7 @@ public class ClusterServiceSingleNodeTest extends HekateNodeParamTestBase {
                     if (errorsCounter.getAndDecrement() > 1) {
                         throw new HekateTestException(HekateTestError.MESSAGE);
                     }
-                    return Collections.emptyList();
+                    return emptyList();
                 }
             });
 

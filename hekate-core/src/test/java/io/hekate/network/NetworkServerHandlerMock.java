@@ -20,13 +20,13 @@ import io.hekate.HekateTestBase;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
@@ -163,7 +163,7 @@ public class NetworkServerHandlerMock<T> implements NetworkServerHandler<T> {
 
     @SafeVarargs
     public final void assertNotReceived(InetSocketAddress address, T... messages) {
-        List<T> expected = Arrays.asList(messages);
+        List<T> expected = asList(messages);
 
         assertFalse(getCtx(address, false).messages.stream().anyMatch(expected::contains));
     }
@@ -182,7 +182,7 @@ public class NetworkServerHandlerMock<T> implements NetworkServerHandler<T> {
 
     @SafeVarargs
     public final void awaitForMessages(InetSocketAddress address, T... messages) throws Exception {
-        List<T> expected = Arrays.asList(messages);
+        List<T> expected = asList(messages);
 
         HekateTestBase.busyWait("messages [from=" + address + ", expected=" + expected + ']', () -> {
             ClientContext<T> ctx = getCtx(address, false);

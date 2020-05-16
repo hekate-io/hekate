@@ -54,14 +54,12 @@ public class AggregateFuture<T> extends MessagingFuture<AggregateResult<T>> {
      * @throws InterruptedException Signals that the thread was interrupted while waiting for aggregation to complete.
      */
     public <V extends T> Collection<V> results(Class<V> type) throws InterruptedException, MessagingFutureException {
-        Collection<T> results = get().results();
-
-        return cast(type, results);
+        return cast(type, results());
     }
 
     @SuppressWarnings("unchecked")
     private <V extends T> Collection<V> cast(Class<V> type, Collection<T> results) {
-        assert results.stream().allMatch(type::isInstance) : "Not all of the aggregation results can be cast to " + type.getName();
+        assert results.stream().allMatch(type::isInstance) : "Some aggregation results can't be cast to " + type.getName();
 
         // No real type checking for performance reasons.
         return (Collection<V>)results;

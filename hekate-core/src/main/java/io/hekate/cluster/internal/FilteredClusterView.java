@@ -24,14 +24,15 @@ import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
+
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptySet;
 
 public class FilteredClusterView implements ClusterView {
     @ToStringIgnore
@@ -46,9 +47,6 @@ public class FilteredClusterView implements ClusterView {
     private ClusterTopology topology;
 
     public FilteredClusterView(ClusterView parent, ClusterFilter filter) {
-        assert parent != null : "Parent view is null.";
-        assert filter != null : "Filter is null.";
-
         this.filter = filter;
         this.parent = parent;
     }
@@ -77,7 +75,7 @@ public class FilteredClusterView implements ClusterView {
     public void addListener(ClusterEventListener listener) {
         ArgAssert.notNull(listener, "Listener");
 
-        parent.addListener(new FilteredClusterListener(filter, listener, Collections.emptySet()));
+        parent.addListener(new FilteredClusterListener(filter, listener, emptySet()));
     }
 
     @Override
@@ -87,9 +85,9 @@ public class FilteredClusterView implements ClusterView {
         Set<ClusterEventType> eventTypesSet;
 
         if (eventTypes != null && eventTypes.length > 0) {
-            eventTypesSet = EnumSet.copyOf(Arrays.asList(eventTypes));
+            eventTypesSet = EnumSet.copyOf(asList(eventTypes));
         } else {
-            eventTypesSet = Collections.emptySet();
+            eventTypesSet = emptySet();
         }
 
         parent.addListener(new FilteredClusterListener(filter, listener, eventTypesSet));
@@ -97,7 +95,7 @@ public class FilteredClusterView implements ClusterView {
 
     @Override
     public void removeListener(ClusterEventListener listener) {
-        parent.removeListener(new FilteredClusterListener(filter, listener, Collections.emptySet()));
+        parent.removeListener(new FilteredClusterListener(filter, listener, emptySet()));
     }
 
     @Override

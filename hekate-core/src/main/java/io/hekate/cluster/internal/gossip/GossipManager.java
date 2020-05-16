@@ -30,7 +30,6 @@ import io.hekate.cluster.internal.gossip.GossipProtocol.UpdateDigest;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -44,6 +43,8 @@ import static io.hekate.cluster.internal.gossip.GossipNodeStatus.FAILED;
 import static io.hekate.cluster.internal.gossip.GossipNodeStatus.JOINING;
 import static io.hekate.cluster.internal.gossip.GossipNodeStatus.LEAVING;
 import static io.hekate.cluster.internal.gossip.GossipNodeStatus.UP;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableSet;
 import static java.util.stream.Collectors.toList;
 
@@ -78,11 +79,11 @@ public class GossipManager {
 
     private GossipSeedNodesSate seedNodesSate;
 
-    private Set<ClusterNode> lastTopology = Collections.emptySet();
+    private Set<ClusterNode> lastTopology = emptySet();
 
     private GossipNodeStatus lastStatus;
 
-    private Set<ClusterAddress> knownAddresses = Collections.emptySet();
+    private Set<ClusterAddress> knownAddresses = emptySet();
 
     private boolean leaveScheduled;
 
@@ -93,11 +94,6 @@ public class GossipManager {
         FailureDetector failureDetector,
         GossipListener gossipListener
     ) {
-        assert cluster != null : "Cluster is null.";
-        assert localNode != null : "Local node is null.";
-        assert failureDetector != null : "Health manager is null.";
-        assert gossipListener != null : "Listener is null.";
-
         this.cluster = cluster;
         this.localNode = localNode;
         this.address = localNode.address();
@@ -122,8 +118,6 @@ public class GossipManager {
     }
 
     public JoinRequest join(List<InetSocketAddress> seedNodes) {
-        assert seedNodes != null : "Seed nodes list is null.";
-
         if (localGossip.hasMembers()) {
             // Already joined.
             return null;
@@ -143,9 +137,6 @@ public class GossipManager {
     }
 
     public JoinRequest processJoinReject(JoinReject msg) {
-        assert msg != null : "Message is null.";
-        assert msg.to().equals(address) : "Message is addressed to another node [message=" + msg + ']';
-
         if (localGossip.hasMembers()) {
             if (DEBUG) {
                 log.debug("Skipped join reject since local node is already joined [reply={}, gossip={}]", msg, localGossip);
@@ -186,8 +177,6 @@ public class GossipManager {
     }
 
     public JoinRequest processJoinFailure(JoinRequest msg, Throwable cause) {
-        assert msg != null : "Message is null.";
-
         if (localGossip.hasMembers()) {
             if (DEBUG) {
                 log.debug("Skipped join message failure since local node is already joined [reply={}, gossip={}]", msg, localGossip);
@@ -206,9 +195,6 @@ public class GossipManager {
     }
 
     public Update processJoinAccept(JoinAccept msg) {
-        assert msg != null : "Message is null.";
-        assert msg.to().equals(address) : "Message is addressed to another node [message=" + msg + ']';
-
         Gossip remote = msg.gossip();
 
         if (!remote.hasMember(id)) {
@@ -241,8 +227,6 @@ public class GossipManager {
     }
 
     public JoinReject acceptJoinRequest(JoinRequest msg) {
-        assert msg != null : "Message is null.";
-
         if (!cluster.equals(msg.cluster())) {
             if (DEBUG) {
                 log.debug("Permanently rejected join request since this node belongs to another cluster [request={}]", msg);
@@ -362,9 +346,6 @@ public class GossipManager {
     }
 
     public UpdateBase processUpdate(UpdateBase msg) {
-        assert msg != null : "Message is null.";
-        assert msg.to().equals(address) : "Message is addressed to another node [message=" + msg + ']';
-
         if (status.isTerminated()) {
             if (DEBUG) {
                 log.debug("Skipped gossip message since local node is in {} state [message={}]", status, msg);
@@ -773,8 +754,6 @@ public class GossipManager {
     }
 
     private Collection<UpdateBase> tryCoordinateAndGossip(int size, GossipPolicy policy) {
-        assert size > 0 : "Gossip size must be above zero [size=" + size + ']';
-
         if (tryCoordinate()) {
             updateLocalSate();
         }
@@ -783,8 +762,6 @@ public class GossipManager {
     }
 
     private Collection<UpdateBase> doGossip(int size, GossipPolicy policy) {
-        assert size > 0 : "Gossip size must be above zero [size=" + size + ']';
-
         List<GossipNodeState> nodes = localGossip.stream()
             .filter(this::canGossip)
             .collect(toList());
@@ -818,7 +795,7 @@ public class GossipManager {
             }
         }
 
-        return Collections.emptyList();
+        return emptyList();
     }
 
     private boolean tryCoordinate() {

@@ -456,8 +456,6 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
     }
 
     private void notifyOnReceivePause(boolean pause, Consumer<NetworkEndpoint<Object>> callback, Channel channel) {
-        assert channel.eventLoop().inEventLoop() : "Must be on event loop thread.";
-
         channel.pipeline().fireUserEventTriggered(pause ? AutoReadChangeEvent.PAUSE : AutoReadChangeEvent.RESUME);
 
         if (callback != null) {

@@ -43,10 +43,6 @@ class RpcMethodHandler {
     private final RpcInterfaceInfo<?> rpc;
 
     public RpcMethodHandler(RpcInterfaceInfo<?> rpc, RpcMethodInfo method, Object target) {
-        assert rpc != null : "RPC interface info is null.";
-        assert method != null : "Method info is null.";
-        assert target != null : "Target is null.";
-
         this.rpc = rpc;
         this.method = method;
         this.target = target;

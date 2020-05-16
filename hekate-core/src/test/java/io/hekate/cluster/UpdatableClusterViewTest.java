@@ -20,11 +20,11 @@ import io.hekate.HekateTestBase;
 import io.hekate.cluster.event.ClusterEventListener;
 import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.util.format.ToString;
-import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import org.junit.Test;
 
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
@@ -125,7 +125,7 @@ public class UpdatableClusterViewTest extends HekateTestBase {
         ClusterView filter = view.filter(n -> n != n1);
 
         assertEquals(topology.version(), filter.topology().version());
-        assertEquals(Collections.singletonList(n2), filter.topology().nodes());
+        assertEquals(singletonList(n2), filter.topology().nodes());
     }
 
     @Test

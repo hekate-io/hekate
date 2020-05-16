@@ -27,12 +27,13 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static java.util.Collections.list;
+import static java.util.Collections.unmodifiableList;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
@@ -76,7 +77,7 @@ public class AddressPatternTest extends HekateTestBase {
     public static void loadInterfaces() throws Exception {
         networkInterfaces = AddressUtils.activeNetworks();
 
-        interfaces = Collections.unmodifiableList(getInterfaces(networkInterfaces));
+        interfaces = unmodifiableList(getInterfaces(networkInterfaces));
 
         Assume.assumeTrue(interfaces.size() > 1);
 
@@ -228,7 +229,7 @@ public class AddressPatternTest extends HekateTestBase {
 
         for (NetworkInterface ni : interfaces) {
             if (ni.isUp() && !ni.isLoopback()) {
-                List<InetAddress> addresses = Collections.list(ni.getInetAddresses()).stream()
+                List<InetAddress> addresses = list(ni.getInetAddresses()).stream()
                     .filter(a -> !a.isLinkLocalAddress())
                     .collect(toList());
 

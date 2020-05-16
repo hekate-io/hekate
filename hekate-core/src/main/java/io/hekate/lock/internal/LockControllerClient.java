@@ -106,12 +106,6 @@ class LockControllerClient {
         LockRegionMetrics metrics,
         AsyncLockCallbackAdaptor asyncCallback
     ) {
-        assert localNode != null : "Cluster node is null.";
-        assert region != null : "Lock region is null.";
-        assert name != null : "Lock name is null.";
-        assert channel != null : "Channel is null.";
-        assert metrics != null : "Metrics are null.";
-
         this.key = new LockKey(region, name);
         this.lockId = lockId;
         this.localNode = localNode;
@@ -183,8 +177,6 @@ class LockControllerClient {
 
     public void becomeLocking(PartitionMapper mapping) {
         synchronized (mux) {
-            assert status == Status.UNLOCKED;
-
             status = Status.LOCKING;
 
             if (DEBUG) {

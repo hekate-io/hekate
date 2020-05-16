@@ -25,7 +25,6 @@ import io.hekate.messaging.loadbalance.EmptyTopologyException;
 import io.hekate.messaging.retry.FailedAttempt;
 import io.hekate.messaging.retry.RetryRoutingPolicy;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -33,6 +32,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import org.junit.Test;
 
+import static java.util.Collections.singletonList;
 import static java.util.Collections.synchronizedList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -90,7 +90,7 @@ public class RetryRequestTest extends RetryTestBase {
             if (details.isFirstAttempt()) {
                 receiver.node().leaveAsync().join();
 
-                sender.awaitForTopology(Collections.singletonList(sender));
+                sender.awaitForTopology(singletonList(sender));
             }
         });
 

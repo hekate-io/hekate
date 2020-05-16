@@ -26,7 +26,6 @@ import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
-import io.hekate.core.internal.util.StreamUtils;
 import io.hekate.core.jmx.JmxService;
 import io.hekate.core.jmx.JmxSupport;
 import io.hekate.core.report.ConfigReporter;
@@ -82,6 +81,7 @@ import java.util.concurrent.ExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.hekate.core.internal.util.StreamUtils.nullSafe;
 import static java.util.stream.Collectors.toList;
 
 public class NettyNetworkService implements NetworkService, NetworkServiceManager, CoreService, JmxSupport<NetworkServiceJmx> {
@@ -97,8 +97,6 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
             DefaultNetworkConnector<T> connector,
             NettyServerHandlerConfig<T> serverHandler
         ) {
-            assert connector != null : "Connector is null.";
-
             this.eventLoop = eventLoop;
             this.connector = connector;
             this.serverHandler = serverHandler;
@@ -218,10 +216,10 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
             transport = factory.getTransport();
         }
 
-        StreamUtils.nullSafe(factory.getConnectors()).forEach(connectorConfigs::add);
+        nullSafe(factory.getConnectors()).forEach(connectorConfigs::add);
 
-        StreamUtils.nullSafe(factory.getConfigProviders()).forEach(provider ->
-            StreamUtils.nullSafe(provider.configureNetwork()).forEach(connectorConfigs::add)
+        nullSafe(factory.getConfigProviders()).forEach(provider ->
+            nullSafe(provider.configureNetwork()).forEach(connectorConfigs::add)
         );
 
         // Register ping protocol.
@@ -242,7 +240,7 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
         Collection<NetworkConfigProvider> providers = ctx.findComponents(NetworkConfigProvider.class);
 
         providers.forEach(provider ->
-            StreamUtils.nullSafe(provider.configureNetwork()).forEach(connectorConfigs::add)
+            nullSafe(provider.configureNetwork()).forEach(connectorConfigs::add)
         );
 
         if (sslConfig != null) {
@@ -630,8 +628,6 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
     }
 
     private <T> ConnectorRegistration<T> register(NetworkConnectorConfig<T> cfg) {
-        assert cfg != null : "Connector configuration is null.";
-
         // Sanity checks.
         ConfigCheck check = ConfigCheck.get(NetworkConnectorConfig.class);
 

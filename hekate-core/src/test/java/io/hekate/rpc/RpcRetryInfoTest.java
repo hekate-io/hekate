@@ -21,12 +21,12 @@ import io.hekate.util.format.ToString;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.annotation.Annotation;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import org.junit.Test;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.unmodifiableList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -52,7 +52,7 @@ public class RpcRetryInfoTest extends HekateTestBase {
 
     @Test
     public void testValues() {
-        List<Class<? extends Throwable>> errors = Arrays.asList(IOException.class, UncheckedIOException.class);
+        List<Class<? extends Throwable>> errors = asList(IOException.class, UncheckedIOException.class);
         String maxAttempts = "1";
         String delay = "2";
         String maxDelay = "3";
@@ -60,7 +60,7 @@ public class RpcRetryInfoTest extends HekateTestBase {
         RpcRetryInfo info = buildInfo(maxAttempts, delay, maxDelay, errors);
 
         assertEquals(errors, info.errors());
-        assertEquals(Collections.unmodifiableList(errors).getClass(), info.errors().getClass());
+        assertEquals(unmodifiableList(errors).getClass(), info.errors().getClass());
         assertEquals(1, info.maxAttempts().getAsInt());
         assertEquals(2, info.delay().getAsLong());
         assertEquals(3, info.maxDelay().getAsLong());

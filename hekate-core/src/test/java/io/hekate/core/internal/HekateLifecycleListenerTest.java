@@ -19,12 +19,12 @@ package io.hekate.core.internal;
 import io.hekate.HekateNodeTestBase;
 import io.hekate.core.Hekate;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import org.junit.Test;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.synchronizedList;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -48,7 +48,7 @@ public class HekateLifecycleListenerTest extends HekateNodeTestBase {
     @Test
     public void testPreConfigured() throws Exception {
         repeat(3, i -> {
-            List<Hekate.State> state = Collections.synchronizedList(new ArrayList<>());
+            List<Hekate.State> state = synchronizedList(new ArrayList<>());
 
             doAnswer(invocation -> {
                 state.add(((Hekate)invocation.getArgument(0)).state());
@@ -79,7 +79,7 @@ public class HekateLifecycleListenerTest extends HekateNodeTestBase {
     @Test
     public void testRegisterUnregister() throws Exception {
         repeat(3, i -> {
-            List<Hekate.State> state = Collections.synchronizedList(new ArrayList<>());
+            List<Hekate.State> state = synchronizedList(new ArrayList<>());
 
             Hekate.LifecycleListener listener = hekate -> state.add(hekate.state());
 
@@ -123,7 +123,7 @@ public class HekateLifecycleListenerTest extends HekateNodeTestBase {
     @Test
     public void testErrorInListener() throws Exception {
         repeat(3, i -> {
-            List<Hekate.State> state = Collections.synchronizedList(new ArrayList<>());
+            List<Hekate.State> state = synchronizedList(new ArrayList<>());
 
             Hekate.LifecycleListener listener = hekate -> {
                 state.add(hekate.state());
@@ -155,7 +155,7 @@ public class HekateLifecycleListenerTest extends HekateNodeTestBase {
 
     @Test
     public void testChangeStateInListener() throws Exception {
-        List<Hekate.State> states = Arrays.asList(
+        List<Hekate.State> states = asList(
             Hekate.State.INITIALIZING,
             Hekate.State.INITIALIZED,
             Hekate.State.JOINING,

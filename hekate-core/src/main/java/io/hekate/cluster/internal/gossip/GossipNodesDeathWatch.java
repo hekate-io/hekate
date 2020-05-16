@@ -19,7 +19,6 @@ package io.hekate.cluster.internal.gossip;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.util.format.ToString;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -30,6 +29,8 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.toSet;
 
 public class GossipNodesDeathWatch {
@@ -41,10 +42,6 @@ public class GossipNodesDeathWatch {
         private final long timestamp;
 
         public Suspect(ClusterNodeId id, Set<ClusterNodeId> suspectedBy, long timestamp) {
-            assert id != null : "Node id is null.";
-            assert suspectedBy != null : "Suspected by nodes list is null.";
-            assert !suspectedBy.isEmpty() : "Suspected by nodes list is empty.";
-
             this.id = id;
             this.suspectedBy = suspectedBy;
             this.timestamp = timestamp;
@@ -94,20 +91,15 @@ public class GossipNodesDeathWatch {
 
     private final Map<ClusterNodeId, Suspect> suspects = new HashMap<>();
 
-    private Set<ClusterNodeId> liveNodes = Collections.emptySet();
+    private Set<ClusterNodeId> liveNodes = emptySet();
 
     public GossipNodesDeathWatch(ClusterNodeId localNodeId, int quorumSize, long maxFailedNodeTimeout) {
-        assert localNodeId != null : "Local node id is null.";
-        assert quorumSize > 0 : "Quorum size must be above zero.";
-
         this.localNodeId = localNodeId;
         this.maxFailedNodeTimeout = TimeUnit.MILLISECONDS.toNanos(maxFailedNodeTimeout);
         this.quorumSize = quorumSize;
     }
 
     public void update(Gossip gossip) {
-        assert gossip != null : "Gossip is null.";
-
         GossipSuspectView suspectView = gossip.suspectView();
 
         Set<ClusterNodeId> newSuspects = suspectView.suspected().stream()
@@ -205,6 +197,6 @@ public class GossipNodesDeathWatch {
             }
         }
 
-        return terminated == null ? Collections.emptyList() : terminated;
+        return terminated == null ? emptyList() : terminated;
     }
 }

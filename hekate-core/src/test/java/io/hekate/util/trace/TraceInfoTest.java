@@ -18,9 +18,9 @@ package io.hekate.util.trace;
 
 import io.hekate.HekateTestBase;
 import io.hekate.util.format.ToString;
-import java.util.Collections;
 import org.junit.Test;
 
+import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -37,7 +37,7 @@ public class TraceInfoTest extends HekateTestBase {
         assertSame(trace, trace.withTag("t", "v"));
 
         assertNotNull(trace.tags());
-        assertEquals(Collections.singletonMap("t", "v"), trace.tags());
+        assertEquals(singletonMap("t", "v"), trace.tags());
 
         assertEquals(ToString.format(trace), trace.toString());
     }

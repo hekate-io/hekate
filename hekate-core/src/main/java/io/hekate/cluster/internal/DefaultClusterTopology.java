@@ -95,8 +95,6 @@ public final class DefaultClusterTopology implements ClusterTopology, Serializab
     }
 
     private DefaultClusterTopology(long version, List<ClusterNode> nodes, boolean safe) {
-        assert nodes != null : "Nodes list is null.";
-
         this.version = version;
 
         if (safe) {

@@ -21,12 +21,12 @@ import io.hekate.core.HekateException;
 import io.hekate.test.HekateTestError;
 import io.hekate.util.format.ToString;
 import java.net.InetSocketAddress;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -112,9 +112,9 @@ public class SeedNodeProviderGroupTest extends HekateTestBase {
         InetSocketAddress addr = newSocketAddress();
 
         when(p1.findSeedNodes(anyString())).thenThrow(new HekateException(HekateTestError.MESSAGE));
-        when(p2.findSeedNodes(anyString())).thenReturn(Collections.singletonList(addr));
+        when(p2.findSeedNodes(anyString())).thenReturn(singletonList(addr));
 
-        assertEquals(Collections.singletonList(addr), group.findSeedNodes(CLUSTER));
+        assertEquals(singletonList(addr), group.findSeedNodes(CLUSTER));
 
         verify(p1).startDiscovery(CLUSTER, selfAddr);
         verify(p2).startDiscovery(CLUSTER, selfAddr);
@@ -135,10 +135,10 @@ public class SeedNodeProviderGroupTest extends HekateTestBase {
 
         InetSocketAddress addr = newSocketAddress();
 
-        when(p1.findSeedNodes(anyString())).thenReturn(Collections.singletonList(addr));
+        when(p1.findSeedNodes(anyString())).thenReturn(singletonList(addr));
         when(p2.findSeedNodes(anyString())).thenThrow(new HekateException(HekateTestError.MESSAGE));
 
-        assertEquals(Collections.singletonList(addr), group.findSeedNodes(CLUSTER));
+        assertEquals(singletonList(addr), group.findSeedNodes(CLUSTER));
 
         verify(p1).startDiscovery(CLUSTER, selfAddr);
         verify(p2).startDiscovery(CLUSTER, selfAddr);
@@ -255,8 +255,8 @@ public class SeedNodeProviderGroupTest extends HekateTestBase {
         InetSocketAddress addr1 = newSocketAddress();
         InetSocketAddress addr2 = newSocketAddress();
 
-        when(p1.findSeedNodes(anyString())).thenReturn(Collections.singletonList(addr1));
-        when(p2.findSeedNodes(anyString())).thenReturn(Collections.singletonList(addr2));
+        when(p1.findSeedNodes(anyString())).thenReturn(singletonList(addr1));
+        when(p2.findSeedNodes(anyString())).thenReturn(singletonList(addr2));
 
         SeedNodeProviderGroup group = new SeedNodeProviderGroup(new SeedNodeProviderGroupConfig()
             .withProvider(p1)
@@ -267,7 +267,7 @@ public class SeedNodeProviderGroupTest extends HekateTestBase {
 
         List<InetSocketAddress> found = group.findSeedNodes(CLUSTER);
 
-        assertEquals(Arrays.asList(addr1, addr2), found);
+        assertEquals(asList(addr1, addr2), found);
 
         verify(p1).startDiscovery(CLUSTER, selfAddr);
         verify(p2).startDiscovery(CLUSTER, selfAddr);

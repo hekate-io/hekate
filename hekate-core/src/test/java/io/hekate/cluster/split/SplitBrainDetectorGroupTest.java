@@ -20,9 +20,9 @@ import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.core.HekateConfigurationException;
 import io.hekate.test.SplitBrainDetectorMock;
-import java.util.Arrays;
 import org.junit.Test;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -51,7 +51,7 @@ public class SplitBrainDetectorGroupTest extends HekateTestBase {
         SplitBrainDetectorMock d2 = new SplitBrainDetectorMock(true);
         SplitBrainDetectorMock d3 = new SplitBrainDetectorMock(true);
 
-        group.setDetectors(Arrays.asList(d1, d2, d3));
+        group.setDetectors(asList(d1, d2, d3));
 
         ClusterNode node = newNode();
 
@@ -78,7 +78,7 @@ public class SplitBrainDetectorGroupTest extends HekateTestBase {
         SplitBrainDetectorMock d2 = new SplitBrainDetectorMock(true);
         SplitBrainDetectorMock d3 = new SplitBrainDetectorMock(true);
 
-        group.setDetectors(Arrays.asList(d1, d2, d3));
+        group.setDetectors(asList(d1, d2, d3));
 
         ClusterNode node = newNode();
 
@@ -107,7 +107,7 @@ public class SplitBrainDetectorGroupTest extends HekateTestBase {
         SplitBrainDetectorMock d2 = new SplitBrainDetectorMock(true);
         SplitBrainDetectorMock d3 = new SplitBrainDetectorMock(true);
 
-        group.setDetectors(Arrays.asList(d1, d2, d3));
+        group.setDetectors(asList(d1, d2, d3));
 
         ClusterNode node = newNode();
 
@@ -129,7 +129,7 @@ public class SplitBrainDetectorGroupTest extends HekateTestBase {
         SplitBrainDetectorMock d1 = new SplitBrainDetectorMock(true);
         SplitBrainDetectorMock d2 = new SplitBrainDetectorMock(true);
 
-        group.setDetectors(Arrays.asList(d1, d2));
+        group.setDetectors(asList(d1, d2));
 
         assertEquals(2, group.getDetectors().size());
         assertTrue(group.getDetectors().contains(d1));

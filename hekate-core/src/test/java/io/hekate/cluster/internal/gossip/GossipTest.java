@@ -18,9 +18,9 @@ package io.hekate.cluster.internal.gossip;
 
 import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterNode;
-import java.util.Collections;
 import org.junit.Test;
 
+import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -113,7 +113,7 @@ public class GossipTest extends HekateTestBase {
         assertEquals(s2, g5.member(s2.id()));
         assertEquals(s3, g5.member(s3.id()));
 
-        Gossip g6 = g5.purge(s1.id(), Collections.singleton(s3.id()));
+        Gossip g6 = g5.purge(s1.id(), singleton(s3.id()));
 
         assertNotSame(g5, g6);
         assertTrue(g6.hasMembers());
@@ -384,7 +384,7 @@ public class GossipTest extends HekateTestBase {
 
         g2 = g2.update(s1.id(), s1)
             .update(s1.id(), s2)
-            .purge(s1.id(), Collections.singleton(s3.id()));
+            .purge(s1.id(), singleton(s3.id()));
 
         assertSame(GossipPrecedence.BEFORE, g1.compare(g2));
         assertSame(GossipPrecedence.AFTER, g2.compare(g1));
@@ -486,7 +486,7 @@ public class GossipTest extends HekateTestBase {
 
         assertEquals(1, g1.allSuspected().size());
 
-        Gossip g2 = g1.purge(s2.id(), Collections.singleton(s3.id()));
+        Gossip g2 = g1.purge(s2.id(), singleton(s3.id()));
 
         g1 = g1.update(s1.id(), s2.status(GossipNodeStatus.LEAVING));
 
@@ -676,7 +676,7 @@ public class GossipTest extends HekateTestBase {
         assertFalse(g.isSuspected(s3.id()));
         assertFalse(g.suspectView().isEmpty());
         assertEquals(1, g.suspectView().suspected().size());
-        assertEquals(Collections.singleton(s1.id()), g.suspectView().suspecting(s2.id()));
+        assertEquals(singleton(s1.id()), g.suspectView().suspecting(s2.id()));
 
         g = g.update(s1.id(), s3.suspect(s2.id()));
 
@@ -738,7 +738,7 @@ public class GossipTest extends HekateTestBase {
         assertFalse(g.isDown(s2.id()));
         assertTrue(g.isDown(s3.id()));
 
-        g = g.purge(s1.id(), Collections.singleton(s3.id()));
+        g = g.purge(s1.id(), singleton(s3.id()));
 
         assertFalse(g.members().containsKey(s3.id()));
 

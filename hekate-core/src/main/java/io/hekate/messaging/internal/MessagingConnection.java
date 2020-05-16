@@ -35,10 +35,6 @@ abstract class MessagingConnection<T> {
         MessagingEndpoint<T> endpoint,
         NetworkEndpoint<MessagingProtocol> net
     ) {
-        assert gateway != null : "Messaging context is null.";
-        assert endpoint != null : "Messaging endpoint is null.";
-        assert net != null : "Network endpoint is null.";
-
         this.gateway = gateway;
         this.endpoint = endpoint;
         this.net = net;

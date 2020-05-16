@@ -23,12 +23,12 @@ import io.hekate.codec.kryo.KryoCodecFactory;
 import io.hekate.util.format.ToString;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import org.junit.Test;
 import org.nustaq.serialization.FSTConfiguration;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 
 public class AutoSelectCodecFactoryTest extends HekateTestBase {
@@ -69,7 +69,7 @@ public class AutoSelectCodecFactoryTest extends HekateTestBase {
         ClassLoader oldLoader = Thread.currentThread().getContextClassLoader();
 
         try {
-            Thread.currentThread().setContextClassLoader(new ExclusiveClassLoader(Collections.singletonList(KRYO_CLASS), oldLoader));
+            Thread.currentThread().setContextClassLoader(new ExclusiveClassLoader(singletonList(KRYO_CLASS), oldLoader));
 
             AutoSelectCodecFactory<Object> factory = new AutoSelectCodecFactory<>();
 
@@ -84,7 +84,7 @@ public class AutoSelectCodecFactoryTest extends HekateTestBase {
         ClassLoader oldLoader = Thread.currentThread().getContextClassLoader();
 
         try {
-            Thread.currentThread().setContextClassLoader(new ExclusiveClassLoader(Arrays.asList(KRYO_CLASS, FST_CLASS), oldLoader));
+            Thread.currentThread().setContextClassLoader(new ExclusiveClassLoader(asList(KRYO_CLASS, FST_CLASS), oldLoader));
 
             AutoSelectCodecFactory<Object> factory = new AutoSelectCodecFactory<>();
 

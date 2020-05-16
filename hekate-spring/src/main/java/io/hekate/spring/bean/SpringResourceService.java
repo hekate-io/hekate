@@ -27,14 +27,10 @@ class SpringResourceService implements ResourceService {
     private final ApplicationContext ctx;
 
     public SpringResourceService(ApplicationContext ctx) {
-        assert ctx != null : "Application context is null.";
-
         this.ctx = ctx;
     }
 
     public static ServiceFactory<ResourceService> factory(ApplicationContext ctx) {
-        assert ctx != null : "Application context is null.";
-
         return new ServiceFactory<ResourceService>() {
             @Override
             public ResourceService createService() {

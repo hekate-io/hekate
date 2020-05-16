@@ -17,12 +17,13 @@
 package foo.bar;
 
 import io.hekate.core.PropertyProvider;
-import java.util.Collections;
 import java.util.Map;
+
+import static java.util.Collections.singletonMap;
 
 public class SomePropertyProvider implements PropertyProvider {
     @Override
     public Map<String, String> getProperties() {
-        return Collections.singletonMap("some-property-from-provider", "some-value-from-provider");
+        return singletonMap("some-property-from-provider", "some-value-from-provider");
     }
 }

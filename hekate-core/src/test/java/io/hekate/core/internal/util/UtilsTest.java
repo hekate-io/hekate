@@ -17,11 +17,11 @@
 package io.hekate.core.internal.util;
 
 import io.hekate.HekateTestBase;
-import java.util.Arrays;
-import java.util.Collections;
 import org.junit.Test;
 
 import static io.hekate.core.internal.util.Utils.camelCase;
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -50,12 +50,12 @@ public class UtilsTest extends HekateTestBase {
     @Test
     public void nullSafeImmutableCopy() {
         assertTrue(Utils.nullSafeImmutableCopy(null).isEmpty());
-        assertTrue(Utils.nullSafeImmutableCopy(Collections.emptyList()).isEmpty());
-        assertTrue(Utils.nullSafeImmutableCopy(Arrays.asList(null, null, null)).isEmpty());
-        assertEquals(3, Utils.nullSafeImmutableCopy(Arrays.asList(1, 2, 3)).size());
+        assertTrue(Utils.nullSafeImmutableCopy(emptyList()).isEmpty());
+        assertTrue(Utils.nullSafeImmutableCopy(asList(null, null, null)).isEmpty());
+        assertEquals(3, Utils.nullSafeImmutableCopy(asList(1, 2, 3)).size());
 
         expect(UnsupportedOperationException.class, () -> {
-            Utils.nullSafeImmutableCopy(Arrays.asList(1, 2, 3)).add(4);
+            Utils.nullSafeImmutableCopy(asList(1, 2, 3)).add(4);
         });
     }
 }

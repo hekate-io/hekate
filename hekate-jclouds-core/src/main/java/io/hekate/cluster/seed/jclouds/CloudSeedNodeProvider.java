@@ -26,7 +26,6 @@ import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.ErrorUtils;
-import io.hekate.core.internal.util.StreamUtils;
 import io.hekate.core.report.ConfigReportSupport;
 import io.hekate.core.report.ConfigReporter;
 import io.hekate.network.NetworkServiceFactory;
@@ -37,7 +36,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,6 +54,8 @@ import org.jclouds.logging.slf4j.config.SLF4JLoggingModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.hekate.core.internal.util.StreamUtils.nullSafe;
+import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toSet;
 
 /**
@@ -136,8 +136,8 @@ public class CloudSeedNodeProvider implements SeedNodeProvider, ConfigReportSupp
         this.credentials = cfg.getCredentials();
         this.endpoint = cfg.getEndpoint();
 
-        this.regions = StreamUtils.nullSafe(cfg.getRegions()).collect(toSet());
-        this.zones = StreamUtils.nullSafe(cfg.getZones()).collect(toSet());
+        this.regions = nullSafe(cfg.getRegions()).collect(toSet());
+        this.zones = nullSafe(cfg.getZones()).collect(toSet());
 
         Properties properties = cfg.buildBaseProperties();
 
@@ -155,7 +155,7 @@ public class CloudSeedNodeProvider implements SeedNodeProvider, ConfigReportSupp
 
         this.properties = properties;
 
-        this.tags = cfg.getTags() != null ? new HashMap<>(cfg.getTags()) : Collections.emptyMap();
+        this.tags = cfg.getTags() != null ? new HashMap<>(cfg.getTags()) : emptyMap();
     }
 
     @Override

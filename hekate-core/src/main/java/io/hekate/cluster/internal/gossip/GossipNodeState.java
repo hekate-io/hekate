@@ -21,9 +21,10 @@ import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.internal.DefaultClusterNode;
 import io.hekate.util.format.ToString;
-import java.util.Collections;
 import java.util.Set;
 
+import static java.util.Collections.emptySet;
+import static java.util.Collections.singleton;
 import static java.util.Collections.unmodifiableSet;
 import static java.util.stream.Collectors.toSet;
 
@@ -37,14 +38,10 @@ public class GossipNodeState extends GossipNodeInfoBase implements Comparable<Go
     private final Set<ClusterNodeId> suspected;
 
     public GossipNodeState(ClusterNode node, GossipNodeStatus status) {
-        this(node, status, 1, Collections.emptySet());
+        this(node, status, 1, emptySet());
     }
 
     public GossipNodeState(ClusterNode node, GossipNodeStatus status, long version, Set<ClusterNodeId> suspected) {
-        assert node != null : "Node is null.";
-        assert status != null : "Status is null.";
-        assert suspected != null : "Suspected set is null.";
-
         this.node = node;
         this.status = status;
         this.version = version;
@@ -132,7 +129,7 @@ public class GossipNodeState extends GossipNodeInfoBase implements Comparable<Go
     }
 
     public GossipNodeState suspect(ClusterNodeId suspected) {
-        return suspect(Collections.singleton(suspected));
+        return suspect(singleton(suspected));
     }
 
     public GossipNodeState suspect(Set<ClusterNodeId> suspected) {
@@ -140,7 +137,7 @@ public class GossipNodeState extends GossipNodeInfoBase implements Comparable<Go
     }
 
     public GossipNodeState unsuspect(ClusterNodeId removed) {
-        return unsuspect(Collections.singleton(removed));
+        return unsuspect(singleton(removed));
     }
 
     public GossipNodeState unsuspect(Set<ClusterNodeId> unsuspected) {

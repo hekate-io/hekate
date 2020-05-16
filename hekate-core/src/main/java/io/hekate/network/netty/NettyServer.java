@@ -46,7 +46,6 @@ import io.netty.handler.ssl.SslContext;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -63,6 +62,8 @@ import static io.hekate.network.NetworkServer.State.STARTED;
 import static io.hekate.network.NetworkServer.State.STARTING;
 import static io.hekate.network.NetworkServer.State.STOPPED;
 import static io.hekate.network.NetworkServer.State.STOPPING;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.synchronizedMap;
 
 class NettyServer implements NetworkServer, NettyChannelSupport {
     private static final Logger log = LoggerFactory.getLogger(NettyServer.class);
@@ -93,7 +94,7 @@ class NettyServer implements NetworkServer, NettyChannelSupport {
 
     private final SslContext ssl;
 
-    private final Map<String, CodecFactory<Object>> codecs = Collections.synchronizedMap(new HashMap<>());
+    private final Map<String, CodecFactory<Object>> codecs = synchronizedMap(new HashMap<>());
 
     private final Map<String, NettyServerHandler> handlers = new ConcurrentHashMap<>();
 
@@ -283,7 +284,7 @@ class NettyServer implements NetworkServer, NettyChannelSupport {
             return handler.clients();
         }
 
-        return Collections.emptyList();
+        return emptyList();
     }
 
     @Override

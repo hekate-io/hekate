@@ -153,8 +153,6 @@ public final class RendezvousHashMapper extends PartitionMapperBase {
         public Snapshot(int partitions, int backupSize, ClusterTopology topology) {
             super(partitions, backupSize);
 
-            assert topology != null : "Topology is null.";
-
             this.topology = topology;
             this.partitions = new AtomicReferenceArray<>(partitions);
         }

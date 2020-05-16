@@ -40,16 +40,11 @@ class SpringInjectionService implements InjectionService, ConfigurableService {
     private AutowireCapableBeanFactory autowire;
 
     public SpringInjectionService(ApplicationContext parent, StringValueResolver resolver) {
-        assert parent != null : "Application context is null.";
-        assert resolver != null : "String value resolver is null.";
-
         this.parent = parent;
         this.resolver = resolver;
     }
 
     public static ServiceFactory<InjectionService> factory(ApplicationContext ctx, StringValueResolver resolver) {
-        assert ctx != null : "Application context is null.";
-
         return new ServiceFactory<InjectionService>() {
             @Override
             public InjectionService createService() {

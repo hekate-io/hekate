@@ -49,8 +49,6 @@ class CandidateHandler implements AsyncLockCallback, JmxSupport<CandidateJmx> {
         private final List<LeaderChangeListener> listeners = new CopyOnWriteArrayList<>();
 
         public DefaultFollowerContext(ClusterNode leader) {
-            assert leader != null : "Leader is null.";
-
             this.leader = new AtomicReference<>(leader);
         }
 
@@ -159,13 +157,6 @@ class CandidateHandler implements AsyncLockCallback, JmxSupport<CandidateJmx> {
         ClusterNode localNode,
         HekateSupport hekate
     ) {
-        assert group != null : "Group name is null.";
-        assert candidate != null : "Candidate is null.";
-        assert worker != null : "Worker is null.";
-        assert lock != null : "Lock is null.";
-        assert localNode != null : "Local node is null.";
-        assert hekate != null : "Hekate is null.";
-
         this.group = group;
         this.candidate = candidate;
         this.worker = worker;

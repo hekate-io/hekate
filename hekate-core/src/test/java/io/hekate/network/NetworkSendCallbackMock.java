@@ -18,12 +18,12 @@ package io.hekate.network;
 
 import io.hekate.HekateTestBase;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -60,7 +60,7 @@ public class NetworkSendCallbackMock<T> implements NetworkSendCallback<T> {
 
     @SafeVarargs
     public final void awaitForSent(T... messages) throws Exception {
-        List<T> expected = new ArrayList<>(Arrays.asList(messages));
+        List<T> expected = new ArrayList<>(asList(messages));
 
         HekateTestBase.busyWait("messages sending [expected=" + expected + ']', () -> {
             for (Iterator<T> it = expected.iterator(); it.hasNext(); ) {
@@ -83,7 +83,7 @@ public class NetworkSendCallbackMock<T> implements NetworkSendCallback<T> {
 
     @SafeVarargs
     public final void awaitForErrors(T... messages) throws Exception {
-        List<T> expected = Arrays.asList(messages);
+        List<T> expected = asList(messages);
 
         HekateTestBase.busyWait("messages failure [expected=" + expected + ']', () ->
             failedMessages.stream().map(f -> f.message).collect(Collectors.toSet()).containsAll(expected)

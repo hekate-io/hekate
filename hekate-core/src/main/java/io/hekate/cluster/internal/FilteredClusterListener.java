@@ -26,9 +26,11 @@ import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.cluster.event.ClusterJoinEvent;
 import io.hekate.cluster.event.ClusterLeaveEvent;
 import io.hekate.core.HekateException;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+
+import static java.util.Collections.emptyList;
+import static java.util.Collections.unmodifiableList;
 
 class FilteredClusterListener implements ClusterEventListener {
     private final ClusterFilter filter;
@@ -38,10 +40,6 @@ class FilteredClusterListener implements ClusterEventListener {
     private final Set<ClusterEventType> eventTypes;
 
     public FilteredClusterListener(ClusterFilter filter, ClusterEventListener delegate, Set<ClusterEventType> eventTypes) {
-        assert filter != null : "Filter is null.";
-        assert delegate != null : "Delegate is null.";
-        assert eventTypes != null : "Event types are null.";
-
         this.filter = filter;
         this.delegate = delegate;
         this.eventTypes = eventTypes;
@@ -93,7 +91,7 @@ class FilteredClusterListener implements ClusterEventListener {
     private List<ClusterNode> filterToImmutable(List<ClusterNode> nodes) {
         List<ClusterNode> filtered = filter.apply(nodes);
 
-        return filtered.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(nodes);
+        return filtered.isEmpty() ? emptyList() : unmodifiableList(nodes);
     }
 
     private ClusterEventListener unwrap() {

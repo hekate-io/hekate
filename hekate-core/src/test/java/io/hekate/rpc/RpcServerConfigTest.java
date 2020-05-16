@@ -18,12 +18,12 @@ package io.hekate.rpc;
 
 import io.hekate.HekateTestBase;
 import io.hekate.util.format.ToString;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import org.junit.Test;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -58,7 +58,7 @@ public class RpcServerConfigTest extends HekateTestBase {
     public void testTags() {
         assertNull(cfg.getTags());
 
-        Set<String> tags = new HashSet<>(Arrays.asList("one", "two"));
+        Set<String> tags = new HashSet<>(asList("one", "two"));
 
         cfg.setTags(tags);
 
@@ -69,7 +69,7 @@ public class RpcServerConfigTest extends HekateTestBase {
         assertNull(cfg.getTags());
 
         assertSame(cfg, cfg.withTag("three"));
-        assertEquals(Collections.singleton("three"), cfg.getTags());
+        assertEquals(singleton("three"), cfg.getTags());
     }
 
     @Test

@@ -105,8 +105,6 @@ public class StateGuard {
      * @param type Guarded component type (for errors reporting).
      */
     public StateGuard(Class<?> type) {
-        assert type != null : "Type is null.";
-
         this.type = type;
 
         ReentrantReadWriteLock lock = new ReentrantReadWriteLock();

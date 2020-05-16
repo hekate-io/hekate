@@ -26,8 +26,6 @@ public abstract class GossipNodeInfoBase {
     public abstract long version();
 
     public GossipPrecedence compare(GossipNodeInfoBase other) {
-        assert other != null : "Other node is null.";
-
         int cmp = status().compareTo(other.status());
 
         long thisVer = version();

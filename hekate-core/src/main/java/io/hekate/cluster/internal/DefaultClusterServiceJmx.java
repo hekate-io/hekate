@@ -24,8 +24,6 @@ class DefaultClusterServiceJmx implements ClusterServiceJmx {
     private final ClusterService service;
 
     public DefaultClusterServiceJmx(ClusterService service) {
-        assert service != null : "Cluster service is null.";
-
         this.service = service;
     }
 

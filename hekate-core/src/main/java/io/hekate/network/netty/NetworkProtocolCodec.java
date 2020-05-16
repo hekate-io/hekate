@@ -32,9 +32,10 @@ import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.MessageToByteEncoder;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
+import static java.util.Collections.emptyMap;
 
 class NetworkProtocolCodec {
     private class Encoder extends MessageToByteEncoder<Object> {
@@ -226,7 +227,7 @@ class NetworkProtocolCodec {
     public NetworkProtocolCodec(Codec<Object> codec) {
         this.codec = codec;
 
-        this.allCodecs = Collections.emptyMap();
+        this.allCodecs = emptyMap();
     }
 
     public NetworkProtocolCodec(Map<String, CodecFactory<Object>> allCodecs) {

@@ -19,9 +19,9 @@ package io.hekate.partition;
 import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterTopology;
-import java.util.Arrays;
 import org.junit.Test;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -51,7 +51,7 @@ public class UpdatablePartitionMapperTest extends HekateTestBase {
 
         UpdatablePartitionMapper mapper = new UpdatablePartitionMapper(16, 2);
 
-        mapper.update(topology, old -> new DefaultPartition(old.id(), n1, Arrays.asList(n2, n3), topology));
+        mapper.update(topology, old -> new DefaultPartition(old.id(), n1, asList(n2, n3), topology));
 
         assertEquals(topology, mapper.topology());
 
@@ -60,8 +60,8 @@ public class UpdatablePartitionMapperTest extends HekateTestBase {
 
             assertEquals(i, part.id());
             assertEquals(n1, part.primaryNode());
-            assertEquals(Arrays.asList(n2, n3), part.backupNodes());
-            assertEquals(Arrays.asList(n1, n2, n3), part.nodes());
+            assertEquals(asList(n2, n3), part.backupNodes());
+            assertEquals(asList(n1, n2, n3), part.nodes());
             assertEquals(topology, part.topology());
         }
     }

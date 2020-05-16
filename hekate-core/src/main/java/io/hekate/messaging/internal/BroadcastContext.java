@@ -23,10 +23,11 @@ import io.hekate.messaging.operation.BroadcastResult;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static java.util.Collections.emptyMap;
 
 class BroadcastContext<T> implements BroadcastResult<T> {
     private final T message;
@@ -42,11 +43,6 @@ class BroadcastContext<T> implements BroadcastResult<T> {
     private int remaining;
 
     public BroadcastContext(T message, List<ClusterNode> nodes, BroadcastFuture<T> future) {
-        assert message != null : "Message is null.";
-        assert nodes != null : "Nodes set is null.";
-        assert !nodes.isEmpty() : "Nodes set is empty.";
-        assert future != null : "Future is null.";
-
         this.message = message;
         this.nodes = new ArrayList<>(nodes); // Copy since node list can be modified.
         this.remaining = nodes.size();
@@ -68,7 +64,7 @@ class BroadcastContext<T> implements BroadcastResult<T> {
     @Override
     public Map<ClusterNode, Throwable> errors() {
         synchronized (this) {
-            return errors == null ? Collections.emptyMap() : errors;
+            return errors == null ? emptyMap() : errors;
         }
     }
 

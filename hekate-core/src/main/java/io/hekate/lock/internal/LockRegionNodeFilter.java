@@ -26,8 +26,6 @@ class LockRegionNodeFilter implements ClusterNodeFilter {
     private final String regionName;
 
     public LockRegionNodeFilter(String regionName) {
-        assert regionName != null : "Region name is null.";
-
         this.regionName = regionName;
     }
 

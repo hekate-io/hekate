@@ -22,7 +22,6 @@ import io.hekate.cluster.internal.FilteredClusterView;
 import io.hekate.cluster.internal.TopologyContextCache;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.util.format.ToString;
-import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -30,6 +29,7 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import static java.util.Collections.singleton;
 import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
 
 /**
@@ -93,7 +93,7 @@ public class UpdatableClusterView implements ClusterView {
     public static UpdatableClusterView of(int version, ClusterNode node) {
         ArgAssert.notNull(node, "Node");
 
-        return new UpdatableClusterView(ClusterTopology.of(version, Collections.singleton(node)));
+        return new UpdatableClusterView(ClusterTopology.of(version, singleton(node)));
     }
 
     /**

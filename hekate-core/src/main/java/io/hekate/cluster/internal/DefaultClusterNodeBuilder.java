@@ -20,9 +20,11 @@ import io.hekate.cluster.ClusterAddress;
 import io.hekate.cluster.ClusterNodeRuntime;
 import io.hekate.core.ServiceInfo;
 import io.hekate.util.format.ToString;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.emptySet;
 
 public class DefaultClusterNodeBuilder {
     private ClusterAddress address;
@@ -33,11 +35,11 @@ public class DefaultClusterNodeBuilder {
 
     private int joinOrder = DefaultClusterNode.NON_JOINED_ORDER;
 
-    private Set<String> roles = Collections.emptySet();
+    private Set<String> roles = emptySet();
 
-    private Map<String, String> properties = Collections.emptyMap();
+    private Map<String, String> properties = emptyMap();
 
-    private Map<String, ServiceInfo> services = Collections.emptyMap();
+    private Map<String, ServiceInfo> services = emptyMap();
 
     private ClusterNodeRuntime sysInfo = DefaultClusterNodeRuntime.getLocalInfo();
 

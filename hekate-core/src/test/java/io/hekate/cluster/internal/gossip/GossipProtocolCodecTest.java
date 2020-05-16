@@ -36,7 +36,6 @@ import io.hekate.core.service.Service;
 import io.hekate.core.service.internal.DefaultServiceInfo;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -45,6 +44,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import org.junit.Test;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -278,7 +278,7 @@ public class GossipProtocolCodecTest extends HekateTestBase {
 
                 int idx = 0;
 
-                for (Class<?> type : Arrays.asList(TestClass1.class, TestClass2.class, TestClass3.class)) {
+                for (Class<?> type : asList(TestClass1.class, TestClass2.class, TestClass3.class)) {
                     Map<String, ServiceProperty<?>> serviceProps = new HashMap<>();
 
                     serviceProps.put("string", ServiceProperty.forString("string", String.valueOf(idx)));
@@ -377,7 +377,7 @@ public class GossipProtocolCodecTest extends HekateTestBase {
             String uuid = UUID.randomUUID().toString();
 
             Gossip g1 = newGossip(from, to, n ->
-                n.withRoles(new HashSet<>(Arrays.asList("role1", "role2", uuid)))
+                n.withRoles(new HashSet<>(asList("role1", "role2", uuid)))
             );
 
             Update before = new Update(from, to, g1);

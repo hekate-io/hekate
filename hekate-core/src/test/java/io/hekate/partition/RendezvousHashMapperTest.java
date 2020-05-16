@@ -24,14 +24,14 @@ import io.hekate.cluster.ClusterTopology;
 import io.hekate.cluster.internal.DefaultClusterTopology;
 import io.hekate.util.format.ToString;
 import java.net.InetSocketAddress;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -97,7 +97,7 @@ public class RendezvousHashMapperTest extends HekateNodeTestBase {
         assertTrue(partition.isPrimary(node));
         assertTrue(partition.isPrimary(node.id()));
         assertTrue(partition.backupNodes().isEmpty());
-        assertEquals(Collections.singletonList(node), partition.nodes());
+        assertEquals(singletonList(node), partition.nodes());
         assertEquals(topology, partition.topology());
         assertEquals(partition.id(), partition.hashCode());
         assertEquals(partition, partition);
@@ -166,7 +166,7 @@ public class RendezvousHashMapperTest extends HekateNodeTestBase {
 
     @Test
     public void testBackupsResideOnDifferentHosts() throws Exception {
-        Set<ClusterNode> nodes = new HashSet<>(Arrays.asList(
+        Set<ClusterNode> nodes = new HashSet<>(asList(
             newNode("127.0.0.1", 1, "22a0310ac3b04a4a8920175d1874fba5"),
             newNode("127.0.0.1", 2, "39f2a564bcc64a40ab977deaadf1dd50"),
             newNode("127.0.0.2", 1, "435e757397654e3d89c0b5c9051c8f62"),

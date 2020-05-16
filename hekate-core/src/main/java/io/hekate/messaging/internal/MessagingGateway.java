@@ -21,7 +21,6 @@ import io.hekate.cluster.ClusterView;
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.CodecService;
 import io.hekate.codec.ThreadLocalCodecFactory;
-import io.hekate.core.internal.util.StreamUtils;
 import io.hekate.core.internal.util.Utils;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingBackPressureConfig;
@@ -43,6 +42,7 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.hekate.core.internal.util.StreamUtils.nullSafe;
 import static java.util.stream.Collectors.toList;
 
 class MessagingGateway<T> {
@@ -98,10 +98,6 @@ class MessagingGateway<T> {
         CodecService codec,
         List<MessageInterceptor> interceptors
     ) {
-        assert cfg != null : "Messaging channel configuration is null.";
-        assert cluster != null : "Cluster service is null.";
-        assert codec != null : "Codec service is null.";
-
         this.name = Utils.nullOrTrim(cfg.getName());
         this.baseType = cfg.getBaseType();
         this.nioThreads = cfg.getNioThreads();
@@ -145,8 +141,8 @@ class MessagingGateway<T> {
         // Interceptors.
         this.interceptors = new MessageInterceptors<>(
             Stream.concat(
-                StreamUtils.nullSafe(interceptors),
-                StreamUtils.nullSafe(cfg.getInterceptors())
+                nullSafe(interceptors),
+                nullSafe(cfg.getInterceptors())
             ).collect(toList())
         );
 
@@ -210,8 +206,6 @@ class MessagingGateway<T> {
     }
 
     public void init(MessagingGatewayContext<T> ctx) {
-        assert ctx != null : "Messaging context is null.";
-
         // Volatile write.
         this.ctx = ctx;
     }

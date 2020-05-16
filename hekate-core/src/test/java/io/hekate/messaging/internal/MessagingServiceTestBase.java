@@ -23,12 +23,12 @@ import io.hekate.messaging.Message;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingServiceFactory;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.runners.Parameterized.Parameters;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -109,7 +109,7 @@ public abstract class MessagingServiceTestBase extends HekateNodeParamTestBase {
     }
 
     protected void awaitForChannelsTopology(TestChannel... channels) {
-        awaitForChannelsTopology(Arrays.asList(channels));
+        awaitForChannelsTopology(asList(channels));
     }
 
     protected void awaitForChannelsTopology(List<TestChannel> channels) {

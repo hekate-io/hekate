@@ -34,12 +34,12 @@ import io.hekate.test.HekateTestError;
 import io.hekate.test.HekateTestException;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import org.junit.Test;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -735,11 +735,11 @@ public class ServiceManagerTest extends HekateTestBase {
     }
 
     private ServiceManager createManager(TestFactory... factories) throws HekateException {
-        return createManager(Arrays.asList(factories));
+        return createManager(asList(factories));
     }
 
     private ServiceManager createManager(List<TestFactory> factories) throws HekateException {
-        List<CoreTestService> services = Collections.singletonList(new CoreTestService());
+        List<CoreTestService> services = singletonList(new CoreTestService());
 
         ServiceManager manager = new ServiceManager(
             "test-node",

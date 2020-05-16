@@ -25,11 +25,12 @@ import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.operation.Response;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
+import static java.util.Collections.singletonList;
+import static java.util.Collections.synchronizedList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -37,7 +38,7 @@ import static org.junit.Assert.assertTrue;
 public class TestChannel {
     private final MessageReceiver<String> receiver;
 
-    private final List<String> received = Collections.synchronizedList(new ArrayList<>());
+    private final List<String> received = synchronizedList(new ArrayList<>());
 
     private HekateTestNode node;
 
@@ -126,7 +127,7 @@ public class TestChannel {
     }
 
     public void awaitForMessage(String expected) throws Exception {
-        awaitForMessages(Collections.singletonList(expected));
+        awaitForMessages(singletonList(expected));
     }
 
     public void awaitForMessages(List<String> expected) throws Exception {

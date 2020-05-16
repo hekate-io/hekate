@@ -31,7 +31,6 @@ import io.hekate.core.JoinFuture;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.util.format.ToString;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -52,6 +51,7 @@ import java.util.stream.Stream;
 import org.junit.Test;
 import org.mockito.InOrder;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.synchronizedSet;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
@@ -764,7 +764,7 @@ public class CoordinationServiceTest extends HekateNodeParamTestBase {
         proceedLatch.countDown();
 
         // Expect 2 but not 3 since one coordination should be interrupted by a concurrent join.
-        awaitForCoordinatedValue("2", Arrays.asList(n1, n2, n3));
+        awaitForCoordinatedValue("2", asList(n1, n2, n3));
 
         assertEquals(2, aborts.get());
     }

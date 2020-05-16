@@ -48,7 +48,6 @@ import io.hekate.util.async.AsyncUtils;
 import io.hekate.util.async.Waiting;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -61,6 +60,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static io.hekate.core.internal.util.StreamUtils.nullSafe;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toList;
 
 public class DefaultCoordinationService implements CoordinationService, CoreService, MessagingConfigProvider {
@@ -140,7 +141,7 @@ public class DefaultCoordinationService implements CoordinationService, CoreServ
     public Collection<MessagingChannelConfig<?>> configureMessaging() {
         // Skip configuration is there are no registered processes.
         if (processesConfigs.isEmpty()) {
-            return Collections.emptyList();
+            return emptyList();
         }
 
         // Map processes to codecs.
@@ -160,7 +161,7 @@ public class DefaultCoordinationService implements CoordinationService, CoreServ
         CodecFactory<CoordinationProtocol> codecFactory = () -> new CoordinationProtocolCodec(codecs);
 
         // Messaging channel configuration.
-        return Collections.singleton(
+        return singleton(
             MessagingChannelConfig.of(CoordinationProtocol.class)
                 .withName(COORDINATION_CHANNEL)
                 .withClusterFilter(node -> node.hasService(CoordinationService.class))

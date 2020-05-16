@@ -17,8 +17,6 @@
 package io.hekate.util.async;
 
 import io.hekate.HekateTestBase;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -29,6 +27,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
 import org.mockito.InOrder;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -127,7 +127,7 @@ public class AsyncUtilsTest extends HekateTestBase {
 
     @Test
     public void testAllOf() throws Exception {
-        List<CompletableFuture<?>> futures = Arrays.asList(
+        List<CompletableFuture<?>> futures = asList(
             new CompletableFuture<>(),
             new CompletableFuture<>(),
             new CompletableFuture<>()
@@ -147,7 +147,7 @@ public class AsyncUtilsTest extends HekateTestBase {
 
     @Test
     public void testAllOfEmpty() throws Exception {
-        CompletableFuture<Void> empty = AsyncUtils.allOf(Collections.emptyList());
+        CompletableFuture<Void> empty = AsyncUtils.allOf(emptyList());
 
         assertTrue(empty.isDone());
     }

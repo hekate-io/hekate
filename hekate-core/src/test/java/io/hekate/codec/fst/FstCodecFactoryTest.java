@@ -19,9 +19,9 @@ package io.hekate.codec.fst;
 import io.hekate.HekateTestBase;
 import io.hekate.codec.CodecTestBase.ObjA;
 import io.hekate.codec.CodecTestBase.ObjB;
-import java.util.Collections;
 import org.junit.Test;
 
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -36,7 +36,7 @@ public class FstCodecFactoryTest extends HekateTestBase {
     public void testKnownTypes() {
         assertNull(factory.getKnownTypes());
 
-        factory.setKnownTypes(Collections.singletonList(ObjA.class));
+        factory.setKnownTypes(singletonList(ObjA.class));
 
         assertEquals(ObjA.class, factory.getKnownTypes().get(0));
 
@@ -52,7 +52,7 @@ public class FstCodecFactoryTest extends HekateTestBase {
 
         assertFalse(factory.getKnownTypes().contains(ObjB.class));
 
-        assertSame(factory, factory.withKnownTypes(Collections.singletonList(ObjA.class)));
+        assertSame(factory, factory.withKnownTypes(singletonList(ObjA.class)));
 
         assertNotNull(factory.createCodec());
     }

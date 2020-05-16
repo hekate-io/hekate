@@ -147,11 +147,6 @@ class DefaultLockRegion implements LockRegion {
         MeterRegistry metrics,
         MessagingChannel<LockProtocol> channel
     ) {
-        assert regionName != null : "Region name is null.";
-        assert localNode != null : "Local node is null.";
-        assert scheduler != null : "Scheduler is null.";
-        assert channel != null : "Messaging channel is null.";
-
         this.regionName = regionName;
         this.scheduler = scheduler;
         this.localNode = localNode;
@@ -255,8 +250,6 @@ class DefaultLockRegion implements LockRegion {
     }
 
     public LockControllerClient lock(long timeout, DistributedLock lock, AsyncLockCallbackAdaptor callback) {
-        assert timeout >= 0 || timeout == -1 : "Unexpected timeout value [value=" + timeout + ']';
-
         readLock.lock();
 
         try {

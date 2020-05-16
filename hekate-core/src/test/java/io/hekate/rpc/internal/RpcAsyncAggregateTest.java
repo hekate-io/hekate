@@ -21,9 +21,7 @@ import io.hekate.rpc.Rpc;
 import io.hekate.rpc.RpcAggregate;
 import io.hekate.rpc.RpcAggregateException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -36,6 +34,7 @@ import java.util.stream.Stream;
 import org.junit.Test;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.synchronizedList;
 import static java.util.stream.Collectors.toMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -467,7 +466,7 @@ public class RpcAsyncAggregateTest extends RpcServiceTestBase {
             .build();
 
         repeat(3, i -> {
-            List<CompletableFuture<Collection<Object>>> rpc2responses = Collections.synchronizedList(new ArrayList<>());
+            List<CompletableFuture<Collection<Object>>> rpc2responses = synchronizedList(new ArrayList<>());
 
             when(rpc1.list(i)).thenAnswer(invocation -> nestedRpc1.list(i));
             when(rpc2.list(i)).thenAnswer(invocation -> {
@@ -484,7 +483,7 @@ public class RpcAsyncAggregateTest extends RpcServiceTestBase {
 
             busyWait("RPC2 to get all requests.", () -> rpc2responses.size() == 2);
 
-            rpc2responses.forEach(f -> f.complete(Arrays.asList(i, i, i)));
+            rpc2responses.forEach(f -> f.complete(asList(i, i, i)));
 
             List<Object> result = get(future);
 
@@ -507,7 +506,7 @@ public class RpcAsyncAggregateTest extends RpcServiceTestBase {
             .build();
 
         repeat(3, i -> {
-            List<CompletableFuture<Collection<Object>>> rpc2responses = Collections.synchronizedList(new ArrayList<>());
+            List<CompletableFuture<Collection<Object>>> rpc2responses = synchronizedList(new ArrayList<>());
 
             when(rpc1.errors(i)).thenAnswer(invocation -> CompletableFuture.allOf(nestedRpc1.errors(i), nestedRpc1.errors(i)));
             when(rpc2.errors(i)).thenAnswer(invocation -> {

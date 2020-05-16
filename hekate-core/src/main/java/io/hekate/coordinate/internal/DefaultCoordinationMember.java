@@ -31,7 +31,6 @@ import io.hekate.coordinate.internal.CoordinationProtocol.Response;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.messaging.MessagingChannel;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Set;
@@ -41,6 +40,7 @@ import java.util.concurrent.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.newSetFromMap;
 
 class DefaultCoordinationMember implements CoordinationMember {
@@ -78,13 +78,6 @@ class DefaultCoordinationMember implements CoordinationMember {
         MessagingChannel<CoordinationProtocol> channel,
         ExecutorService async
     ) {
-        assert process != null : "Coordination process name is null.";
-        assert remoteNode != null : "Remote node is null.";
-        assert epoch != null : "Epoch is null.";
-        assert topology != null : "Topology is null.";
-        assert channel != null : "Channel is null.";
-        assert async != null : "Executor service is null.";
-
         this.process = process;
         this.topology = topology;
         this.localNode = topology.localNode();
@@ -133,7 +126,7 @@ class DefaultCoordinationMember implements CoordinationMember {
 
         synchronized (mux) {
             if (disposed) {
-                toCancel = Collections.emptyList();
+                toCancel = emptyList();
             } else {
                 disposed = true;
 

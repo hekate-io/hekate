@@ -31,8 +31,6 @@ import io.hekate.cluster.internal.gossip.GossipProtocol.Update;
 import io.hekate.cluster.internal.gossip.GossipProtocol.UpdateBase;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -43,6 +41,9 @@ import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -86,12 +87,12 @@ public class GossipManagerTest extends HekateTestBase {
     public void testDoNotJoinIfJoined() throws Exception {
         GossipManager m = createManager(1);
 
-        m.join(Collections.emptyList());
+        m.join(emptyList());
 
         assertSame(GossipNodeStatus.UP, m.status());
 
-        assertNull(m.join(Collections.emptyList()));
-        assertNull(m.join(Collections.singletonList(newSocketAddress())));
+        assertNull(m.join(emptyList()));
+        assertNull(m.join(singletonList(newSocketAddress())));
     }
 
     @Test
@@ -187,11 +188,11 @@ public class GossipManagerTest extends HekateTestBase {
 
         InetSocketAddress failed = newSocketAddress(2);
 
-        assertEquals(failed, m.join(Collections.singletonList(failed)).toAddress());
+        assertEquals(failed, m.join(singletonList(failed)).toAddress());
 
         assertEquals(failed, m.processJoinFailure(new JoinRequest(m.node(), CLUSTER_ID, failed), TEST_ERROR).toAddress());
 
-        assertNull(m.join(Collections.singletonList(failed)));
+        assertNull(m.join(singletonList(failed)));
 
         assertSame(GossipNodeStatus.UP, m.status());
 
@@ -202,11 +203,11 @@ public class GossipManagerTest extends HekateTestBase {
     public void testDoNotProcessJoinAcceptIfJoined() throws Exception {
         GossipManager fake = createManager(2);
 
-        fake.join(Collections.emptyList());
+        fake.join(emptyList());
 
         GossipManager m = createManager(1);
 
-        m.join(Collections.emptyList());
+        m.join(emptyList());
 
         assertSame(GossipNodeStatus.UP, m.status());
 
@@ -222,7 +223,7 @@ public class GossipManagerTest extends HekateTestBase {
     public void testDoNotProcessJoinRejectIfJoined() throws Exception {
         GossipManager m = createManager(1);
 
-        m.join(Collections.emptyList());
+        m.join(emptyList());
 
         assertSame(GossipNodeStatus.UP, m.status());
 
@@ -238,7 +239,7 @@ public class GossipManagerTest extends HekateTestBase {
     public void testDoNotProcessJoinRequestIfNotJoined() throws Exception {
         GossipManager m = createManager(1);
 
-        m.join(Collections.singletonList(newSocketAddress(2)));
+        m.join(singletonList(newSocketAddress(2)));
 
         assertSame(GossipNodeStatus.DOWN, m.status());
 
@@ -253,7 +254,7 @@ public class GossipManagerTest extends HekateTestBase {
     public void testDoNotProcessJoinRequestFromSelf() throws Exception {
         GossipManager m = createManager(1);
 
-        m.join(Collections.singletonList(newSocketAddress(2)));
+        m.join(singletonList(newSocketAddress(2)));
 
         assertSame(GossipNodeStatus.DOWN, m.status());
 
@@ -268,7 +269,7 @@ public class GossipManagerTest extends HekateTestBase {
     public void testDoNotProcessJoinRequestIfDownAfterLeave() throws Exception {
         GossipManager m = createManager(1);
 
-        m.join(Collections.emptyList());
+        m.join(emptyList());
 
         assertSame(GossipNodeStatus.UP, m.status());
 
@@ -286,7 +287,7 @@ public class GossipManagerTest extends HekateTestBase {
     public void testDoNotProcessJoinRequestFromOtherCluster() throws Exception {
         GossipManager m = createManager(1, CLUSTER_ID + "-other");
 
-        m.join(Collections.emptyList());
+        m.join(emptyList());
 
         JoinReply reply = m.processJoinRequest(new JoinRequest(newNode(), CLUSTER_ID, m.address().socket()));
 
@@ -298,7 +299,7 @@ public class GossipManagerTest extends HekateTestBase {
     public void testDoNotProcessJoinRequestIfJoiningNodeFails() throws Exception {
         GossipManager m = createManager(1);
 
-        m.join(Collections.emptyList());
+        m.join(emptyList());
 
         ClusterNode newNode = newNode();
 
@@ -325,11 +326,11 @@ public class GossipManagerTest extends HekateTestBase {
     public void testDoNotProcessJoinAcceptIfNotMember() throws Exception {
         GossipManager fake = createManager(2);
 
-        fake.join(Collections.emptyList());
+        fake.join(emptyList());
 
         GossipManager m = createManager(1);
 
-        m.join(Collections.singletonList(fake.address().socket()));
+        m.join(singletonList(fake.address().socket()));
 
         assertNull(m.processJoinAccept(new JoinAccept(fake.address(), m.address(), fake.localGossip())));
 
@@ -342,7 +343,7 @@ public class GossipManagerTest extends HekateTestBase {
     public void testDoNotProcessUpdateIfDown() throws Exception {
         GossipManager fake = createManager(1);
 
-        fake.join(Collections.emptyList());
+        fake.join(emptyList());
 
         GossipManager m = createManager(2);
 
@@ -358,11 +359,11 @@ public class GossipManagerTest extends HekateTestBase {
     public void testDoNotProcessUpdateIfNotInRemoteView() throws Exception {
         GossipManager fake = createManager(1);
 
-        fake.join(Collections.emptyList());
+        fake.join(emptyList());
 
         GossipManager m = createManager(2);
 
-        m.join(Collections.emptyList());
+        m.join(emptyList());
 
         assertSame(GossipNodeStatus.UP, m.status());
 
@@ -381,11 +382,11 @@ public class GossipManagerTest extends HekateTestBase {
         assertSame(GossipNodeStatus.DOWN, m1.status());
         assertSame(GossipNodeStatus.DOWN, m1.status());
 
-        assertNull(m1.join(Collections.emptyList()));
+        assertNull(m1.join(emptyList()));
 
         assertSame(GossipNodeStatus.UP, m1.status());
 
-        JoinRequest join = m2.join(Collections.singletonList(m1.address().socket()));
+        JoinRequest join = m2.join(singletonList(m1.address().socket()));
 
         assertNotNull(join);
         assertEquals(m2.address(), join.from());
@@ -829,13 +830,13 @@ public class GossipManagerTest extends HekateTestBase {
         assertSame(GossipNodeStatus.DOWN, m1.status());
         assertSame(GossipNodeStatus.DOWN, m1.status());
 
-        assertNull(m1.join(Collections.emptyList()));
+        assertNull(m1.join(emptyList()));
 
         assertSame(GossipNodeStatus.UP, m1.status());
 
         say("Hey bro! Let me join!");
 
-        JoinRequest join = m2.join(Collections.singletonList(m1.address().socket()));
+        JoinRequest join = m2.join(singletonList(m1.address().socket()));
 
         assertNotNull(join);
         assertEquals(m2.address(), join.from());
@@ -942,9 +943,9 @@ public class GossipManagerTest extends HekateTestBase {
             if (first == null) {
                 first = mgr;
 
-                mgr.join(Collections.emptyList());
+                mgr.join(emptyList());
             } else {
-                JoinRequest join = mgr.join(Collections.singletonList(first.address().socket()));
+                JoinRequest join = mgr.join(singletonList(first.address().socket()));
 
                 JoinAccept reply = first.processJoinRequest(join).asAccept();
 
@@ -966,7 +967,7 @@ public class GossipManagerTest extends HekateTestBase {
     private void gossipTillSameState(GossipManager... nodes) {
         assertNotNull(nodes);
 
-        gossipTillSameState(Arrays.asList(nodes));
+        gossipTillSameState(asList(nodes));
     }
 
     private void gossipTillSameState(List<GossipManager> nodes) {

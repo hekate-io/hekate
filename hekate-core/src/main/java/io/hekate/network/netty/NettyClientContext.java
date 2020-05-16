@@ -464,8 +464,6 @@ class NettyClientContext<T> {
     }
 
     private void notifyOnReceivePause(boolean pause, Consumer<NetworkEndpoint<T>> callback, Channel channel) {
-        assert eventLoop.inEventLoop() : "Must be on event loop thread.";
-
         channel.pipeline().fireUserEventTriggered(pause ? AutoReadChangeEvent.PAUSE : AutoReadChangeEvent.RESUME);
 
         if (callback != null) {

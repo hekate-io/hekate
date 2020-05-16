@@ -23,13 +23,13 @@ import io.hekate.messaging.operation.AggregateResult;
 import io.hekate.messaging.operation.Response;
 import io.hekate.util.format.ToString;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -89,7 +89,7 @@ public class AggregateContextTest extends HekateTestBase {
         AggregateContext<String> ctx = ctx(allNodes());
 
         assertFalse(ctx.forgetNode(n1));
-        assertEquals(Arrays.asList(n2, n3), ctx.nodes());
+        assertEquals(asList(n2, n3), ctx.nodes());
 
         assertFalse(ctx.forgetNode(n2));
         assertEquals(singletonList(n3), ctx.nodes());
@@ -119,7 +119,7 @@ public class AggregateContextTest extends HekateTestBase {
         assertEquals("r2", ctx.resultOf(n2));
         assertEquals("r3", ctx.resultOf(n3));
 
-        Set<String> results = new HashSet<>(Arrays.asList("r1", "r2", "r3"));
+        Set<String> results = new HashSet<>(asList("r1", "r2", "r3"));
 
         for (String r : ctx) {
             assertTrue(results.contains(r));
@@ -180,7 +180,7 @@ public class AggregateContextTest extends HekateTestBase {
     }
 
     private List<ClusterNode> allNodes() {
-        return Arrays.asList(n1, n2, n3);
+        return asList(n1, n2, n3);
     }
 
     @SuppressWarnings("unchecked")

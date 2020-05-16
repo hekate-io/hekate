@@ -27,9 +27,6 @@ class LockRegionMetrics {
     private final Counter locks;
 
     public LockRegionMetrics(String name, MeterRegistry metrics) {
-        assert name != null : "Name is null.";
-        assert metrics != null : "Meter registry is null.";
-
         locks = Counter.builder("hekate.lock.count")
             .tag("region", name)
             .register(metrics);

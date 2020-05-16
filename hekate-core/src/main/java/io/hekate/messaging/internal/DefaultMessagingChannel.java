@@ -71,10 +71,6 @@ class DefaultMessagingChannel<T> implements MessagingChannel<T>, MessageOperatio
         PartitionMapper partitions,
         LoadBalancer<T> balancer
     ) {
-        assert gateway != null : "Gateway is null.";
-        assert cluster != null : "Cluster view is null.";
-        assert partitions != null : "Partition mapper is null.";
-
         this.gateway = gateway;
         this.cluster = cluster;
         this.partitions = partitions;

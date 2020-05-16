@@ -159,7 +159,7 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
     private volatile State state = DOWN;
 
     public HekateNode(HekateBootstrap boot) {
-        assert boot != null : "Bootstrap is null.";
+        ArgAssert.notNull(boot, "Bootstrap");
 
         // Install plugins.
         plugins = new PluginManager(boot);
@@ -986,9 +986,6 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
     }
 
     private void doTerminate(ClusterLeaveReason reason, Throwable cause) {
-        assert reason != null : "Reason is null";
-        assert state == TERMINATING : "Unexpected service state: " + state;
-
         if (cause == null) {
             if (log.isInfoEnabled()) {
                 log.info("Terminating...");

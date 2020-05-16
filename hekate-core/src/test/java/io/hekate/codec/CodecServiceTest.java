@@ -32,9 +32,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -45,6 +43,10 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.singleton;
+import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 
@@ -62,7 +64,7 @@ public class CodecServiceTest extends HekateTestBase {
 
     @Parameters(name = "{index}:{0}")
     public static Collection<CodecFactory<Object>> getCodecFactories() {
-        return Arrays.asList(
+        return asList(
             new JdkCodecFactory<>(),
             new KryoCodecFactory<>(),
             new FstCodecFactory<>()
@@ -75,12 +77,12 @@ public class CodecServiceTest extends HekateTestBase {
         encodeDecode(ClusterNodeId.class, newNodeId(), Assert::assertEquals);
         encodeDecode(ClusterAddress.class, newAddress(1), Assert::assertEquals);
         encodeDecode(ClusterNode.class, newNode(), Assert::assertEquals);
-        encodeDecode(Set.class, Collections.singleton("one"), Assert::assertEquals);
-        encodeDecode(List.class, Collections.singletonList("one"), Assert::assertEquals);
-        encodeDecode(Map.class, Collections.singletonMap("one", "one"), Assert::assertEquals);
-        encodeDecode(List.class, Arrays.asList("one", "two", "three"), Assert::assertEquals);
+        encodeDecode(Set.class, singleton("one"), Assert::assertEquals);
+        encodeDecode(List.class, singletonList("one"), Assert::assertEquals);
+        encodeDecode(Map.class, singletonMap("one", "one"), Assert::assertEquals);
+        encodeDecode(List.class, asList("one", "two", "three"), Assert::assertEquals);
         encodeDecode(ClusterTopology.class, DefaultClusterTopology.of(1, toSet(newNode(), newNode(), newNode())), Assert::assertEquals);
-        encodeDecode(ClusterHash.class, new DefaultClusterHash(Arrays.asList(newNode(), newNode(), newNode())), Assert::assertEquals);
+        encodeDecode(ClusterHash.class, new DefaultClusterHash(asList(newNode(), newNode(), newNode())), Assert::assertEquals);
     }
 
     @Test

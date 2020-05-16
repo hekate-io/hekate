@@ -57,8 +57,6 @@ class MessagingConnectionIn<T> extends MessagingConnection<T> {
     ) {
         super(gateway, endpoint, net);
 
-        assert gateway.receiver() != null : "Receiver is not configured [channel=" + gateway + ']';
-
         this.log = gateway.log();
         this.async = gateway.async();
         this.sendPressure = gateway.sendGuard();

@@ -17,9 +17,9 @@
 package io.hekate.coordinate;
 
 import io.hekate.HekateTestBase;
-import java.util.Arrays;
 import org.junit.Test;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -36,7 +36,7 @@ public class CoordinationServiceFactoryTest extends HekateTestBase {
 
         assertNull(factory.getProcesses());
 
-        factory.setProcesses(Arrays.asList(cfg1, cfg2));
+        factory.setProcesses(asList(cfg1, cfg2));
 
         assertEquals(2, factory.getProcesses().size());
         assertTrue(factory.getProcesses().contains(cfg1));
@@ -67,7 +67,7 @@ public class CoordinationServiceFactoryTest extends HekateTestBase {
 
         assertNull(factory.getConfigProviders());
 
-        factory.setConfigProviders(Arrays.asList(p1, p2));
+        factory.setConfigProviders(asList(p1, p2));
 
         assertEquals(2, factory.getConfigProviders().size());
         assertTrue(factory.getConfigProviders().contains(p1));

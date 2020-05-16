@@ -39,9 +39,6 @@ class ReceivePressureGuard implements ConfigReportSupport {
     private final Object mux = new Object();
 
     public ReceivePressureGuard(int loMark, int hiMark) {
-        assert hiMark > 0 : "High watermark must be above zero.";
-        assert loMark < hiMark : "Low watermark must less than high watermark [low=" + loMark + ", high=" + hiMark + ']';
-
         this.loMark = loMark;
         this.hiMark = hiMark;
     }
@@ -61,8 +58,6 @@ class ReceivePressureGuard implements ConfigReportSupport {
     }
 
     public void onEnqueue(NetworkEndpoint<?> endpoint) {
-        assert endpoint != null : "Endpoint is  null.";
-
         int size = queueSize.incrementAndGet();
 
         if (size >= hiMark) {

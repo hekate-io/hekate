@@ -31,7 +31,6 @@ import io.hekate.util.StateGuard;
 import io.hekate.util.async.AsyncUtils;
 import io.hekate.util.async.Waiting;
 import io.hekate.util.format.ToString;
-import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
@@ -46,6 +45,7 @@ import java.util.concurrent.ThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 
 class ClusterEventManager implements HekateSupport {
@@ -198,7 +198,7 @@ class ClusterEventManager implements HekateSupport {
         if (eventTypes == null || eventTypes.length == 0) {
             doAddListener(new FilteredListener(listener));
         } else {
-            EnumSet<ClusterEventType> eventTypesSet = EnumSet.copyOf(Arrays.asList(eventTypes));
+            EnumSet<ClusterEventType> eventTypesSet = EnumSet.copyOf(asList(eventTypes));
 
             doAddListener(new FilteredListener(eventTypesSet, listener));
         }
@@ -216,7 +216,7 @@ class ClusterEventManager implements HekateSupport {
         if (eventTypes == null || eventTypes.length == 0) {
             addListenerAsync(listener);
         } else {
-            final EnumSet<ClusterEventType> eventTypesSet = EnumSet.copyOf(Arrays.asList(eventTypes));
+            final EnumSet<ClusterEventType> eventTypesSet = EnumSet.copyOf(asList(eventTypes));
 
             doAddListenerAsync(new FilteredListener(eventTypesSet, listener));
         }
@@ -261,8 +261,6 @@ class ClusterEventManager implements HekateSupport {
     }
 
     public void start(ThreadFactory threads) {
-        assert threads != null : "Thread factory is null.";
-
         guard.withWriteLock(() -> {
             worker = Executors.newSingleThreadExecutor(threads);
 

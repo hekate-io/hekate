@@ -401,7 +401,6 @@ public class DefaultMessagingService implements MessagingService, CoreService, N
             gateway.idleSocketTimeout() > 0, /* <-- Check for idle connections.*/
             gateway.messagingTimeout(),
             gateway.warnOnRetry(),
-            gateway.baseRetryPolicy(),
             gateway.rootChannel()
         );
 

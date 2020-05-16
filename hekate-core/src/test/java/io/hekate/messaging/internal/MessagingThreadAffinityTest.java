@@ -20,7 +20,6 @@ import io.hekate.HekateTestBase;
 import io.hekate.messaging.MessagingChannel;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -28,6 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.synchronizedList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -85,7 +85,7 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
 
         TestChannel sender = createChannel().join();
 
-        sender.awaitForTopology(Arrays.asList(sender, receiver));
+        sender.awaitForTopology(asList(sender, receiver));
 
         int partitionSize = 10;
 
@@ -120,7 +120,7 @@ public class MessagingThreadAffinityTest extends MessagingServiceTestBase {
 
         TestChannel sender = createChannel().join();
 
-        sender.awaitForTopology(Arrays.asList(sender, receiver));
+        sender.awaitForTopology(asList(sender, receiver));
 
         int partitionSize = 10;
 

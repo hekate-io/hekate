@@ -47,9 +47,6 @@ public abstract class ClusterEventBase implements ClusterEvent {
      * @param hekate Delegate for {@link #hekate()}.
      */
     public ClusterEventBase(ClusterTopology topology, HekateSupport hekate) {
-        assert topology != null : "Cluster topology  is null.";
-        assert hekate != null : "Hekate is null.";
-
         this.topology = topology;
         this.hekate = hekate;
     }

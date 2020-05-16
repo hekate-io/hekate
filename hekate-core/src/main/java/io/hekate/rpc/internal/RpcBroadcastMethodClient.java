@@ -55,15 +55,15 @@ class RpcBroadcastMethodClient<T> extends RpcMethodClientBase<T> {
     ) {
         super(rpc, tag, method, channel);
 
-        assert method.broadcast().isPresent() : "Not a broadcast method [rpc=" + rpc + ", method=" + method + ']';
-
         this.retryPolicy = retryPolicy;
         this.timeout = timeout;
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // Error handling.
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        RpcBroadcast config = method.broadcast().get();
+        RpcBroadcast config = method.broadcast().orElseThrow(() ->
+            new AssertionError("Not a broadcast method [rpc=" + rpc + ", method=" + method + ']')
+        );
 
         Consumer<AggregateResult<RpcProtocol>> errorCheck;
 

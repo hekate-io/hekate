@@ -23,7 +23,6 @@ import io.hekate.network.NetworkService;
 import io.hekate.util.async.AsyncUtils;
 import io.hekate.util.async.Waiting;
 import java.net.InetSocketAddress;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -34,6 +33,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
+import static java.util.Collections.synchronizedSet;
 
 class SeedNodeManager {
     interface AliveAddressProvider {
@@ -61,8 +64,6 @@ class SeedNodeManager {
     private AliveAddressProvider aliveAddressProvider;
 
     public SeedNodeManager(String cluster, SeedNodeProvider provider) {
-        assert provider != null : "Provider is null.";
-
         this.cluster = cluster;
         this.provider = provider;
         this.cleanupInterval = provider.cleanupInterval();
@@ -75,7 +76,7 @@ class SeedNodeManager {
 
         List<InetSocketAddress> nodes = provider.findSeedNodes(cluster);
 
-        nodes = nodes != null ? nodes : Collections.emptyList();
+        nodes = nodes != null ? nodes : emptyList();
 
         if (DEBUG) {
             log.debug("Got a seed nodes list [seed-nodes={}]", nodes);
@@ -133,9 +134,6 @@ class SeedNodeManager {
     }
 
     public void startCleaning(NetworkService net, AliveAddressProvider aliveAddressProvider) {
-        assert net != null : "Network service is null.";
-        assert aliveAddressProvider != null : "Alive address provider is null.";
-
         synchronized (cleanupMux) {
             if (cleaner == null && cleanupInterval > 0) {
                 if (DEBUG) {
@@ -145,7 +143,7 @@ class SeedNodeManager {
                 this.net = net;
                 this.aliveAddressProvider = aliveAddressProvider;
 
-                Set<InetSocketAddress> pingInProgress = Collections.synchronizedSet(new HashSet<>());
+                Set<InetSocketAddress> pingInProgress = synchronizedSet(new HashSet<>());
 
                 cleaner = Executors.newSingleThreadScheduledExecutor(new HekateThreadFactory("SeedNodeCleaner"));
 
@@ -198,7 +196,7 @@ class SeedNodeManager {
             Set<InetSocketAddress> seeds;
 
             if (provided == null || provided.isEmpty()) {
-                seeds = Collections.emptySet();
+                seeds = emptySet();
             } else {
                 seeds = new HashSet<>(provided);
             }

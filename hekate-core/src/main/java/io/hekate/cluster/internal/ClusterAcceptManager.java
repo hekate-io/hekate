@@ -45,9 +45,6 @@ class ClusterAcceptManager {
     private final ExecutorService async;
 
     public ClusterAcceptManager(List<ClusterAcceptor> acceptors, ExecutorService async) {
-        assert acceptors != null : "Acceptors list is null.";
-        assert async != null : "Async worker is null.";
-
         this.async = async;
 
         this.acceptors = new ArrayList<>(acceptors);

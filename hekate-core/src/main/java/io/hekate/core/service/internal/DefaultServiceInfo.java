@@ -31,9 +31,6 @@ public class DefaultServiceInfo implements ServiceInfo, Serializable {
     private final Map<String, ServiceProperty<?>> props;
 
     public DefaultServiceInfo(String type, Map<String, ServiceProperty<?>> props) {
-        assert type != null : "Service type is null.";
-        assert props != null : "Service properties are null.";
-
         this.type = type;
         this.props = props;
     }

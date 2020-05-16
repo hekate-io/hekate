@@ -19,13 +19,13 @@ package io.hekate.messaging.internal;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.operation.RequestFuture;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import static java.util.Collections.synchronizedList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 
@@ -38,7 +38,7 @@ public class RequestOrderTest extends MessagingServiceTestBase {
 
     @Test
     public void testRequestOrderAfterRetry() throws Exception {
-        List<Integer> received = Collections.synchronizedList(new ArrayList<>());
+        List<Integer> received = synchronizedList(new ArrayList<>());
 
         AtomicInteger processed = new AtomicInteger();
 
