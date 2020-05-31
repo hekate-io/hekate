@@ -148,8 +148,6 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
 
     private final HekateLifecycle lifecycle = new HekateLifecycle(this);
 
-    private boolean preTerminated;
-
     private volatile DefaultClusterTopology topology;
 
     private volatile ScheduledExecutorService sysWorker;
@@ -965,24 +963,12 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
                 clusterEvents.ensureLeaveEventFired(ClusterLeaveReason.LEAVE, topology).thenRun(() ->
                     runOnSysThread(() -> {
                         if (state == LEAVING) {
-                            preTerminateServices();
-
                             clusterMgr.leaveAsync();
                         }
                     })
                 );
             }
         });
-    }
-
-    private void preTerminateServices() {
-        if (!preTerminated) {
-            preTerminated = true;
-
-            services.preTerminate();
-
-            plugins.stop();
-        }
     }
 
     private void doTerminate(ClusterLeaveReason reason, Throwable cause) {
@@ -1002,7 +988,9 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
             log.error("Got an unexpected error while waiting for cluster leave event processing.", e);
         }
 
-        preTerminateServices();
+        plugins.stop();
+
+        services.preTerminate();
         services.terminate();
         services.postTerminate();
 
@@ -1026,7 +1014,6 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
             cleanup = lifecycle.terminate(cause);
 
             sysWorker = null;
-            preTerminated = false;
 
             if (log.isInfoEnabled()) {
                 log.info("Terminated.");
