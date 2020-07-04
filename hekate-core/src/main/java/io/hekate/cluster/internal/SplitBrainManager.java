@@ -69,8 +69,6 @@ class SplitBrainManager implements ConfigReportSupport {
     private Executor async;
 
     public SplitBrainManager(SplitBrainAction action, long checkInterval, SplitBrainDetector detector) {
-        assert action != null : "Action is null.";
-
         this.detector = detector;
         this.checkInterval = checkInterval;
         this.action = action;
@@ -100,10 +98,6 @@ class SplitBrainManager implements ConfigReportSupport {
     }
 
     public void initialize(ClusterNode localNode, Executor async, Callback callback) {
-        assert localNode != null : "Local node is null.";
-        assert async != null : "Executor is null.";
-        assert callback != null : "Callback is null.";
-
         guard.becomeInitialized(() -> {
             this.localNode = localNode;
             this.async = async;

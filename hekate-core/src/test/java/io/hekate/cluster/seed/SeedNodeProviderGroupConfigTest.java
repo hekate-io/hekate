@@ -19,9 +19,9 @@ package io.hekate.cluster.seed;
 import io.hekate.HekateTestBase;
 import io.hekate.util.format.ToString;
 import java.util.ArrayList;
-import java.util.Arrays;
 import org.junit.Test;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -60,14 +60,14 @@ public class SeedNodeProviderGroupConfigTest extends HekateTestBase {
         SeedNodeProvider p2 = mock(SeedNodeProvider.class);
         SeedNodeProvider p3 = mock(SeedNodeProvider.class);
 
-        cfg.setProviders(new ArrayList<>(Arrays.asList(p1, p2)));
+        cfg.setProviders(new ArrayList<>(asList(p1, p2)));
 
         assertTrue(cfg.hasProviders());
-        assertEquals(Arrays.asList(p1, p2), cfg.getProviders());
+        assertEquals(asList(p1, p2), cfg.getProviders());
 
         assertSame(cfg, cfg.withProvider(p3));
 
-        assertEquals(Arrays.asList(p1, p2, p3), cfg.getProviders());
+        assertEquals(asList(p1, p2, p3), cfg.getProviders());
         assertTrue(cfg.hasProviders());
 
         cfg.setProviders(null);
@@ -85,9 +85,9 @@ public class SeedNodeProviderGroupConfigTest extends HekateTestBase {
         assertNull(cfg.getProviders());
         assertFalse(cfg.hasProviders());
 
-        assertSame(cfg, cfg.withProviders(Arrays.asList(p1, p2, p3)));
+        assertSame(cfg, cfg.withProviders(asList(p1, p2, p3)));
 
-        assertEquals(Arrays.asList(p1, p2, p3), cfg.getProviders());
+        assertEquals(asList(p1, p2, p3), cfg.getProviders());
         assertTrue(cfg.hasProviders());
     }
 

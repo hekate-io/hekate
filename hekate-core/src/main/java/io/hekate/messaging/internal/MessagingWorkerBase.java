@@ -25,8 +25,6 @@ abstract class MessagingWorkerBase implements MessagingWorker {
     private final ThreadPoolExecutor executor;
 
     public MessagingWorkerBase(ThreadPoolExecutor executor) {
-        assert executor != null : "Executor is null.";
-
         executor.setRejectedExecutionHandler((rejected, pool) ->
             AsyncUtils.fallbackExecutor().execute(rejected)
         );

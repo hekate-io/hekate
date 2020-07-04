@@ -22,8 +22,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -32,6 +30,10 @@ import java.util.Set;
 import org.junit.Test;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Arrays.asList;
+import static java.util.Collections.unmodifiableList;
+import static java.util.Collections.unmodifiableMap;
+import static java.util.Collections.unmodifiableSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
@@ -167,7 +169,7 @@ public abstract class CodecTestBase<T extends CodecFactory<Object>> extends Heka
 
         Codec<Object> codec = factory.createCodec();
 
-        Map<Object, Object> decoded = encodeDecode(codec, codec, Collections.unmodifiableMap(map));
+        Map<Object, Object> decoded = encodeDecode(codec, codec, unmodifiableMap(map));
 
         assertEquals(map, decoded);
     }
@@ -181,7 +183,7 @@ public abstract class CodecTestBase<T extends CodecFactory<Object>> extends Heka
 
         Codec<Object> codec = factory.createCodec();
 
-        Set<Object> decoded = encodeDecode(codec, codec, Collections.unmodifiableSet(set));
+        Set<Object> decoded = encodeDecode(codec, codec, unmodifiableSet(set));
 
         assertEquals(set, decoded);
     }
@@ -195,14 +197,14 @@ public abstract class CodecTestBase<T extends CodecFactory<Object>> extends Heka
 
         Codec<Object> codec = factory.createCodec();
 
-        List<Object> decoded = encodeDecode(codec, codec, Collections.unmodifiableList(list));
+        List<Object> decoded = encodeDecode(codec, codec, unmodifiableList(list));
 
         assertEquals(list, decoded);
     }
 
     @Test
     public void testArrayAsList() throws Exception {
-        List<Object> list = Arrays.asList(new ObjA(), new ObjB());
+        List<Object> list = asList(new ObjA(), new ObjB());
 
         Codec<Object> codec = factory.createCodec();
 

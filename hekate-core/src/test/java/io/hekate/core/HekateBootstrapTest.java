@@ -23,13 +23,13 @@ import io.hekate.core.plugin.Plugin;
 import io.hekate.core.service.Service;
 import io.hekate.core.service.ServiceFactory;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.junit.Test;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -83,7 +83,7 @@ public class HekateBootstrapTest extends HekateTestBase {
     public void testRoles() {
         assertNull(bootstrap.getRoles());
 
-        bootstrap.setRoles(new ArrayList<>(Arrays.asList("role1", "role2")));
+        bootstrap.setRoles(new ArrayList<>(asList("role1", "role2")));
 
         assertNotNull(bootstrap.getRoles());
         assertTrue(bootstrap.getRoles().contains("role1"));
@@ -138,7 +138,7 @@ public class HekateBootstrapTest extends HekateTestBase {
 
         assertNull(bootstrap.getPropertyProviders());
 
-        bootstrap.setPropertyProviders(Arrays.asList(p1, p2));
+        bootstrap.setPropertyProviders(asList(p1, p2));
 
         assertEquals(2, bootstrap.getPropertyProviders().size());
         assertTrue(bootstrap.getPropertyProviders().contains(p1));
@@ -160,7 +160,7 @@ public class HekateBootstrapTest extends HekateTestBase {
 
         ServiceFactory<DummyService> factory1 = DummyService::new;
 
-        bootstrap.setServices(Collections.singletonList(factory1));
+        bootstrap.setServices(singletonList(factory1));
 
         assertNotNull(bootstrap.getServices());
         assertTrue(bootstrap.getServices().contains(factory1));
@@ -194,7 +194,7 @@ public class HekateBootstrapTest extends HekateTestBase {
 
         Plugin p = mock(Plugin.class);
 
-        bootstrap.setPlugins(Collections.singletonList(p));
+        bootstrap.setPlugins(singletonList(p));
 
         assertNotNull(bootstrap.getPlugins());
         assertTrue(bootstrap.getPlugins().contains(p));
@@ -216,7 +216,7 @@ public class HekateBootstrapTest extends HekateTestBase {
 
         Hekate.LifecycleListener listener = mock(Hekate.LifecycleListener.class);
 
-        bootstrap.setLifecycleListeners(Collections.singletonList(listener));
+        bootstrap.setLifecycleListeners(singletonList(listener));
 
         assertNotNull(bootstrap.getLifecycleListeners());
         assertTrue(bootstrap.getLifecycleListeners().contains(listener));

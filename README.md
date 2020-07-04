@@ -2,7 +2,7 @@
 
 Java Library for Distributed Services
 
-[![Build Status](https://travis-ci.org/hekate-io/hekate.svg?branch=master)](https://travis-ci.org/hekate-io/hekate)
+![build](https://github.com/hekate-io/hekate/workflows/build/badge.svg)
 [![codecov](https://codecov.io/gh/hekate-io/hekate/branch/master/graph/badge.svg)](https://codecov.io/gh/hekate-io/hekate)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.hekate/hekate-all/badge.svg)](https://search.maven.org/search?q=io.hekate)
 [![Javadocs](http://javadoc.io/badge/io.hekate/hekate-all.svg)](http://javadoc.io/doc/io.hekate/hekate-all)
@@ -130,7 +130,7 @@ Please see the **[hekate-io/hekate-examples](https://github.com/hekate-io/hekate
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-spring-boot</artifactId>
-    <version>3.9.0</version>
+    <version>3.10.0-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -139,7 +139,7 @@ Please see the **[hekate-io/hekate-examples](https://github.com/hekate-io/hekate
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-spring</artifactId>
-    <version>3.9.0</version>
+    <version>3.10.0-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -148,7 +148,7 @@ Please see the **[hekate-io/hekate-examples](https://github.com/hekate-io/hekate
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-core</artifactId>
-    <version>3.9.0</version>
+    <version>3.10.0-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -190,6 +190,8 @@ Please see the **[hekate-io/hekate-examples](https://github.com/hekate-io/hekate
   
 ## Release History
 
+ - v.3.9.0 (8-May-2020) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.3.9.0)]
+
  - v.3.8.0 (29-Feb-2020) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.3.8.0)]
  
  - v.3.7.0 (3-Feb-2020) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.3.7.0)]
@@ -219,7 +221,5 @@ Please see the **[hekate-io/hekate-examples](https://github.com/hekate-io/hekate
  - v.2.4.0 (15-Jul-2018) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.2.4.0)]
 
  - v.2.3.1 (18-May-2018) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.2.3.1)]
-
- - v.2.3.0 (4-May-2018) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.2.3.0)]
 
  - [...and so on](https://github.com/hekate-io/hekate/releases)

@@ -17,11 +17,11 @@
 package io.hekate.rpc;
 
 import io.hekate.core.internal.util.ArgAssert;
-import io.hekate.core.internal.util.StreamUtils;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.List;
 
+import static io.hekate.core.internal.util.StreamUtils.nullSafe;
 import static java.util.Collections.unmodifiableList;
 import static java.util.stream.Collectors.toList;
 
@@ -61,7 +61,7 @@ public class RpcInterfaceInfo<T> {
         this.version = version;
         this.minClientVersion = minClientVersion;
         this.versionedName = javaType.getName() + ':' + version;
-        this.methods = unmodifiableList(StreamUtils.nullSafe(methods).collect(toList()));
+        this.methods = unmodifiableList(nullSafe(methods).collect(toList()));
     }
 
     /**

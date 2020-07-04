@@ -22,8 +22,6 @@ import io.hekate.messaging.MessagingException;
 import io.hekate.messaging.operation.SendCallback;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Exchanger;
@@ -31,6 +29,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.synchronizedList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -67,7 +67,7 @@ public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
                 .newSubscribe("request")
                 .responses();
 
-            assertEquals(Arrays.asList("response0", "response1", "response2", "final"), results);
+            assertEquals(asList("response0", "response1", "response2", "final"), results);
 
             receiver.checkReceiverError();
         });
@@ -96,7 +96,7 @@ public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
         repeat(5, i -> {
             CompletableFuture<Throwable> errFuture = new CompletableFuture<>();
 
-            List<String> senderMessages = Collections.synchronizedList(new ArrayList<>());
+            List<String> senderMessages = synchronizedList(new ArrayList<>());
 
             sender.channel().forNode(receiver.nodeId()).newSubscribe("request").submit((err, rsp) -> {
                 if (err == null) {
@@ -120,7 +120,7 @@ public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
 
             assertNull(get(errFuture));
 
-            List<String> expectedMessages = Arrays.asList("response0", "response1", "response2", "final");
+            List<String> expectedMessages = asList("response0", "response1", "response2", "final");
 
             assertEquals(expectedMessages, senderMessages);
 
@@ -167,7 +167,7 @@ public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
 
             lastReplyCallbackRef.set(receiveErrFuture::complete);
 
-            List<String> senderMessages = Collections.synchronizedList(new ArrayList<>());
+            List<String> senderMessages = synchronizedList(new ArrayList<>());
 
             sender.channel().forNode(receiver.nodeId()).newSubscribe("request").submit((err, rsp) -> {
                 if (err == null) {
@@ -194,7 +194,7 @@ public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
             assertNull(get(receiveErrFuture));
             assertNull(get(sendErrFuture));
 
-            List<String> expectedMessages = Arrays.asList("response0", "response1", "response2", "final");
+            List<String> expectedMessages = asList("response0", "response1", "response2", "final");
 
             assertEquals(expectedMessages, senderMessages);
 

@@ -21,7 +21,6 @@ import io.hekate.rpc.RpcInterfaceInfo;
 import io.hekate.rpc.RpcMethodInfo;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -31,6 +30,10 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static java.util.Collections.singleton;
+import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 
 class RpcSplitAggregateMethodHandler extends RpcMethodHandler {
     private static final Logger log = LoggerFactory.getLogger(RpcSplitAggregateMethodHandler.class);
@@ -44,16 +47,16 @@ class RpcSplitAggregateMethodHandler extends RpcMethodHandler {
     public RpcSplitAggregateMethodHandler(RpcInterfaceInfo<?> rpc, RpcMethodInfo method, Object target) {
         super(rpc, method, target);
 
-        assert method.aggregate().isPresent() : "Not an aggregate method [method=" + method + ']';
-        assert method.splitArg().isPresent() : "Split argument index is not defined.";
-        assert method.splitArgType().isPresent() : "Split argument index is not defined.";
-
-        this.splitArgIdx = method.splitArg().getAsInt();
+        this.splitArgIdx = method.splitArg().orElseThrow(() ->
+            new AssertionError("Split argument index is not defined.")
+        );
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // Splitting.
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        Class<?> splitArgType = method.splitArgType().get();
+        Class<?> splitArgType = method.splitArgType().orElseThrow(() ->
+            new AssertionError("Split argument type is not defined.")
+        );
 
         if (splitArgType.equals(Map.class)) {
             // Map.
@@ -67,7 +70,7 @@ class RpcSplitAggregateMethodHandler extends RpcMethodHandler {
                 int idx = 0;
 
                 for (Map.Entry<Object, Object> e : map.entrySet()) {
-                    parts[idx++] = Collections.singletonMap(e.getKey(), e.getValue());
+                    parts[idx++] = singletonMap(e.getKey(), e.getValue());
                 }
 
                 return parts;
@@ -84,7 +87,7 @@ class RpcSplitAggregateMethodHandler extends RpcMethodHandler {
                 int idx = 0;
 
                 for (Object o : set) {
-                    parts[idx++] = Collections.singleton(o);
+                    parts[idx++] = singleton(o);
                 }
 
                 return parts;
@@ -101,7 +104,7 @@ class RpcSplitAggregateMethodHandler extends RpcMethodHandler {
                 int idx = 0;
 
                 for (Object o : col) {
-                    parts[idx++] = Collections.singletonList(o);
+                    parts[idx++] = singletonList(o);
                 }
 
                 return parts;

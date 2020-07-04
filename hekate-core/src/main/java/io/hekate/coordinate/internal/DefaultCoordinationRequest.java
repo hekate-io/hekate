@@ -38,10 +38,6 @@ class DefaultCoordinationRequest implements CoordinationRequest {
     private final Request request;
 
     public DefaultCoordinationRequest(String process, CoordinationMember from, Message<CoordinationProtocol> message) {
-        assert process != null : "Process name is null.";
-        assert from != null : "Member is null.";
-        assert message != null : "Message is null.";
-
         this.process = process;
         this.from = from;
         this.message = message;

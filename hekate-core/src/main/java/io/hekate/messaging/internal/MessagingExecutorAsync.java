@@ -30,8 +30,6 @@ class MessagingExecutorAsync implements MessagingExecutor {
     private final int size;
 
     public MessagingExecutorAsync(int size, HekateThreadFactory factory) {
-        assert size > 0 : "Thread pool size must be above zero [size=" + size + ']';
-
         this.size = size;
 
         affinityWorkers = new MessagingSingleThreadWorker[size];

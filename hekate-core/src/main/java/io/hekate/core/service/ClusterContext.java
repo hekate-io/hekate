@@ -106,11 +106,4 @@ public interface ClusterContext {
      * @param listener Listener to be removed.
      */
     void removeListener(ClusterEventListener listener);
-
-    /**
-     * Registers the synchronization future that will block the {@link Hekate#join()} method until synchronization is complete.
-     *
-     * @param future Future.
-     */
-    void addSyncFuture(CompletableFuture<?> future);
 }

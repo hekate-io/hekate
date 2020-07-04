@@ -49,8 +49,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -79,6 +77,8 @@ import org.junit.runner.Description;
 import org.junit.runners.model.TestTimedOutException;
 
 import static io.hekate.core.internal.util.Utils.NL;
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -589,7 +589,7 @@ public abstract class HekateTestBase {
                     services.put(type, new DefaultServiceInfo(type, serviceProps));
                 }
             } else {
-                services = Collections.emptyMap();
+                services = emptyMap();
             }
 
             return builder.withRoles(roles)
@@ -732,7 +732,7 @@ public abstract class HekateTestBase {
 
     @SafeVarargs
     protected final <T> Set<T> toSet(T... elements) {
-        return new HashSet<>(Arrays.asList(elements));
+        return new HashSet<>(asList(elements));
     }
 
     protected long sayTime(String msg, TestTask task) throws Exception {

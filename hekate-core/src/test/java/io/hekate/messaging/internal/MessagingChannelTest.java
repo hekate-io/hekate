@@ -34,7 +34,6 @@ import io.hekate.partition.DefaultPartition;
 import io.hekate.partition.UpdatablePartitionMapper;
 import io.hekate.test.NetworkClientCallbackMock;
 import java.net.InetSocketAddress;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -44,6 +43,7 @@ import java.util.concurrent.Exchanger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import static org.hamcrest.CoreMatchers.hasItem;
@@ -424,7 +424,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
         // First node is primary
         // ----------------------------------------------------------------------
         ClusterNode primary1 = nodes[0];
-        List<ClusterNode> backup1 = Arrays.asList(nodes[1], nodes[2]);
+        List<ClusterNode> backup1 = asList(nodes[1], nodes[2]);
 
         mapper.update(topology, old -> new DefaultPartition(old.id(), primary1, backup1, topology));
 
@@ -437,7 +437,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
         // Second node is primary.
         // ----------------------------------------------------------------------
         ClusterNode primary2 = nodes[1];
-        List<ClusterNode> backup2 = Arrays.asList(nodes[0], nodes[2]);
+        List<ClusterNode> backup2 = asList(nodes[0], nodes[2]);
 
         mapper.update(topology, old -> new DefaultPartition(old.id(), primary2, backup2, topology));
 
@@ -450,7 +450,7 @@ public class MessagingChannelTest extends MessagingServiceTestBase {
         // Third node is primary.
         // ----------------------------------------------------------------------
         ClusterNode primary3 = nodes[1];
-        List<ClusterNode> backup3 = Arrays.asList(nodes[0], nodes[1]);
+        List<ClusterNode> backup3 = asList(nodes[0], nodes[1]);
 
         mapper.update(topology, old -> new DefaultPartition(old.id(), primary3, backup3, topology));
 

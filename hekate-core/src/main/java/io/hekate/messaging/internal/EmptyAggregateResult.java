@@ -19,16 +19,16 @@ package io.hekate.messaging.internal;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.messaging.operation.AggregateResult;
 import io.hekate.util.format.ToString;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 
 class EmptyAggregateResult<T> implements AggregateResult<T> {
     private final T request;
 
     public EmptyAggregateResult(T request) {
-        assert request != null : "Request is null.";
-
         this.request = request;
     }
 
@@ -39,17 +39,17 @@ class EmptyAggregateResult<T> implements AggregateResult<T> {
 
     @Override
     public List<ClusterNode> nodes() {
-        return Collections.emptyList();
+        return emptyList();
     }
 
     @Override
     public Map<ClusterNode, Throwable> errors() {
-        return Collections.emptyMap();
+        return emptyMap();
     }
 
     @Override
     public Map<ClusterNode, T> resultsByNode() {
-        return Collections.emptyMap();
+        return emptyMap();
     }
 
     @Override

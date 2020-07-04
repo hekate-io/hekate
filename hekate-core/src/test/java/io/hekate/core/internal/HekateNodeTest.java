@@ -547,7 +547,7 @@ public class HekateNodeTest extends HekateNodeTestBase {
         doAnswer(invocationOnMock -> {
             InitializationContext ctx = invocationOnMock.getArgument(0);
 
-            ctx.cluster().addSyncFuture(syncFuture);
+            ctx.cluster().addListener(evt -> evt.attach(syncFuture), ClusterEventType.JOIN);
 
             return null;
         }).when(serviceMock).initialize(any(InitializationContext.class));

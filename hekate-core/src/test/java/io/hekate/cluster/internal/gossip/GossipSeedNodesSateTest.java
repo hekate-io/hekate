@@ -19,12 +19,12 @@ package io.hekate.cluster.internal.gossip;
 import io.hekate.HekateTestBase;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.junit.Test;
 
+import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -33,7 +33,7 @@ import static org.junit.Assert.assertTrue;
 public class GossipSeedNodesSateTest extends HekateTestBase {
     @Test
     public void testEmpty() throws Exception {
-        GossipSeedNodesSate s = new GossipSeedNodesSate(newSocketAddress(1), Collections.emptyList());
+        GossipSeedNodesSate s = new GossipSeedNodesSate(newSocketAddress(1), emptyList());
 
         assertTrue(s.isSelfJoin());
         assertNull(s.nextSeed());

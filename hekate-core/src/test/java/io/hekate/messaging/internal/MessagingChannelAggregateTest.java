@@ -25,7 +25,6 @@ import io.hekate.messaging.MessagingException;
 import io.hekate.messaging.operation.AggregateFuture;
 import io.hekate.messaging.operation.AggregateResult;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -36,6 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import org.junit.Test;
 
+import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -362,7 +362,7 @@ public class MessagingChannelAggregateTest extends MessagingServiceTestBase {
 
         assertTrue(result.toString(), result.isSuccess());
         assertEquals(result.toString(), result.results().size(), channels.size());
-        assertEquals(Arrays.asList("reply-3", "reply-3", "reply-3"), new ArrayList<>(result.results()));
+        assertEquals(asList("reply-3", "reply-3", "reply-3"), new ArrayList<>(result.results()));
     }
 
     @Test

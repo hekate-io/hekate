@@ -23,9 +23,9 @@ import io.hekate.messaging.intercept.MessageInterceptor;
 import io.hekate.messaging.loadbalance.LoadBalancer;
 import io.hekate.messaging.retry.GenericRetryConfigurer;
 import io.hekate.partition.RendezvousHashMapper;
-import java.util.Collections;
 import org.junit.Test;
 
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -221,7 +221,7 @@ public class MessagingChannelConfigTest extends HekateTestBase {
 
         assertNull(cfg.getInterceptors());
 
-        cfg.setInterceptors(Collections.singletonList(interceptor));
+        cfg.setInterceptors(singletonList(interceptor));
 
         assertEquals(1, cfg.getInterceptors().size());
 

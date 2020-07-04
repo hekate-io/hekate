@@ -52,8 +52,6 @@ public class DefaultCodecService implements CodecService, EncoderDecoder<Object>
     private final EncoderDecoder<Object> codec;
 
     public DefaultCodecService(CodecFactory<Object> factory) {
-        assert factory != null : "Codec factory is null.";
-
         CodecFactory<Object> threadLocal = ThreadLocalCodecFactory.tryWrap(factory);
 
         this.factory = threadLocal;

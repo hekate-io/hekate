@@ -19,9 +19,9 @@ package io.hekate.network;
 import io.hekate.HekateTestBase;
 import io.hekate.network.address.AddressPattern;
 import io.hekate.network.address.AddressSelector;
-import java.util.Collections;
 import org.junit.Test;
 
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -261,7 +261,7 @@ public class NetworkServiceFactoryTest extends HekateTestBase {
         NetworkConnectorConfig<Object> m1 = new NetworkConnectorConfig<>();
         NetworkConnectorConfig<Object> m2 = new NetworkConnectorConfig<>();
 
-        cfg.setConnectors(Collections.singletonList(m1));
+        cfg.setConnectors(singletonList(m1));
 
         assertNotNull(cfg.getConnectors());
         assertTrue(cfg.getConnectors().contains(m1));
@@ -285,7 +285,7 @@ public class NetworkServiceFactoryTest extends HekateTestBase {
         NetworkConfigProvider c1 = () -> null;
         NetworkConfigProvider c2 = () -> null;
 
-        cfg.setConfigProviders(Collections.singletonList(c1));
+        cfg.setConfigProviders(singletonList(c1));
 
         assertNotNull(cfg.getConfigProviders());
         assertTrue(cfg.getConfigProviders().contains(c1));

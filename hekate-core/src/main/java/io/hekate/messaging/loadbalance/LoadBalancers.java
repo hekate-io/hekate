@@ -53,8 +53,6 @@ public final class LoadBalancers {
 
         @Override
         public ClusterNodeId route(T msg, LoadBalancerContext ctx) {
-            assert !ctx.topology().isEmpty() : "Topology is empty.";
-
             int idx = COUNTER.getAndUpdate(this, val -> {
                 int newVal = val + 1;
 

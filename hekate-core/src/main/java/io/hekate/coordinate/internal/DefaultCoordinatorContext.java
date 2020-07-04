@@ -140,13 +140,6 @@ class DefaultCoordinatorContext implements CoordinatorContext {
         CoordinationHandler handler,
         Runnable onComplete
     ) {
-        assert name != null : "Process name is null.";
-        assert hekate != null : "Hekate is null.";
-        assert epoch != null : "Epoch is null.";
-        assert topology != null : "Topology is null.";
-        assert handler != null : "Coordination handler is null.";
-        assert onComplete != null : "Completion callback is null.";
-
         this.name = name;
         this.hekate = hekate;
         this.epoch = epoch;

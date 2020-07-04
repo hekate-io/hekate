@@ -7,6 +7,6 @@ for [Hekate.io](https://github.com/hekate-io/hekate) library.
  <dependency>
      <groupId>io.hekate</groupId>
      <artifactId>hekate-zookeeper</artifactId>
-     <version>3.9.0</version>
+     <version>3.10.0-SNAPSHOT</version>
  </dependency>
  ```

@@ -19,10 +19,11 @@ package io.hekate.cluster.internal;
 import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterHash;
 import io.hekate.cluster.ClusterNode;
-import java.util.Arrays;
-import java.util.Collections;
 import org.junit.Test;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
@@ -33,13 +34,13 @@ public class DefaultClusterHashTest extends HekateTestBase {
         ClusterNode n2 = newNode();
         ClusterNode n3 = newNode();
 
-        ClusterHash h1 = new DefaultClusterHash(Collections.emptyList());
+        ClusterHash h1 = new DefaultClusterHash(emptyList());
 
-        ClusterHash h2 = new DefaultClusterHash(Collections.singleton(n1));
-        ClusterHash h3 = new DefaultClusterHash(Collections.singleton(n1));
+        ClusterHash h2 = new DefaultClusterHash(singleton(n1));
+        ClusterHash h3 = new DefaultClusterHash(singleton(n1));
 
-        ClusterHash h4 = new DefaultClusterHash(Arrays.asList(n1, n2, n3));
-        ClusterHash h5 = new DefaultClusterHash(Arrays.asList(n3, n2, n1));
+        ClusterHash h4 = new DefaultClusterHash(asList(n1, n2, n3));
+        ClusterHash h5 = new DefaultClusterHash(asList(n3, n2, n1));
 
         assertNotEquals(h1, h2);
         assertNotEquals(h2, h4);

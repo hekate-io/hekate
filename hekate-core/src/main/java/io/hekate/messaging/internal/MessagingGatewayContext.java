@@ -37,7 +37,6 @@ import io.hekate.messaging.operation.Response;
 import io.hekate.messaging.operation.ResponsePart;
 import io.hekate.messaging.retry.FailedAttempt;
 import io.hekate.messaging.retry.FixedBackoffPolicy;
-import io.hekate.messaging.retry.GenericRetryConfigurer;
 import io.hekate.messaging.retry.RetryErrorPredicate;
 import io.hekate.messaging.retry.RetryRoutingPolicy;
 import io.hekate.network.NetworkConnector;
@@ -169,18 +168,8 @@ class MessagingGatewayContext<T> {
         boolean checkIdle,
         long messagingTimeout,
         int warnOnRetry,
-        GenericRetryConfigurer baseRetryPolicy,
         DefaultMessagingChannel<T> channel
     ) {
-        assert name != null : "Name is null.";
-        assert baseType != null : "Base type is null.";
-        assert net != null : "Network connector is null.";
-        assert localNode != null : "Local cluster node is null.";
-        assert async != null : "Executor is null.";
-        assert metrics != null : "Metrics are null.";
-        assert channel != null : "Default channel is null.";
-        assert baseRetryPolicy != null : "Base retry policy is null.";
-
         this.id = new MessagingChannelId();
         this.name = name;
         this.baseType = baseType;
@@ -650,8 +639,6 @@ class MessagingGatewayContext<T> {
     }
 
     private void scheduleTimeout(MessageOperation<T> op, long initTimeout) {
-        assert initTimeout > 0 : "Timeout must be greater than zero [timeout=" + initTimeout + ']';
-
         Future<?> timeoutFuture = timer.repeatWithFixedDelay(() -> {
             if (op.isDone()) {
                 // Do not execute anymore (operation already completed).
@@ -918,8 +905,6 @@ class MessagingGatewayContext<T> {
     }
 
     private void checkMessageType(T msg) {
-        assert msg != null : "Message must be not null.";
-
         if (!baseType.isInstance(msg)) {
             throw new ClassCastException("Messaging channel doesn't support the specified type "
                 + "[channel-type=" + baseType.getName() + ", message-type=" + msg.getClass().getName() + ']');

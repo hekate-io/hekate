@@ -18,10 +18,11 @@ package io.hekate.network.netty;
 
 import io.hekate.network.NetworkEndpoint;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+
+import static java.util.Collections.emptyList;
 
 class NettyServerHandler {
     private final NettyServerHandlerConfig<Object> config;
@@ -46,7 +47,7 @@ class NettyServerHandler {
     public List<NetworkEndpoint<?>> clients() {
         synchronized (clients) {
             if (clients.isEmpty()) {
-                return Collections.emptyList();
+                return emptyList();
             } else {
                 return new ArrayList<>(clients.keySet());
             }

@@ -39,7 +39,7 @@ import java.util.List;
  * <li><a href="#protocol_details">Protocol Details</a></li>
  * </ul>
  *
- * <a name="service_configuration"></a>
+ * <a id="service_configuration"></a>
  * <h2>Service Configuration</h2>
  * <p>
  * {@link LockService} can be registered and configured in {@link HekateBootstrap} with the help of {@link LockServiceFactory} as shown in
@@ -67,7 +67,7 @@ import java.util.List;
  * </div>
  * </div>
  *
- * <a name="locks_and_regions"></a>
+ * <a id="locks_and_regions"></a>
  * <h2>Locks and Regions</h2>
  * <p>
  * Each lock within the lock service is identified by its {@link DistributedLock#name() name} and a {@link LockRegion}. Lock name is
@@ -84,7 +84,7 @@ import java.util.List;
  * regions are managed by the particular node).
  * </p>
  *
- * <a name="locking_and_unlocking"></a>
+ * <a id="locking_and_unlocking"></a>
  * <h2>Locking and Unlocking</h2>
  * <p>
  * In order obtain the lock, one must get the {@link LockRegion} instance from the {@link LockService} and then use that instance to create
@@ -99,7 +99,7 @@ import java.util.List;
  * must always be followed by the same amount of {@link DistributedLock#unlock() unlock()} method calls or the lock will never be released.
  * </p>
  *
- * <a name="protocol_details"></a>
+ * <a id="protocol_details"></a>
  * <h2>Protocol Details</h2>
  * <p>
  * {@link LockService} uses {@link RendezvousHashMapper} to evenly distribute locks processing workload among the nodes. For each

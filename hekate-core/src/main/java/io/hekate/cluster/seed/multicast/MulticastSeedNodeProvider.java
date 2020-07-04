@@ -50,7 +50,6 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -66,6 +65,7 @@ import static io.netty.channel.ChannelOption.IP_MULTICAST_TTL;
 import static io.netty.channel.ChannelOption.SO_REUSEADDR;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.list;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -589,8 +589,6 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider, JmxSupport<M
     }
 
     private boolean isRegistered() {
-        assert Thread.holdsLock(mux) : "Thread must hold lock on mutex.";
-
         return localNode != null;
     }
 
@@ -693,7 +691,7 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider, JmxSupport<M
 
         for (NetworkInterface nif : AddressUtils.activeNetworks()) {
             if (nif.isUp() && nif.isLoopback()) {
-                for (InetAddress nifAddress : Collections.list(nif.getInetAddresses())) {
+                for (InetAddress nifAddress : list(nif.getInetAddresses())) {
                     if (!nifAddress.isLinkLocalAddress() && nifAddress.isLoopbackAddress()) {
                         if (lo != null) {
                             throw new HekateException("Failed to resolve a loopback network interface. "

@@ -20,6 +20,10 @@ import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateSupport;
+import io.hekate.core.internal.util.ArgAssert;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Abstract base class for {@link ClusterEvent} implementations.
@@ -28,9 +32,13 @@ import io.hekate.core.HekateSupport;
  * @see ClusterService
  */
 public abstract class ClusterEventBase implements ClusterEvent {
+    private static final CompletableFuture[] EMPTY_FUTURES = new CompletableFuture[0];
+
     private final HekateSupport hekate;
 
     private final ClusterTopology topology;
+
+    private final List<CompletableFuture<?>> syncs = new CopyOnWriteArrayList<>();
 
     /**
      * Constructs a new instance with the specified topology snapshot.
@@ -39,9 +47,6 @@ public abstract class ClusterEventBase implements ClusterEvent {
      * @param hekate Delegate for {@link #hekate()}.
      */
     public ClusterEventBase(ClusterTopology topology, HekateSupport hekate) {
-        assert topology != null : "Cluster topology  is null.";
-        assert hekate != null : "Hekate is null.";
-
         this.topology = topology;
         this.hekate = hekate;
     }
@@ -54,6 +59,18 @@ public abstract class ClusterEventBase implements ClusterEvent {
     @Override
     public ClusterTopology topology() {
         return topology;
+    }
+
+    @Override
+    public void attach(CompletableFuture<?> future) {
+        ArgAssert.notNull(future, "Future");
+
+        syncs.add(future);
+    }
+
+    @Override
+    public CompletableFuture<?> future() {
+        return CompletableFuture.allOf(syncs.toArray(EMPTY_FUTURES));
     }
 
     @Override

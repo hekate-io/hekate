@@ -65,15 +65,15 @@ class RpcAggregateMethodClient<T> extends RpcMethodClientBase<T> {
     ) {
         super(rpc, tag, method, channel);
 
-        assert method.aggregate().isPresent() : "Not an aggregate method [rpc=" + rpc + ", method=" + method + ']';
-
         this.retryPolicy = retryPolicy;
         this.timeout = timeout;
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // Error handling.
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        RpcAggregate config = method.aggregate().get();
+        RpcAggregate config = method.aggregate().orElseThrow(() ->
+            new AssertionError("Not an aggregate method [rpc=" + rpc + ", method=" + method + ']')
+        );
 
         Consumer<AggregateResult<RpcProtocol>> errorCheck;
 

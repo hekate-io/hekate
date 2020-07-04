@@ -37,10 +37,6 @@ public interface GossipPolicy {
             List<GossipNodeState> nodes,
             Set<ClusterNodeId> seen
         ) {
-            assert size > 0 : "Size must be above zero [size=" + size + ']';
-            assert fromNode != null : "From node is null.";
-            assert seen != null : "Seen list is null.";
-
             // Select unseen nodes with higher probability.
             boolean preferUnseen = ThreadLocalRandom.current().nextInt(100) <= 70;
 
@@ -95,10 +91,6 @@ public interface GossipPolicy {
             List<GossipNodeState> nodes,
             Set<ClusterNodeId> seen
         ) {
-            assert size > 0 : "Size must be above zero [size=" + size + ']';
-            assert fromNode != null : "From node is null.";
-            assert seen != null : "Seen list is null.";
-
             nodes = nodes.stream()
                 .filter(n -> !seen.contains(n.id()) && !n.status().isTerminated())
                 .collect(toList());
@@ -132,10 +124,6 @@ public interface GossipPolicy {
             List<GossipNodeState> nodes,
             Set<ClusterNodeId> seen
         ) {
-            assert size > 0 : "Size must be above zero [size=" + size + ']';
-            assert fromNode != null : "From node is null.";
-            assert seen != null : "Seen list is null.";
-
             nodes = nodes.stream()
                 .filter(n -> !seen.contains(n.id()))
                 .collect(toList());
@@ -169,10 +157,6 @@ public interface GossipPolicy {
             List<GossipNodeState> nodes,
             Set<ClusterNodeId> seen
         ) {
-            assert size > 0 : "Size must be above zero [size=" + size + ']';
-            assert fromNode != null : "From node is null.";
-            assert seen != null : "Seen list is null.";
-
             // Select target nodes by using a round robin approach.
             NavigableSet<GossipNodeState> sorted = new TreeSet<>(nodes);
 

@@ -17,10 +17,11 @@
 package io.hekate.cluster.seed.jclouds;
 
 import io.hekate.util.format.ToString;
-import java.util.Collections;
 import java.util.Properties;
 import org.junit.Test;
 
+import static java.util.Collections.singleton;
+import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -106,7 +107,7 @@ public class CloudSeedNodeProviderConfigTest extends CloudPropertiesBaseTestBase
     public void testRegions() {
         assertNull(cfg.getRegions());
 
-        cfg.setRegions(Collections.singleton("test1"));
+        cfg.setRegions(singleton("test1"));
 
         assertTrue(cfg.getRegions().contains("test1"));
 
@@ -123,7 +124,7 @@ public class CloudSeedNodeProviderConfigTest extends CloudPropertiesBaseTestBase
     public void testZones() {
         assertNull(cfg.getZones());
 
-        cfg.setZones(Collections.singleton("test1"));
+        cfg.setZones(singleton("test1"));
 
         assertTrue(cfg.getZones().contains("test1"));
 
@@ -140,7 +141,7 @@ public class CloudSeedNodeProviderConfigTest extends CloudPropertiesBaseTestBase
     public void testTags() {
         assertNull(cfg.getTags());
 
-        cfg.setTags(Collections.singletonMap("test1", "1"));
+        cfg.setTags(singletonMap("test1", "1"));
 
         assertEquals("1", cfg.getTags().get("test1"));
 

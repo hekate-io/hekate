@@ -31,8 +31,6 @@ class FstCodec implements Codec<Object> {
     private final FSTConfiguration fst;
 
     public FstCodec(FSTConfiguration fst) {
-        assert fst != null : "FST configuration is null.";
-
         this.fst = fst;
     }
 

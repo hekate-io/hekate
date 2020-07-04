@@ -1,0 +1,132 @@
+name: build
+
+on:
+  push:
+    branches-ignore:
+      - "experimental-**"
+
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  ##########################################################################################################################################
+  # Build Job
+  ##########################################################################################################################################
+  build:
+    # Disable build if commit message contains [ci skip] or [skip ci].
+    if: "!contains(toJSON(github.event.commits.*.message), '[skip ci]') && !contains(toJSON(github.event.commits.*.message), '[ci skip]')"
+
+    name: "Build on JDK ${{matrix.java}} (${{matrix.os}})"
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        java: [8, 11]
+
+    runs-on: ${{matrix.os}}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set up JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{matrix.java}}
+
+      - name: Cache Maven packages
+        uses: actions/cache@v1
+        with:
+          path: ~/.m2
+          key: ${{runner.os}}-m2-${{hashFiles('**/pom.xml')}}
+          restore-keys: ${{runner.os}}-m2
+
+      - name: Build
+        run: './mvnw clean install -B -DskipTests=true'
+
+  ##########################################################################################################################################
+  # Test Job
+  ##########################################################################################################################################
+  test:
+    # Disable tests if commit message contains [ci skip] or [skip ci].
+    if: "!contains(toJSON(github.event.commits.*.message), '[skip ci]') && !contains(toJSON(github.event.commits.*.message), '[ci skip]')"
+
+    name: "Test on JDK ${{matrix.java}} (os=${{matrix.os}}, transport=${{matrix.transport}}, ssl=${{matrix.ssl}})"
+
+    needs: build
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        java: [8, 11]
+        transport: [NIO, EPOLL]
+        ssl: [NO, JDK, OPEN_SSL]
+        exclude:
+          # Exclude SSL on windows.
+          - os: windows-latest
+            ssl: JDK
+          - os: windows-latest
+            ssl: OPEN_SSL
+
+          # Exclude EPOLL on windows.
+          - os: windows-latest
+            transport: EPOLL
+
+    runs-on: ${{matrix.os}}
+
+    env:
+      # Test matrix.
+      TRANSPORT: ${{matrix.transport}}
+      SSL: ${{matrix.ssl}}
+
+      # Disable tests that depend on docker-compose on Windows.
+      # See https://github.community/t5/GitHub-Actions/docker-compose-on-windows-latest/td-p/40577
+      MYSQL_ENABLED: ${{matrix.os != 'windows-latest'}}
+      POSTGRES_ENABLED: ${{matrix.os != 'windows-latest'}}
+      ETCD_ENABLED: ${{matrix.os != 'windows-latest'}}
+      CONSUL_ENABLED: ${{matrix.os != 'windows-latest'}}
+
+      # AWS parameters.
+      AWS_TEST_ENABLED: ${{secrets.AWS_TEST_ENABLED}}
+      AWS_TEST_ACCESS_KEY: ${{secrets.AWS_TEST_ACCESS_KEY}}
+      AWS_TEST_SECRET_KEY: ${{secrets.AWS_TEST_SECRET_KEY}}
+
+      # Google Cloud parameters.
+      GOOGLE_TEST_ENABLED: ${{secrets.GOOGLE_TEST_ENABLED}}
+      GOOGLE_TEST_EMAIL: ${{secrets.GOOGLE_TEST_EMAIL}}
+      GOOGLE_TEST_PRIVATE_KEY: ${{secrets.GOOGLE_TEST_PRIVATE_KEY}}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set up JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{matrix.java}}
+
+      - name: Start docker-compose stack
+        run: docker-compose up -d
+        if: ${{runner.os != 'Windows'}}
+
+      - name: Cache Maven packages
+        uses: actions/cache@v1
+        with:
+          path: ~/.m2
+          key: ${{runner.os}}-m2-${{hashFiles('**/pom.xml')}}
+          restore-keys: ${{runner.os}}-m2
+
+      # Test on Linux (exclusive with Windows).
+      - name: Run Tests
+        if: ${{runner.os != 'Windows'}}
+        # Note that we escape '!' sign in the command arguments.
+        run: './mvnw test -pl \!hekate-all -B'
+
+      # Test on Windows (exclusive with Linux).
+      - name: Run Tests
+        if: ${{runner.os == 'Windows'}}
+        run: './mvnw test -pl !hekate-all -B'
+
+      - name: Upload code coverage results
+        uses: codecov/codecov-action@v1

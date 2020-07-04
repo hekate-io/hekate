@@ -19,12 +19,12 @@ package io.hekate.core.internal;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.HekateException;
-import io.hekate.core.internal.util.StreamUtils;
 import io.hekate.core.plugin.Plugin;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.hekate.core.internal.util.StreamUtils.nullSafe;
 import static java.util.stream.Collectors.toList;
 
 class PluginManager {
@@ -81,11 +81,9 @@ class PluginManager {
     private final HekateBootstrap boot;
 
     public PluginManager(HekateBootstrap boot) {
-        assert boot != null : "Bootstrap is null";
-
         this.boot = boot;
 
-        this.plugins = StreamUtils.nullSafe(boot.getPlugins()).map(PluginState::new).collect(toList());
+        this.plugins = nullSafe(boot.getPlugins()).map(PluginState::new).collect(toList());
     }
 
     public void install() {

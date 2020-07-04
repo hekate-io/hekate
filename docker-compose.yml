@@ -15,7 +15,7 @@
 #
 # Test environment for Hekate.io project.
 #
-version: '2'
+version: '2.1'
 services:
   mysql:
     container_name: hekate-test-mysql

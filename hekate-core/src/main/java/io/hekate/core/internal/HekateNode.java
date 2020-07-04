@@ -77,7 +77,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -93,7 +92,6 @@ import static io.hekate.core.Hekate.State.SYNCHRONIZING;
 import static io.hekate.core.Hekate.State.TERMINATING;
 import static io.hekate.core.Hekate.State.UP;
 import static io.hekate.core.internal.util.StreamUtils.nullSafe;
-import static io.hekate.util.async.AsyncUtils.allOf;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.synchronizedMap;
@@ -150,8 +148,6 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
 
     private final HekateLifecycle lifecycle = new HekateLifecycle(this);
 
-    private boolean preTerminated;
-
     private volatile DefaultClusterTopology topology;
 
     private volatile ScheduledExecutorService sysWorker;
@@ -161,7 +157,7 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
     private volatile State state = DOWN;
 
     public HekateNode(HekateBootstrap boot) {
-        assert boot != null : "Bootstrap is null.";
+        ArgAssert.notNull(boot, "Bootstrap");
 
         // Install plugins.
         plugins = new PluginManager(boot);
@@ -764,8 +760,6 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
 
     private ClusterContext createClusterContext() {
         return new ClusterContext() {
-            private final List<CompletableFuture<?>> syncFutures = new CopyOnWriteArrayList<>();
-
             @Override
             public CompletableFuture<ClusterJoinEvent> onJoin(int joinOrder, Set<ClusterNode> nodes) {
                 CompletableFuture<ClusterJoinEvent> future = new CompletableFuture<>();
@@ -783,10 +777,8 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
                                 log.debug("Updated local topology [topology={}]", topology);
                             }
 
-                            if (!syncFutures.isEmpty()) {
-                                if (log.isInfoEnabled()) {
-                                    log.info("Joined the cluster ...will synchronize [join-order={}, topology={}]", joinOrder, topology);
-                                }
+                            if (log.isInfoEnabled()) {
+                                log.info("Joined the cluster ...will synchronize [join-order={}, topology={}]", joinOrder, topology);
                             }
 
                             // Start synchronization.
@@ -795,25 +787,22 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
                             // Fire the cluster join event.
                             ClusterJoinEvent event = new ClusterJoinEvent(topology, hekate());
 
-                            clusterEvents.fireAsync(event).thenRun(() ->
-                                // Await for synchronization.
-                                allOf(syncFutures).whenComplete((ignore, err) ->
-                                    // Switch to UP state.
-                                    runOnSysThread(() ->
-                                        guard.withWriteLock(() -> {
-                                            if (err == null) {
-                                                // Check that state wasn't changed while we were waiting for synchronization.
-                                                if (state == SYNCHRONIZING) {
-                                                    log.info("Hekate is UP and running [cluster={}, node={}]", clusterName, node);
+                            clusterEvents.fireAsync(event).whenComplete((ignore, err) ->
+                                // Switch to UP state.
+                                runOnSysThread(() ->
+                                    guard.withWriteLock(() -> {
+                                        if (err == null) {
+                                            // Check that state wasn't changed while we were waiting for synchronization.
+                                            if (state == SYNCHRONIZING) {
+                                                log.info("Hekate is UP and running [cluster={}, node={}]", clusterName, node);
 
-                                                    become(UP);
-                                                }
-                                            } else {
-                                                // Terminate on error.
-                                                doTerminateAsync(ClusterLeaveReason.TERMINATE, err);
+                                                become(UP);
                                             }
-                                        })
-                                    )
+                                        } else {
+                                            // Terminate on error.
+                                            doTerminateAsync(ClusterLeaveReason.TERMINATE, err);
+                                        }
+                                    })
                                 )
                             );
 
@@ -853,9 +842,9 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
                                     event.added(), event.removed(), event.failed(), event.topology());
                             }
 
-                            clusterEvents.fireAsync(event);
-
-                            future.complete(event);
+                            clusterEvents.fireAsync(event).whenComplete((ignore, err) ->
+                                future.complete(event)
+                            );
                         } else {
                             future.complete(null);
                         }
@@ -902,11 +891,6 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
             @Override
             public void removeListener(ClusterEventListener listener) {
                 clusterEvents.removeListener(listener);
-            }
-
-            @Override
-            public void addSyncFuture(CompletableFuture<?> future) {
-                syncFutures.add(future);
             }
         };
     }
@@ -979,8 +963,6 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
                 clusterEvents.ensureLeaveEventFired(ClusterLeaveReason.LEAVE, topology).thenRun(() ->
                     runOnSysThread(() -> {
                         if (state == LEAVING) {
-                            preTerminateServices();
-
                             clusterMgr.leaveAsync();
                         }
                     })
@@ -989,20 +971,7 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
         });
     }
 
-    private void preTerminateServices() {
-        if (!preTerminated) {
-            preTerminated = true;
-
-            services.preTerminate();
-
-            plugins.stop();
-        }
-    }
-
     private void doTerminate(ClusterLeaveReason reason, Throwable cause) {
-        assert reason != null : "Reason is null";
-        assert state == TERMINATING : "Unexpected service state: " + state;
-
         if (cause == null) {
             if (log.isInfoEnabled()) {
                 log.info("Terminating...");
@@ -1019,7 +988,9 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
             log.error("Got an unexpected error while waiting for cluster leave event processing.", e);
         }
 
-        preTerminateServices();
+        plugins.stop();
+
+        services.preTerminate();
         services.terminate();
         services.postTerminate();
 
@@ -1043,7 +1014,6 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
             cleanup = lifecycle.terminate(cause);
 
             sysWorker = null;
-            preTerminated = false;
 
             if (log.isInfoEnabled()) {
                 log.info("Terminated.");

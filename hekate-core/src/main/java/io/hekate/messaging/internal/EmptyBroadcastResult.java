@@ -19,16 +19,16 @@ package io.hekate.messaging.internal;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.messaging.operation.BroadcastResult;
 import io.hekate.util.format.ToString;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 
 class EmptyBroadcastResult<T> implements BroadcastResult<T> {
     private final T message;
 
     public EmptyBroadcastResult(T message) {
-        assert message != null : "Message is null.";
-
         this.message = message;
     }
 
@@ -39,12 +39,12 @@ class EmptyBroadcastResult<T> implements BroadcastResult<T> {
 
     @Override
     public List<ClusterNode> nodes() {
-        return Collections.emptyList();
+        return emptyList();
     }
 
     @Override
     public Map<ClusterNode, Throwable> errors() {
-        return Collections.emptyMap();
+        return emptyMap();
     }
 
     @Override

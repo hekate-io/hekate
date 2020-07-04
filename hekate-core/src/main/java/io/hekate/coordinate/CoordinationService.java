@@ -48,7 +48,7 @@ import java.util.List;
  * <li><a href="#thread_management">Thread Management</a></li>
  * </ul>
  *
- * <a name="service_configuration"></a>
+ * <a id="service_configuration"></a>
  * <h2>Service Configuration</h2>
  * <p>
  * {@link CoordinationService} can be registered and configured in {@link HekateBootstrap} with the help of {@link
@@ -76,7 +76,7 @@ import java.util.List;
  * </div>
  * </div>
  *
- * <a name="coordination_handler"></a>
+ * <a id="coordination_handler"></a>
  * <h2>Coordination Handler</h2>
  * <p>
  * Application-specific logic of a distributed coordination process must be encapsulated into an implementation of {@link
@@ -112,7 +112,7 @@ import java.util.List;
  * ${source: coordinate/CoordinationServiceJavadocTest.java#handler}
  * </p>
  *
- * <a name="messaging"></a>
+ * <a id="messaging"></a>
  * <h2>Messaging</h2>
  * <p>
  * {@link CoordinationService} provides support for asynchronous message exchange among the coordination participants. It can be done via
@@ -140,7 +140,7 @@ import java.util.List;
  * cluster topology.
  * </p>
  *
- * <a name="topology_changes"></a>
+ * <a id="topology_changes"></a>
  * <h2>Topology Changes</h2>
  * <p>
  * If topology change happens while coordination process is still running then {@link CoordinationService} will try to cancel the current
@@ -162,7 +162,7 @@ import java.util.List;
  * CoordinationContext} instance (see {@link CoordinationContext#setAttachment(Object)}/{@link CoordinationContext#getAttachment()}).
  * </p>
  *
- * <a name="awaiting_for_initial_coordination"></a>
+ * <a id="awaiting_for_initial_coordination"></a>
  * <h2>Awaiting for Initial Coordination</h2>
  * <p>
  * Sometimes it is required for applications to await for initial coordination process to complete before proceeding to their main
@@ -177,7 +177,7 @@ import java.util.List;
  * ${source: coordinate/CoordinationServiceJavadocTest.java#future}
  * </p>
  *
- * <a name="thread_management"></a>
+ * <a id="thread_management"></a>
  * <h2>Thread Management</h2>
  * <p>
  * Each {@link CoordinationHandler} instance is bound to a single thread that is managed by the {@link CoordinationService}. All

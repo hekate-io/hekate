@@ -83,12 +83,6 @@ public class ServiceManager {
         List<Class<? extends Service>> coreServices,
         List<? extends ServiceFactory<?>> factories
     ) {
-        assert container != null : "Container is null.";
-        assert metrics != null : "Metrics registry is null.";
-        assert builtInServices != null : "Built-in services list is null.";
-        assert coreServices != null : "Core services list is null.";
-        assert factories != null : "Service factories list is null.";
-
         this.nodeName = nodeName;
         this.clusterName = clusterName;
         this.container = container;
@@ -160,8 +154,6 @@ public class ServiceManager {
     }
 
     public void preInitialize(InitializationContext ctx) throws HekateException {
-        assert ctx != null : "Initialization context is null.";
-
         if (DEBUG) {
             log.debug("Pre-initializing services [context={}]", ctx);
         }
@@ -177,8 +169,6 @@ public class ServiceManager {
     }
 
     public void initialize(InitializationContext ctx) throws HekateException {
-        assert ctx != null : "Initialization context is null.";
-
         if (DEBUG) {
             log.debug("Initializing services [context={}]", ctx);
         }
@@ -194,8 +184,6 @@ public class ServiceManager {
     }
 
     public void postInitialize(InitializationContext ctx) throws HekateException {
-        assert ctx != null : "Initialization context is null.";
-
         if (DEBUG) {
             log.debug("Post-initializing services [context={}]", ctx);
         }
@@ -268,8 +256,6 @@ public class ServiceManager {
     }
 
     public <T extends Service> T findService(Class<T> type) {
-        assert type != null : "Service type is null.";
-
         Service service;
 
         // Try to find with the read lock.

@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
+import java.util.stream.Stream;
 
 import static io.hekate.core.internal.util.Utils.NL;
 import static org.junit.Assert.assertFalse;
@@ -70,6 +71,10 @@ public final class HekateTestProps {
 
     public static boolean is(String key) {
         return Boolean.parseBoolean(get(key));
+    }
+
+    public static boolean has(String key, String value) {
+        return Stream.of(get(key).split(",")).anyMatch(v -> value.equals(v.trim()));
     }
 
     public static String get(String key) {

@@ -232,12 +232,6 @@ final class AddressPatternOpts {
     }
 
     private static String extractMatcher(String prefix, String pattern) {
-        assert prefix != null : "Prefix is null.";
-        assert !prefix.isEmpty() : "Prefix is empty.";
-        assert pattern != null : "Pattern is null.";
-        assert !pattern.isEmpty() : "Pattern is empty.";
-        assert pattern.startsWith(prefix) : "Pattern doesn't start with the prefix [prefix=" + prefix + ", pattern=" + pattern + ']';
-
         String matcher = pattern.substring(prefix.length()).trim();
 
         CHECK.that(!matcher.isEmpty(), "invalid host pattern [prefix=" + prefix + ", pattern=" + pattern + ']');

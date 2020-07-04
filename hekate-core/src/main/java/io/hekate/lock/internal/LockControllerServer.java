@@ -134,9 +134,6 @@ class LockControllerServer {
     private LockHolder lockedOwner;
 
     public LockControllerServer(String name, ScheduledExecutorService scheduler) {
-        assert name != null : "Name is null.";
-        assert scheduler != null : "Scheduler is null.";
-
         this.scheduler = scheduler;
         this.name = name;
     }
@@ -191,8 +188,6 @@ class LockControllerServer {
     }
 
     public boolean processLock(Message<LockProtocol> msg) {
-        assert msg != null : "Message is null.";
-
         if (DEBUG) {
             log.debug("Got lock request [from={}, request={}]", msg.endpoint(), msg);
         }
@@ -228,8 +223,6 @@ class LockControllerServer {
     }
 
     public boolean processUnlock(Message<LockProtocol> msg) {
-        assert msg != null : "Message is null.";
-
         if (DEBUG) {
             log.debug("Got unlock request [from={}, request={}]", msg.endpoint(), msg);
         }

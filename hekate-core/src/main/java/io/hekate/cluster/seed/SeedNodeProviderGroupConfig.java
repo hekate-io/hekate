@@ -16,10 +16,11 @@
 
 package io.hekate.cluster.seed;
 
-import io.hekate.core.internal.util.StreamUtils;
 import io.hekate.util.format.ToString;
 import java.util.ArrayList;
 import java.util.List;
+
+import static io.hekate.core.internal.util.StreamUtils.nullSafe;
 
 /**
  * Configuration options for {@link SeedNodeProviderGroup}.
@@ -122,7 +123,7 @@ public class SeedNodeProviderGroupConfig {
      * @return {@code true} if this configuration has at least one provider (see {@link #setProviders(List)}).
      */
     public boolean hasProviders() {
-        return StreamUtils.nullSafe(providers).count() > 0;
+        return nullSafe(providers).count() > 0;
     }
 
     @Override

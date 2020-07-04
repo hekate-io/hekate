@@ -18,18 +18,17 @@ package io.hekate.cluster.internal.gossip;
 
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.util.format.ToString;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
+import static java.util.Collections.emptyMap;
+
 public class GossipSuspectView {
-    public static final GossipSuspectView EMPTY = new GossipSuspectView(Collections.emptyMap());
+    public static final GossipSuspectView EMPTY = new GossipSuspectView(emptyMap());
 
     private final Map<ClusterNodeId, Set<ClusterNodeId>> suspected;
 
     public GossipSuspectView(Map<ClusterNodeId, Set<ClusterNodeId>> suspected) {
-        assert suspected != null : "Suspect map is null.";
-
         this.suspected = suspected;
     }
 

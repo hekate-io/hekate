@@ -42,9 +42,6 @@ class ServiceHandler {
     private boolean configured;
 
     public ServiceHandler(Service service, ServiceInitOrder initOrder) {
-        assert service != null : "Service is null.";
-        assert initOrder != null : "Initialization order handler is null.";
-
         this.service = service;
         this.initOrder = initOrder;
     }

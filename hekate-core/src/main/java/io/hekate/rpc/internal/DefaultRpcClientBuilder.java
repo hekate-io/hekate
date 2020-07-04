@@ -55,9 +55,6 @@ class DefaultRpcClientBuilder<T> implements RpcClientBuilder<T> {
         long timeout,
         GenericRetryConfigurer retry
     ) {
-        assert type != null : "RPC type is null.";
-        assert channel != null : "Messaging channel is null.";
-
         this.type = type;
         this.tag = tag;
         this.channel = channel;

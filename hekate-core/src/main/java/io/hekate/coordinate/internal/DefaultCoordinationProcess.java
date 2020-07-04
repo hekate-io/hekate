@@ -79,12 +79,6 @@ class DefaultCoordinationProcess implements CoordinationProcess {
         ExecutorService async,
         MessagingChannel<CoordinationProtocol> channel
     ) {
-        assert name != null : "Name is null.";
-        assert hekate != null : "Hekate is null.";
-        assert handler != null : "Protocol is null.";
-        assert async != null : "Executor service is null.";
-        assert channel != null : "Messaging channel is null.";
-
         this.name = name;
         this.hekate = hekate;
         this.handler = handler;
@@ -148,8 +142,6 @@ class DefaultCoordinationProcess implements CoordinationProcess {
     }
 
     public void processTopologyChange(ClusterTopology newTopology) {
-        assert newTopology != null : "New topology is null.";
-
         guard.withWriteLockIfInitialized(() -> {
             if (DEBUG) {
                 log.debug("Processing topology change [topology={}]", newTopology);
@@ -193,8 +185,6 @@ class DefaultCoordinationProcess implements CoordinationProcess {
     }
 
     public void processMessage(Message<CoordinationProtocol> msg) {
-        assert msg != null : "Message is null.";
-
         if (msg.is(Prepare.class)) {
             ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             // Prepare.

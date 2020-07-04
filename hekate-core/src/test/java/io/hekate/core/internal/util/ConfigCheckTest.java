@@ -18,11 +18,13 @@ package io.hekate.core.internal.util;
 
 import io.hekate.HekateTestBase;
 import io.hekate.core.HekateConfigurationException;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.stream.Stream;
 import org.junit.Test;
+
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptySet;
+import static java.util.Collections.singleton;
 
 public class ConfigCheckTest extends HekateTestBase {
     private static final String PREFIX = "ConfigCheckTest: ";
@@ -112,12 +114,12 @@ public class ConfigCheckTest extends HekateTestBase {
     @Test
     public void testUnique() {
         expectExactMessage(HCE, PREFIX + "duplicated One [value=one]", () ->
-            check.unique("one", Collections.singleton("one"), "One")
+            check.unique("one", singleton("one"), "One")
         );
 
-        check.unique("one", Collections.emptySet(), "Success");
-        check.unique("one", Collections.singleton("two"), "Success");
-        check.unique("one", new HashSet<>(Arrays.asList("two", "three")), "Success");
+        check.unique("one", emptySet(), "Success");
+        check.unique("one", singleton("two"), "Success");
+        check.unique("one", new HashSet<>(asList("two", "three")), "Success");
     }
 
     @Test

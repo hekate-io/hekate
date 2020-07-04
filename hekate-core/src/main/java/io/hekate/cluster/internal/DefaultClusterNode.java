@@ -79,14 +79,16 @@ public class DefaultClusterNode implements Serializable, ClusterNode {
     @ToStringFormat(JoinOrderFormatter.class)
     private volatile int joinOrder;
 
-    public DefaultClusterNode(ClusterAddress address, String name, boolean localNode, int joinOrder, Set<String> roles,
-        Map<String, String> properties, Map<String, ServiceInfo> services, ClusterNodeRuntime runtime) {
-        assert address != null : "Address is null.";
-        assert roles != null : "Node roles are null.";
-        assert properties != null : "Node properties are null.";
-        assert services != null : "Node services are null.";
-        assert runtime != null : "Runtime info is null.";
-
+    public DefaultClusterNode(
+        ClusterAddress address,
+        String name,
+        boolean localNode,
+        int joinOrder,
+        Set<String> roles,
+        Map<String, String> properties,
+        Map<String, ServiceInfo> services,
+        ClusterNodeRuntime runtime
+    ) {
         this.address = address;
         this.name = name != null ? name : "";
         this.local = localNode;

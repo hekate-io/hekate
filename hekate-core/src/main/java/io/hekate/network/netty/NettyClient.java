@@ -87,8 +87,6 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
 
     @SuppressWarnings("unchecked")
     public NettyClient(NettyClientFactory<T> factory) {
-        assert factory != null : "Configuration is null.";
-
         ConfigCheck check = ConfigCheck.get(NettyClientFactory.class);
 
         check.notEmpty(factory.getProtocol(), "protocol");

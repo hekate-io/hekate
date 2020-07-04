@@ -17,10 +17,11 @@
 package io.hekate.core.internal.util;
 
 import io.hekate.HekateTestBase;
-import java.util.Collections;
 import org.junit.Test;
 
+import static io.hekate.core.internal.util.StreamUtils.nullSafe;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
@@ -29,10 +30,10 @@ import static org.junit.Assert.assertNotNull;
 public class StreamUtilsTest extends HekateTestBase {
     @Test
     public void testNullSafe() {
-        assertNotNull(StreamUtils.nullSafe(null));
-        assertNotNull(StreamUtils.nullSafe(Collections.emptyList()));
+        assertNotNull(nullSafe(null));
+        assertNotNull(nullSafe(emptyList()));
 
-        assertEquals(singletonList("non null"), StreamUtils.nullSafe(asList(null, "non null", null)).collect(toList()));
+        assertEquals(singletonList("non null"), nullSafe(asList(null, "non null", null)).collect(toList()));
     }
 
     @Test

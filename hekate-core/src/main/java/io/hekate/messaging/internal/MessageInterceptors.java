@@ -16,7 +16,6 @@
 
 package io.hekate.messaging.internal;
 
-import io.hekate.core.internal.util.StreamUtils;
 import io.hekate.messaging.intercept.ClientMessageInterceptor;
 import io.hekate.messaging.intercept.ClientReceiveContext;
 import io.hekate.messaging.intercept.ClientSendContext;
@@ -27,6 +26,8 @@ import io.hekate.messaging.intercept.ServerReceiveContext;
 import io.hekate.messaging.intercept.ServerSendContext;
 import java.util.Collection;
 
+import static io.hekate.core.internal.util.StreamUtils.nullSafe;
+
 class MessageInterceptors<T> {
     private final ClientMessageInterceptor<T>[] clients;
 
@@ -34,12 +35,12 @@ class MessageInterceptors<T> {
 
     @SuppressWarnings("unchecked")
     public MessageInterceptors(Collection<MessageInterceptor> interceptors) {
-        this.clients = StreamUtils.nullSafe(interceptors)
+        this.clients = nullSafe(interceptors)
             .filter(it -> it instanceof ClientMessageInterceptor)
             .map(it -> (ClientMessageInterceptor)it)
             .toArray(ClientMessageInterceptor[]::new);
 
-        this.servers = StreamUtils.nullSafe(interceptors)
+        this.servers = nullSafe(interceptors)
             .filter(it -> it instanceof ServerMessageInterceptor)
             .map(it -> (ServerMessageInterceptor)it)
             .toArray(ServerMessageInterceptor[]::new);

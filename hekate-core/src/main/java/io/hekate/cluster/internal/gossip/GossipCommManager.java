@@ -86,10 +86,6 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
     private final NetworkClientCallback<GossipProtocol> outboundCallback;
 
     public GossipCommManager(NetworkConnector<GossipProtocol> connector, ClusterAddress localAddress, GossipCommListener listener) {
-        assert connector != null : "Network connector is null.";
-        assert localAddress != null : "Local node address is null.";
-        assert listener != null : "Gossip communication listener is null.";
-
         this.localAddress = localAddress;
         this.connector = connector;
         this.listener = listener;

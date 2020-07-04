@@ -76,9 +76,6 @@ class DefaultDistributedLock implements DistributedLock {
     private final DefaultLockRegion region;
 
     public DefaultDistributedLock(String name, DefaultLockRegion region) {
-        assert name != null : "Name is null.";
-        assert region != null : "Lock region is null.";
-
         this.name = name;
         this.region = region;
     }

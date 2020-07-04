@@ -29,8 +29,6 @@ public class HekateNodeJmx implements HekateJmx {
     private volatile OptionalLong startTimeNanos = OptionalLong.empty();
 
     public HekateNodeJmx(Hekate hekate) {
-        assert hekate != null : "Hekate instance is null.";
-
         this.hekate = hekate;
 
         hekate.addListener(changed -> {

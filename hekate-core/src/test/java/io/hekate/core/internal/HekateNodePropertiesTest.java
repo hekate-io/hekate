@@ -17,9 +17,9 @@
 package io.hekate.core.internal;
 
 import io.hekate.HekateNodeTestBase;
-import java.util.Collections;
 import org.junit.Test;
 
+import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -32,7 +32,7 @@ public class HekateNodePropertiesTest extends HekateNodeTestBase {
             .withProperty("prop1", "val1")
             .withProperty("prop2", "val2")
             .withPropertyProvider(() ->
-                Collections.singletonMap("prop3", "val3")
+                singletonMap("prop3", "val3")
             )
         ).join();
 

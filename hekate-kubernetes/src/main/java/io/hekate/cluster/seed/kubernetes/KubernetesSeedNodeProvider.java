@@ -34,7 +34,6 @@ import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -44,6 +43,7 @@ import org.slf4j.LoggerFactory;
 
 import static io.hekate.core.internal.util.StreamUtils.nullSafe;
 import static io.hekate.core.internal.util.Utils.nullOrTrim;
+import static java.util.Arrays.asList;
 import static java.util.Collections.unmodifiableSet;
 
 /**
@@ -91,7 +91,7 @@ public class KubernetesSeedNodeProvider implements SeedNodeProvider, ConfigRepor
     private static final Logger log = LoggerFactory.getLogger(KubernetesSeedNodeProvider.class);
 
     /** Statuses of Pods that can be selected as seed nodes. */
-    private static final Set<String> ACTIVE_POD_PHASES = unmodifiableSet(new HashSet<>(Arrays.asList("Pending", "Running")));
+    private static final Set<String> ACTIVE_POD_PHASES = unmodifiableSet(new HashSet<>(asList("Pending", "Running")));
 
     /** Configuration of Fabric8.io client for Kubernetes. */
     @ToStringIgnore

@@ -39,12 +39,18 @@ import io.hekate.core.ServiceProperty;
 import io.hekate.core.service.internal.DefaultServiceInfo;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.emptySet;
+import static java.util.Collections.singleton;
+import static java.util.Collections.singletonMap;
+import static java.util.Collections.unmodifiableMap;
+import static java.util.Collections.unmodifiableSet;
 
 public class GossipProtocolCodec implements Codec<GossipProtocol> {
     private static final GossipProtocol.Type[] MESSAGE_TYPES = GossipProtocol.Type.values();
@@ -62,8 +68,6 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
     private ClusterNodeId localNodeId;
 
     public GossipProtocolCodec(AtomicReference<ClusterNodeId> localNodeIdRef) {
-        assert localNodeIdRef != null : "Local node ID is null.";
-
         this.localNodeIdRef = localNodeIdRef;
     }
 
@@ -344,9 +348,9 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
 
             GossipNodeState nodeState = decodeNodeState(seen, in);
 
-            members = Collections.singletonMap(nodeState.id(), nodeState);
+            members = singletonMap(nodeState.id(), nodeState);
 
-            seen = Collections.unmodifiableSet(seen);
+            seen = unmodifiableSet(seen);
         } else if (membersSize > 0) {
             seen = new HashSet<>(membersSize, 1.0f);
 
@@ -358,11 +362,11 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
                 members.put(nodeState.id(), nodeState);
             }
 
-            members = Collections.unmodifiableMap(members);
-            seen = Collections.unmodifiableSet(seen);
+            members = unmodifiableMap(members);
+            seen = unmodifiableSet(seen);
         } else {
-            members = Collections.emptyMap();
-            seen = Collections.emptySet();
+            members = emptyMap();
+            seen = emptySet();
         }
 
         // Removed.
@@ -410,9 +414,9 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
 
             GossipNodeInfo nodeInfo = decodeNodeInfo(seen, in);
 
-            members = Collections.singletonMap(nodeInfo.id(), nodeInfo);
+            members = singletonMap(nodeInfo.id(), nodeInfo);
 
-            seen = Collections.unmodifiableSet(seen);
+            seen = unmodifiableSet(seen);
         } else if (membersSize > 0) {
             seen = new HashSet<>(membersSize, 1.0f);
 
@@ -424,11 +428,11 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
                 members.put(nodeInfo.id(), nodeInfo);
             }
 
-            members = Collections.unmodifiableMap(members);
-            seen = Collections.unmodifiableSet(seen);
+            members = unmodifiableMap(members);
+            seen = unmodifiableSet(seen);
         } else {
-            members = Collections.emptyMap();
-            seen = Collections.emptySet();
+            members = emptyMap();
+            seen = emptySet();
         }
 
         // Removed.
@@ -635,9 +639,9 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
                 props.put(key, val);
             }
 
-            props = Collections.unmodifiableMap(props);
+            props = unmodifiableMap(props);
         } else {
-            props = Collections.emptyMap();
+            props = emptyMap();
         }
 
         // Services.
@@ -664,17 +668,17 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
                         serviceProps.put(prop.name(), prop);
                     }
 
-                    serviceProps = Collections.unmodifiableMap(serviceProps);
+                    serviceProps = unmodifiableMap(serviceProps);
                 } else {
-                    serviceProps = Collections.emptyMap();
+                    serviceProps = emptyMap();
                 }
 
                 services.put(type, new DefaultServiceInfo(type, serviceProps));
             }
 
-            services = Collections.unmodifiableMap(services);
+            services = unmodifiableMap(services);
         } else {
-            services = Collections.emptyMap();
+            services = emptyMap();
         }
 
         // System info.
@@ -778,7 +782,7 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
         int size = in.readVarIntUnsigned();
 
         if (size == 1) {
-            return Collections.singleton(CodecUtils.readNodeId(in));
+            return singleton(CodecUtils.readNodeId(in));
         } else if (size > 0) {
             Set<ClusterNodeId> set = new HashSet<>(size, 1.0f);
 
@@ -786,9 +790,9 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
                 set.add(CodecUtils.readNodeId(in));
             }
 
-            return Collections.unmodifiableSet(set);
+            return unmodifiableSet(set);
         } else {
-            return Collections.emptySet();
+            return emptySet();
         }
     }
 
@@ -808,7 +812,7 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
         int size = in.readVarIntUnsigned();
 
         if (size == 1) {
-            return Collections.singleton(readStringWithDictionary(in));
+            return singleton(readStringWithDictionary(in));
         } else if (size > 0) {
             Set<String> set = new HashSet<>(size, 1.0f);
 
@@ -816,9 +820,9 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
                 set.add(readStringWithDictionary(in));
             }
 
-            return Collections.unmodifiableSet(set);
+            return unmodifiableSet(set);
         } else {
-            return Collections.emptySet();
+            return emptySet();
         }
     }
 

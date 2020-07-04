@@ -17,10 +17,12 @@
 package io.hekate.cluster.internal.gossip;
 
 import io.hekate.cluster.ClusterNodeId;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.unmodifiableMap;
 
 public class GossipDigest extends GossipBase {
     private final long epoch;
@@ -37,10 +39,6 @@ public class GossipDigest extends GossipBase {
         Set<ClusterNodeId> removed,
         Set<ClusterNodeId> seen
     ) {
-        assert members != null : "Members map is null.";
-        assert removed != null : "Removed set is null.";
-        assert seen != null : "Seen set is null.";
-
         this.epoch = epoch;
         this.members = members;
         this.removed = removed;
@@ -48,14 +46,12 @@ public class GossipDigest extends GossipBase {
     }
 
     public GossipDigest(Gossip gossip) {
-        assert gossip != null : "Gossip is null.";
-
         Map<ClusterNodeId, GossipNodeState> members = gossip.members();
 
         Map<ClusterNodeId, GossipNodeInfo> membersInfo;
 
         if (members.isEmpty()) {
-            membersInfo = Collections.emptyMap();
+            membersInfo = emptyMap();
         } else {
             membersInfo = new HashMap<>(members.size(), 1.0f);
 
@@ -66,7 +62,7 @@ public class GossipDigest extends GossipBase {
                 membersInfo.put(id, new GossipNodeInfo(node.id(), node.status(), node.version()));
             }
 
-            membersInfo = Collections.unmodifiableMap(membersInfo);
+            membersInfo = unmodifiableMap(membersInfo);
         }
 
         this.epoch = gossip.epoch();

@@ -81,7 +81,6 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -103,8 +102,11 @@ import org.slf4j.LoggerFactory;
 
 import static io.hekate.core.internal.util.StreamUtils.nullSafe;
 import static io.hekate.util.async.AsyncUtils.shutdown;
+import static java.util.Collections.emptySet;
+import static java.util.Collections.singleton;
 import static java.util.Collections.synchronizedList;
 import static java.util.Collections.unmodifiableList;
+import static java.util.Collections.unmodifiableSet;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toSet;
 
@@ -284,7 +286,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             }
         });
 
-        return Collections.singleton(netCfg);
+        return singleton(netCfg);
     }
 
     @Override
@@ -594,7 +596,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
         guard.withReadLock(() -> {
             if (guard.isInitialized()) {
-                requireContext().cluster().addListener(listener);
+                requireContext().cluster().addListener(listener, eventTypes);
             } else {
                 deferredListeners.add(new DeferredClusterListener(listener, eventTypes));
             }
@@ -837,8 +839,6 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
     }
 
     private void process(GossipProtocol msg) {
-        assert msg != null : "Message is null.";
-
         guard.withReadLockIfInitialized(() -> {
             metrics.onGossipMessage(msg.type());
 
@@ -948,9 +948,6 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
     }
 
     private void processSendFailure(GossipProtocol msg, Throwable error) {
-        assert msg != null : "Message is null.";
-        assert error != null : "Error is null.";
-
         guard.withReadLockIfInitialized(() -> {
             if (msg.type() == GossipProtocol.Type.JOIN_REQUEST) {
                 JoinRequest request = (JoinRequest)msg;
@@ -967,8 +964,6 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
     }
 
     private void processConnectFailure(ClusterAddress address) {
-        assert address != null : "Node address is null.";
-
         guard.withReadLockIfInitialized(() ->
             failureDetector.onConnectFailure(address)
         );
@@ -991,7 +986,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
     private GossipListener createGossipListener() {
         return new GossipListener() {
             // Volatile since can be accessed by a different thread in seed node cleaner.
-            private volatile Set<InetSocketAddress> knownAddresses = Collections.emptySet();
+            private volatile Set<InetSocketAddress> knownAddresses = emptySet();
 
             @Override
             public void onJoinReject(ClusterAddress rejectedBy, String reason) {
@@ -1002,11 +997,6 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
             @Override
             public void onStatusChange(GossipNodeStatus oldStatus, GossipNodeStatus newStatus, int order, Set<ClusterNode> newTopology) {
-                assert newStatus != null : "New status is null.";
-                assert oldStatus != null : "Old status is null.";
-                assert oldStatus != newStatus : "Both old and new statuses are the same [status=" + newStatus + ']';
-                assert newTopology != null : "New topology is null.";
-
                 if (DEBUG) {
                     log.debug("Processing gossip manager status change [old={}, new={}, order={}, topology={}]",
                         oldStatus, newStatus, order, newTopology);
@@ -1033,8 +1023,6 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                         break;
                     }
                     case UP: {
-                        assert order > 0 : "Join order must be above zero [order=" + order + ']';
-
                         ctx.cluster().onJoin(order, newTopology).thenAcceptAsync(event -> {
                             if (event != null) {
                                 try {
@@ -1141,7 +1129,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             public void onKnownAddressesChange(Set<ClusterAddress> oldAddresses, Set<ClusterAddress> newAddresses) {
                 Set<InetSocketAddress> addresses = newAddresses.stream().map(ClusterAddress::socket).collect(toSet());
 
-                knownAddresses = Collections.unmodifiableSet(addresses);
+                knownAddresses = unmodifiableSet(addresses);
             }
 
             @Override

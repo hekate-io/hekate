@@ -23,11 +23,12 @@ import com.esotericsoftware.kryo.io.Output;
 import io.hekate.HekateTestBase;
 import io.hekate.codec.CodecTestBase.ObjA;
 import io.hekate.codec.CodecTestBase.ObjB;
-import java.util.Collections;
 import org.junit.Test;
 import org.objenesis.strategy.InstantiatorStrategy;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 
+import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -42,7 +43,7 @@ public class KryoCodecFactoryTest extends HekateTestBase {
     public void testKnownTypes() {
         assertNull(factory.getKnownTypes());
 
-        factory.setKnownTypes(Collections.singletonList(ObjA.class));
+        factory.setKnownTypes(singletonList(ObjA.class));
 
         assertEquals(ObjA.class, factory.getKnownTypes().get(0));
 
@@ -58,7 +59,7 @@ public class KryoCodecFactoryTest extends HekateTestBase {
 
         assertFalse(factory.getKnownTypes().contains(ObjB.class));
 
-        assertSame(factory, factory.withKnownTypes(Collections.singletonList(ObjA.class)));
+        assertSame(factory, factory.withKnownTypes(singletonList(ObjA.class)));
 
         assertNotNull(factory.createCodec());
     }
@@ -92,7 +93,7 @@ public class KryoCodecFactoryTest extends HekateTestBase {
             }
         };
 
-        factory.setSerializers(Collections.singletonMap(ObjA.class, serializer));
+        factory.setSerializers(singletonMap(ObjA.class, serializer));
 
         assertSame(serializer, factory.getSerializers().get(ObjA.class));
 
@@ -123,7 +124,7 @@ public class KryoCodecFactoryTest extends HekateTestBase {
             }
         };
 
-        factory.setDefaultSerializers(Collections.singletonMap(ObjA.class, serializer));
+        factory.setDefaultSerializers(singletonMap(ObjA.class, serializer));
 
         assertSame(serializer, factory.getDefaultSerializers().get(ObjA.class));
 

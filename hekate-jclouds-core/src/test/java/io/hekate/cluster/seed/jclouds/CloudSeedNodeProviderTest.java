@@ -23,7 +23,6 @@ import io.hekate.core.report.DefaultConfigReporter;
 import io.hekate.util.format.ToString;
 import java.net.InetSocketAddress;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -50,6 +49,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 import static io.hekate.core.internal.util.Utils.NL;
+import static java.util.Collections.singleton;
 import static org.jclouds.ContextBuilder.newBuilder;
 import static org.jclouds.compute.options.TemplateOptions.Builder.userMetadata;
 import static org.junit.Assert.assertEquals;
@@ -152,7 +152,7 @@ public class CloudSeedNodeProviderTest extends HekateTestBase {
     @Test
     public void testRegionNotMatch() throws Exception {
         CloudSeedNodeProvider provider = provider(cfg ->
-            cfg.setRegions(Collections.singleton(selectUnusedRegion()))
+            cfg.setRegions(singleton(selectUnusedRegion()))
         );
 
         assertTrue(provider.findSeedNodes("").isEmpty());

@@ -40,8 +40,6 @@ class RpcTypeAnalyzer {
     private final PlaceholderResolver resolver;
 
     public RpcTypeAnalyzer(PlaceholderResolver resolver) {
-        assert resolver != null : "String resolver is null.";
-
         this.resolver = resolver;
     }
 

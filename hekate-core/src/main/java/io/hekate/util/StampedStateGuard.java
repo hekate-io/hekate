@@ -66,8 +66,6 @@ public class StampedStateGuard {
      * @param type Type of a guarded component (for errors reporting).
      */
     public StampedStateGuard(Class<?> type) {
-        assert type != null : "Type is null.";
-
         this.type = type;
     }
 

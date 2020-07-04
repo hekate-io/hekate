@@ -34,8 +34,6 @@ class RpcProtocolCodec implements Codec<RpcProtocol> {
     private final Codec<Object> delegate;
 
     public RpcProtocolCodec(Codec<Object> delegate) {
-        assert delegate != null : "Delegate codec is null.";
-
         this.delegate = delegate;
     }
 

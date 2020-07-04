@@ -19,6 +19,7 @@ package io.hekate.cluster.event;
 import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.core.HekateSupport;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Cluster event. This is the base interface for all events that can be fired by the {@link ClusterService}.
@@ -61,4 +62,27 @@ public interface ClusterEvent extends HekateSupport {
      * @return Cluster topology.
      */
     ClusterTopology topology();
+
+    /**
+     * Attaches an arbitrary asynchronous task to this event.
+     *
+     * <p>
+     * The specified future object represents an asynchronous task that should be logically attached to this event in such a way that this
+     * event should not be considered completed until the task future is completed.
+     * </p>
+     *
+     * @param future Synchronization future.
+     *
+     * @see #future()
+     */
+    void attach(CompletableFuture<?> future);
+
+    /**
+     * Returns a future object that represents all the {@link #attach(CompletableFuture) attached} futures of this event.
+     *
+     * @return Future object that represents all the {@link #attach(CompletableFuture) attached} futures of this event.
+     *
+     * @see #attach(CompletableFuture)
+     */
+    CompletableFuture<?> future();
 }

@@ -33,7 +33,6 @@ import io.hekate.util.format.ToStringIgnore;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import org.jclouds.ContextBuilder;
@@ -50,6 +49,8 @@ import org.jclouds.logging.slf4j.config.SLF4JLoggingModule;
 import org.jclouds.rest.ResourceNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static java.util.Collections.emptyList;
 
 /**
  * Cloud store-based implementation of {@link SeedNodeProvider} interface.
@@ -238,7 +239,7 @@ public class CloudStoreSeedNodeProvider implements SeedNodeProvider, ConfigRepor
                 log.warn("Failed to load seed nodes list [container={}, cluster={}, cause={}]", container, cluster, e.toString());
             }
 
-            return Collections.emptyList();
+            return emptyList();
         } catch (HttpResponseException e) {
             if (ErrorUtils.isCausedBy(IOException.class, e)) {
                 throw new HekateException("Cloud provider connection failure [provider=" + provider + ']', e);

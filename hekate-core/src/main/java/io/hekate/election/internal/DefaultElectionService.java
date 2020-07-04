@@ -42,7 +42,6 @@ import io.hekate.util.StateGuard;
 import io.hekate.util.async.Waiting;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -54,6 +53,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static io.hekate.core.internal.util.StreamUtils.nullSafe;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 
 public class DefaultElectionService implements ElectionService, CoreService, LockConfigProvider {
@@ -118,10 +119,10 @@ public class DefaultElectionService implements ElectionService, CoreService, Loc
     @Override
     public Collection<LockRegionConfig> configureLocking() {
         if (candidateConfigs.isEmpty()) {
-            return Collections.emptyList();
+            return emptyList();
         }
 
-        return Collections.singletonList(new LockRegionConfig(ELECTION_LOCK_REGION));
+        return singletonList(new LockRegionConfig(ELECTION_LOCK_REGION));
     }
 
     @Override
@@ -235,9 +236,6 @@ public class DefaultElectionService implements ElectionService, CoreService, Loc
 
     private void registerCandidate(CandidateConfig cfg, Hekate hekate) {
         assert guard.isWriteLocked() : "Thread must hold a write lock.";
-        assert guard.isInitialized() : "Service must be initialized.";
-        assert cfg != null : "Configuration is null.";
-        assert hekate != null : "Hekate is null.";
 
         if (DEBUG) {
             log.debug("Registering new candidate [config={}]", cfg);

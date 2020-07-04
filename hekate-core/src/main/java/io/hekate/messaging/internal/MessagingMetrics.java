@@ -30,12 +30,12 @@ class MessagingMetrics {
 
     private final Counter retry;
 
-    public MessagingMetrics(String channelName, IntSupplier activeTaskSource, LongSupplier completedTaskSource, MeterRegistry metrics) {
-        assert channelName != null : "Channel name is null.";
-        assert activeTaskSource != null : "Active task source is null.";
-        assert completedTaskSource != null : "Completed task source is null.";
-        assert metrics != null : "Meter registry is null.";
-
+    public MessagingMetrics(
+        String channelName,
+        IntSupplier activeTaskSource,
+        LongSupplier completedTaskSource,
+        MeterRegistry metrics
+    ) {
         Gauge.builder("hekate.message.task.count", completedTaskSource, LongSupplier::getAsLong)
             .tag("channel", channelName)
             .register(metrics);

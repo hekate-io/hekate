@@ -28,8 +28,6 @@ class MessagingMetaData {
         private final ClusterNodeFilter delegate;
 
         public HasReceiver(String channelName, ClusterNodeFilter delegate) {
-            assert channelName != null : "Channel name is null.";
-
             this.channelName = channelName;
             this.delegate = delegate;
         }

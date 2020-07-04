@@ -51,11 +51,6 @@ class SendPressureGuard implements ConfigReportSupport {
     private boolean stopped;
 
     public SendPressureGuard(int loMark, int hiMark, MessagingOverflowPolicy policy) {
-        assert hiMark > 0 : "High watermark must be above zero.";
-        assert loMark < hiMark : "Low watermark must less than high watermark [low=" + loMark + ", high=" + hiMark + ']';
-        assert policy != null : "Policy must be not null.";
-        assert policy != MessagingOverflowPolicy.IGNORE : "Unexpected overflow policy: " + policy;
-
         this.loMark = loMark;
         this.hiMark = hiMark;
         this.policy = policy;

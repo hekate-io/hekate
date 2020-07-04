@@ -32,10 +32,6 @@ class DefaultRpcServerJmx implements RpcServerJmx {
     private final ClusterView cluster;
 
     public DefaultRpcServerJmx(RpcInterfaceInfo<?> rpcInterface, String tag, RpcServerInfo server, ClusterView cluster) {
-        assert rpcInterface != null : "RPC interface is null.";
-        assert server != null : "Server is null.";
-        assert cluster != null : "Cluster is null.";
-
         this.rpcInterface = rpcInterface;
         this.tag = tag;
         this.server = server;

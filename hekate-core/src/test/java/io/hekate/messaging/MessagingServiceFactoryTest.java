@@ -18,10 +18,11 @@ package io.hekate.messaging;
 
 import io.hekate.HekateTestBase;
 import io.hekate.messaging.intercept.MessageInterceptor;
-import java.util.Arrays;
 import java.util.Collections;
 import org.junit.Test;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -39,7 +40,7 @@ public class MessagingServiceFactoryTest extends HekateTestBase {
         MessagingChannelConfig<Object> c1 = MessagingChannelConfig.unchecked();
         MessagingChannelConfig<Object> c2 = MessagingChannelConfig.unchecked();
 
-        cfg.setChannels(Collections.singletonList(c1));
+        cfg.setChannels(singletonList(c1));
 
         assertNotNull(cfg.getChannels());
         assertTrue(cfg.getChannels().contains(c1));
@@ -63,7 +64,7 @@ public class MessagingServiceFactoryTest extends HekateTestBase {
 
         assertNull(cfg.getConfigProviders());
 
-        cfg.setConfigProviders(Arrays.asList(p1, p2));
+        cfg.setConfigProviders(asList(p1, p2));
 
         assertEquals(2, cfg.getConfigProviders().size());
         assertTrue(cfg.getConfigProviders().contains(p1));
@@ -86,7 +87,7 @@ public class MessagingServiceFactoryTest extends HekateTestBase {
 
         assertNull(cfg.getGlobalInterceptors());
 
-        cfg.setGlobalInterceptors(Arrays.asList(p1, p2));
+        cfg.setGlobalInterceptors(asList(p1, p2));
 
         assertEquals(2, cfg.getGlobalInterceptors().size());
         assertTrue(cfg.getGlobalInterceptors().contains(p1));

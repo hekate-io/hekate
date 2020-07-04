@@ -27,7 +27,6 @@ import io.hekate.network.netty.NetworkServiceFactoryForTest;
 import io.hekate.test.SeedNodeProviderMock;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -35,6 +34,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.junit.After;
 import org.junit.Before;
+
+import static java.util.Arrays.asList;
 
 public abstract class HekateNodeTestBase extends HekateTestBase {
     public interface NodeConfigurer {
@@ -102,6 +103,7 @@ public abstract class HekateNodeTestBase extends HekateTestBase {
 
         boot.setClusterName("test");
         boot.setNodeName("node-" + address.getPort() + '-' + allNodes.size());
+        boot.setConfigReport(true);
         boot.setDefaultCodec(defaultCodec());
 
         if (ctx.resources() != null) {
@@ -150,7 +152,7 @@ public abstract class HekateNodeTestBase extends HekateTestBase {
     }
 
     protected void awaitForTopology(HekateTestNode... nodes) {
-        awaitForTopology(Arrays.asList(nodes));
+        awaitForTopology(asList(nodes));
     }
 
     protected void awaitForTopology(Collection<HekateTestNode> nodes) {

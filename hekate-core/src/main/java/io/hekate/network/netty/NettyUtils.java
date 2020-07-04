@@ -55,9 +55,6 @@ public final class NettyUtils {
      * @param task Task.
      */
     public static void runAtAllCost(EventLoop eventLoop, Runnable task) {
-        assert eventLoop != null : "Event loop is null.";
-        assert task != null : "Task is null.";
-
         boolean notified = false;
 
         // Try to execute via event loop.

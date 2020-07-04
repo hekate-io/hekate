@@ -24,9 +24,9 @@ import io.hekate.core.HekateException;
 import io.hekate.core.plugin.Plugin;
 import io.hekate.test.HekateTestError;
 import io.hekate.test.HekateTestException;
-import java.util.Arrays;
 import org.junit.Test;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -228,7 +228,7 @@ public class PluginManagerTest extends HekateTestBase {
     private PluginManager createManager(Plugin... plugins) {
         HekateBootstrap boot = new HekateBootstrap();
 
-        boot.setPlugins(Arrays.asList(plugins));
+        boot.setPlugins(asList(plugins));
 
         return new PluginManager(boot);
     }

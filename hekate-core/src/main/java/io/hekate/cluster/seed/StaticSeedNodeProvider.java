@@ -27,8 +27,10 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
+
+import static java.util.Collections.emptyList;
+import static java.util.Collections.unmodifiableList;
 
 /**
  * Seed node provider with a pre-configured static list of seed node addresses.
@@ -131,10 +133,10 @@ public class StaticSeedNodeProvider implements SeedNodeProvider, ConfigReportSup
 
             result.trimToSize();
 
-            return Collections.unmodifiableList(result);
+            return unmodifiableList(result);
         }
 
-        return Collections.emptyList();
+        return emptyList();
     }
 
     @Override

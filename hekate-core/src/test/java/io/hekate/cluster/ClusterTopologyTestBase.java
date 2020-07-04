@@ -25,6 +25,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import org.junit.Test;
 
+import static java.util.Collections.emptySet;
+import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -40,7 +42,7 @@ public abstract class ClusterTopologyTestBase extends HekateTestBase {
 
     @Test
     public void testEmpty() throws Exception {
-        ClusterTopology t = newTopology(1, Collections.emptySet());
+        ClusterTopology t = newTopology(1, emptySet());
 
         assertEquals(1, t.version());
         assertEquals(HASH_SIZE, t.hash().bytes().length);
@@ -64,7 +66,7 @@ public abstract class ClusterTopologyTestBase extends HekateTestBase {
     public void testSingleLocalNode() throws Exception {
         ClusterNode n = newLocalNode(node -> node.withJoinOrder(1));
 
-        ClusterTopology t = newTopology(1, Collections.singleton(n));
+        ClusterTopology t = newTopology(1, singleton(n));
 
         assertEquals(1, t.version());
         assertEquals(HASH_SIZE, t.hash().bytes().length);
@@ -92,7 +94,7 @@ public abstract class ClusterTopologyTestBase extends HekateTestBase {
     public void testSingleRemoteNode() throws Exception {
         ClusterNode n = newNode(node -> node.withJoinOrder(1));
 
-        ClusterTopology t = newTopology(1, Collections.singleton(n));
+        ClusterTopology t = newTopology(1, singleton(n));
 
         assertEquals(1, t.version());
         assertEquals(HASH_SIZE, t.hash().bytes().length);

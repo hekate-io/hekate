@@ -33,11 +33,11 @@ import io.hekate.lock.internal.LockProtocol.UnlockRequest;
 import io.hekate.lock.internal.LockProtocol.UnlockResponse;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 
 class LockProtocolCodec implements Codec<LockProtocol> {
@@ -364,7 +364,7 @@ class LockProtocolCodec implements Codec<LockProtocol> {
         int size = in.readVarIntUnsigned();
 
         if (size == 0) {
-            return Collections.emptyList();
+            return emptyList();
         } else {
             List<LockMigrationInfo> locks = new ArrayList<>(size);
 

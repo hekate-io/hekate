@@ -25,9 +25,9 @@ import io.hekate.cluster.split.SplitBrainAction;
 import io.hekate.cluster.split.SplitBrainDetector;
 import io.hekate.core.HekateConfigurationException;
 import io.hekate.test.SeedNodeProviderMock;
-import java.util.Collections;
 import org.junit.Test;
 
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -153,7 +153,7 @@ public class ClusterServiceFactoryTest extends HekateTestBase {
             // No-op.
         };
 
-        factory.setClusterListeners(Collections.singletonList(listener));
+        factory.setClusterListeners(singletonList(listener));
 
         assertNotNull(factory.getClusterListeners());
         assertTrue(factory.getClusterListeners().contains(listener));
@@ -175,7 +175,7 @@ public class ClusterServiceFactoryTest extends HekateTestBase {
 
         ClusterAcceptor acceptor = (newNode, node) -> null;
 
-        factory.setAcceptors(Collections.singletonList(acceptor));
+        factory.setAcceptors(singletonList(acceptor));
 
         assertNotNull(factory.getAcceptors());
         assertTrue(factory.getAcceptors().contains(acceptor));

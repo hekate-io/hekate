@@ -29,6 +29,7 @@ import io.hekate.cluster.internal.DefaultClusterTopology;
 import io.hekate.core.Hekate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -80,6 +81,80 @@ public class ClusterEventManagerTest extends HekateTestBase {
     @After
     public void tearDown() throws InterruptedException {
         mgr.stop();
+    }
+
+    @Test
+    public void testFilterByEventTypeBeforeStart() throws Exception {
+        for (int i = 1; i <= 3; i++) {
+            threads.reset();
+
+            TestListener join = new TestListener();
+            TestListener change = new TestListener();
+            TestListener leave = new TestListener();
+
+            mgr.addListener(join, ClusterEventType.JOIN);
+            mgr.addListener(change, ClusterEventType.CHANGE);
+            mgr.addListener(leave, ClusterEventType.LEAVE);
+
+            mgr.start(threads);
+
+            get(mgr.fireAsync(newJoinEvent()));
+
+            assertEquals(1, join.getEvents().size());
+            assertEquals(0, change.getEvents().size());
+            assertEquals(0, leave.getEvents().size());
+
+            get(mgr.fireAsync(newChangeEvent()));
+
+            assertEquals(1, join.getEvents().size());
+            assertEquals(1, change.getEvents().size());
+            assertEquals(0, leave.getEvents().size());
+
+            get(mgr.fireAsync(newLeaveEvent()));
+
+            assertEquals(1, join.getEvents().size());
+            assertEquals(1, change.getEvents().size());
+            assertEquals(1, leave.getEvents().size());
+
+            mgr.stop();
+        }
+    }
+
+    @Test
+    public void testFilterByEventTypeAfterStart() throws Exception {
+        for (int i = 1; i <= 3; i++) {
+            threads.reset();
+
+            mgr.start(threads);
+
+            TestListener join = new TestListener();
+            TestListener change = new TestListener();
+            TestListener leave = new TestListener();
+
+            mgr.addListener(join, ClusterEventType.JOIN);
+            mgr.addListener(change, ClusterEventType.CHANGE);
+            mgr.addListener(leave, ClusterEventType.LEAVE);
+
+            get(mgr.fireAsync(newJoinEvent()));
+
+            assertEquals(1, join.getEvents().size());
+            assertEquals(0, change.getEvents().size());
+            assertEquals(0, leave.getEvents().size());
+
+            get(mgr.fireAsync(newChangeEvent()));
+
+            assertEquals(1, join.getEvents().size());
+            assertEquals(1, change.getEvents().size());
+            assertEquals(0, leave.getEvents().size());
+
+            get(mgr.fireAsync(newLeaveEvent()));
+
+            assertEquals(1, join.getEvents().size());
+            assertEquals(1, change.getEvents().size());
+            assertEquals(1, leave.getEvents().size());
+
+            mgr.stop();
+        }
     }
 
     @Test
@@ -427,6 +502,27 @@ public class ClusterEventManagerTest extends HekateTestBase {
                 assertEquals(4, listener.getEvents().size());
             }
         }
+    }
+
+    @Test
+    public void testEventSynchronization() throws Exception {
+        CompletableFuture<?> sync1 = new CompletableFuture<>();
+        CompletableFuture<?> sync2 = new CompletableFuture<>();
+        CompletableFuture<?> sync3 = new CompletableFuture<>();
+
+        mgr.addListener(event -> event.attach(sync1));
+        mgr.addListener(event -> event.attach(sync2));
+        mgr.addListener(event -> event.attach(sync3));
+
+        mgr.start(threads);
+
+        CompletableFuture<Void> future = mgr.fireAsync(newJoinEvent());
+
+        sync1.complete(null);
+        sync2.complete(null);
+        sync3.complete(null);
+
+        get(future);
     }
 
     private ClusterJoinEvent newJoinEvent() throws Exception {

@@ -24,10 +24,11 @@ import io.hekate.messaging.operation.Response;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static java.util.Collections.emptyMap;
 
 class AggregateContext<T> implements AggregateResult<T> {
     private final T request;
@@ -43,11 +44,6 @@ class AggregateContext<T> implements AggregateResult<T> {
     private Map<ClusterNode, Throwable> errors;
 
     public AggregateContext(T request, List<ClusterNode> nodes, AggregateFuture<T> future) {
-        assert request != null : "Request is null.";
-        assert nodes != null : "Node set is null.";
-        assert !nodes.isEmpty() : "Node set is empty.";
-        assert future != null : "Aggregate future is null.";
-
         this.request = request;
         this.nodes = new ArrayList<>(nodes); // Copy since node list can be modified.
         this.future = future;
@@ -69,7 +65,7 @@ class AggregateContext<T> implements AggregateResult<T> {
     @Override
     public Map<ClusterNode, Throwable> errors() {
         synchronized (this) {
-            return errors == null ? Collections.emptyMap() : errors;
+            return errors == null ? emptyMap() : errors;
         }
     }
 

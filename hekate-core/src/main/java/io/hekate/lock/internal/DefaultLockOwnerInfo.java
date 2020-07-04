@@ -26,8 +26,6 @@ public class DefaultLockOwnerInfo implements LockOwnerInfo {
     private final ClusterNode node;
 
     public DefaultLockOwnerInfo(long threadId, ClusterNode node) {
-        assert node != null : "Node is null.";
-
         this.threadId = threadId;
         this.node = node;
     }

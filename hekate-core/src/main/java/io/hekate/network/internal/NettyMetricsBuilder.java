@@ -27,8 +27,6 @@ class NettyMetricsBuilder {
     private final MeterRegistry metrics;
 
     public NettyMetricsBuilder(MeterRegistry metrics) {
-        assert metrics != null : "Metrics registry is null.";
-
         this.metrics = metrics;
     }
 

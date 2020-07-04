@@ -18,13 +18,14 @@ package io.hekate.cluster.seed;
 
 import io.hekate.core.HekateException;
 import java.net.InetSocketAddress;
-import java.util.Collections;
 import java.util.List;
+
+import static java.util.Collections.emptyList;
 
 public class SeedNodeProviderAdaptor implements SeedNodeProvider {
     @Override
     public List<InetSocketAddress> findSeedNodes(String cluster) throws HekateException {
-        return Collections.emptyList();
+        return emptyList();
     }
 
     @Override

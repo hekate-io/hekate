@@ -26,7 +26,6 @@ import io.hekate.codec.CodecFactory;
 import io.hekate.codec.CodecService;
 import io.hekate.core.internal.HekateNodeFactory;
 import io.hekate.core.internal.util.ConfigCheck;
-import io.hekate.core.internal.util.StreamUtils;
 import io.hekate.core.plugin.Plugin;
 import io.hekate.core.service.Service;
 import io.hekate.core.service.ServiceFactory;
@@ -40,6 +39,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
+
+import static io.hekate.core.internal.util.StreamUtils.nullSafe;
 
 /**
  * Main configuration and factory for {@link Hekate} instances.
@@ -459,7 +460,7 @@ public class HekateBootstrap {
      * @return Optional service factory if it was registered within this instance.
      */
     public <T extends ServiceFactory<?>> Optional<T> service(Class<T> factoryType) {
-        return StreamUtils.nullSafe(services)
+        return nullSafe(services)
             .filter(factory -> factoryType.isAssignableFrom(factory.getClass()))
             .map(factoryType::cast)
             .findFirst();
