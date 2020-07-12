@@ -31,7 +31,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static java.util.Collections.emptyList;
@@ -148,18 +147,22 @@ public final class RendezvousHashMapper extends PartitionMapperBase {
         private final ClusterTopology topology;
 
         @ToStringIgnore
-        private final AtomicReferenceArray<Partition> partitions;
+        private final Partition[] partitions;
 
         public Snapshot(int partitions, int backupSize, ClusterTopology topology) {
             super(partitions, backupSize);
 
             this.topology = topology;
-            this.partitions = new AtomicReferenceArray<>(partitions);
+            this.partitions = new Partition[partitions];
         }
 
         @Override
         public Partition partition(int pid) {
-            Partition partition = partitions.get(pid);
+            // No synchronization on partitions.
+            // ---------------------------------------------------------------------
+            // All operations are idempotent and results are immutable.
+            // Therefore, multiple threads can overwrite the same value in parallel.
+            Partition partition = partitions[pid];
 
             if (partition == null) {
                 int topologySize = topology.size();
@@ -219,7 +222,7 @@ public final class RendezvousHashMapper extends PartitionMapperBase {
                     partition = new DefaultPartition(pid, null, emptyList(), topology);
                 }
 
-                partitions.compareAndSet(pid, null, partition);
+                partitions[pid] = partition;
             }
 
             return partition;
