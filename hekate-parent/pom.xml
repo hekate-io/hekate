@@ -578,7 +578,7 @@
                     <author>false</author>
                     <detectOfflineLinks>false</detectOfflineLinks>
                     <detectJavaApiLink>true</detectJavaApiLink>
-                    <excludePackageNames>*.internal.*:*.dev.*</excludePackageNames>
+                    <excludePackageNames>*.internal:*.dev</excludePackageNames>
                     <top>
                         <!--
                             Note that 'replace-me-with-script' token will be later replaced with 'script'
