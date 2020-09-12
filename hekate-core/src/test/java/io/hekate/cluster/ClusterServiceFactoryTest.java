@@ -21,9 +21,7 @@ import io.hekate.cluster.event.ClusterEventListener;
 import io.hekate.cluster.health.FailureDetector;
 import io.hekate.cluster.health.FailureDetectorMock;
 import io.hekate.cluster.seed.SeedNodeProvider;
-import io.hekate.cluster.split.SplitBrainAction;
 import io.hekate.cluster.split.SplitBrainDetector;
-import io.hekate.core.HekateConfigurationException;
 import io.hekate.test.SeedNodeProviderMock;
 import org.junit.Test;
 
@@ -33,34 +31,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 public class ClusterServiceFactoryTest extends HekateTestBase {
     private final ClusterServiceFactory factory = new ClusterServiceFactory();
-
-    @Test
-    public void testSplitBrainAction() {
-        assertSame(SplitBrainAction.TERMINATE, factory.getSplitBrainAction());
-
-        factory.setSplitBrainAction(SplitBrainAction.REJOIN);
-
-        assertSame(SplitBrainAction.REJOIN, factory.getSplitBrainAction());
-
-        assertSame(factory, factory.withSplitBrainAction(SplitBrainAction.TERMINATE));
-
-        assertSame(SplitBrainAction.TERMINATE, factory.getSplitBrainAction());
-
-        try {
-            factory.setSplitBrainAction(null);
-
-            fail("Error was expected.");
-        } catch (HekateConfigurationException e) {
-            assertEquals(e.toString(), e.getMessage(), ClusterServiceFactory.class.getSimpleName()
-                + ": split-brain action must be not null.");
-        }
-
-        assertSame(SplitBrainAction.TERMINATE, factory.getSplitBrainAction());
-    }
 
     @Test
     public void testSplitBrainDetector() {

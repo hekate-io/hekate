@@ -505,4 +505,18 @@ public interface Hekate extends HekateSupport {
      * @return {@code true} if listener was removed or {@code false} if there is no such listener.
      */
     boolean removeListener(LifecycleListener listener);
+
+    /**
+     * Signals a fatal error.
+     *
+     * <p>
+     * This method is intended to be used by {@link Hekate} services and components (including various user-defined handlers and callbacks)
+     * in order to notify on an unrecoverable error and trigger {@link HekateFatalErrorPolicy}.
+     * </p>
+     *
+     * @param error Fatal error.
+     *
+     * @see HekateBootstrap#setFatalErrorPolicy(HekateFatalErrorPolicy)
+     */
+    void fatalError(Throwable error);
 }

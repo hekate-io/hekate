@@ -60,7 +60,7 @@ public interface InitializationContext {
     Hekate hekate();
 
     /**
-     * Instructs local node to asynchronously leave and rejoin to the cluster.
+     * Instructs local node to asynchronously terminate and rejoin to the cluster.
      */
     void rejoin();
 

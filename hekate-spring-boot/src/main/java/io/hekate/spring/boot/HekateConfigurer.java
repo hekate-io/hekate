@@ -21,6 +21,7 @@ import io.hekate.codec.CodecService;
 import io.hekate.core.Hekate;
 import io.hekate.core.Hekate.LifecycleListener;
 import io.hekate.core.HekateBootstrap;
+import io.hekate.core.HekateFatalErrorPolicy;
 import io.hekate.core.PropertyProvider;
 import io.hekate.core.plugin.Plugin;
 import io.hekate.core.service.ServiceFactory;
@@ -134,6 +135,7 @@ import org.springframework.stereotype.Component;
  * <li>{@link HekateBootstrap#setRoles(List) 'hekate.roles'}</li>
  * <li>{@link HekateBootstrap#setProperties(Map) 'hekate.properties'}</li>
  * <li>{@link HekateBootstrap#setConfigReport(boolean)} 'hekate.config-report'}</li>
+ * <li>{@link HekateBootstrap#setFatalErrorPolicy(HekateFatalErrorPolicy) 'hekate.on-fatal-error'}</li>
  * </ul>
  *
  * <h2>Deferred Cluster Joining</h2>
@@ -158,6 +160,46 @@ import org.springframework.stereotype.Component;
 @ConditionalOnMissingBean(Hekate.class)
 @ConditionalOnProperty(name = "hekate.enable", havingValue = "true", matchIfMissing = true)
 public class HekateConfigurer {
+    /**
+     * Configurer of {@link HekateFatalErrorPolicy}.
+     */
+    @Configuration
+    @ConditionalOnProperty("hekate.on-fatal-error")
+    static class FatalErrorPolicyConfigurer {
+        /**
+         * Creates {@link HekateFatalErrorPolicy#terminate()} bean.
+         *
+         * @return {@link HekateFatalErrorPolicy#terminate()} bean.
+         */
+        @Bean
+        @ConditionalOnProperty(value = "hekate.on-fatal-error", havingValue = "terminate")
+        public HekateFatalErrorPolicy hekateFatalErrorPolicyTerminate() {
+            return HekateFatalErrorPolicy.terminate();
+        }
+
+        /**
+         * Creates {@link HekateFatalErrorPolicy#rejoin()} bean.
+         *
+         * @return {@link HekateFatalErrorPolicy#rejoin()} bean.
+         */
+        @Bean
+        @ConditionalOnProperty(value = "hekate.on-fatal-error", havingValue = "rejoin")
+        public HekateFatalErrorPolicy hekateFatalErrorPolicyRejoin() {
+            return HekateFatalErrorPolicy.rejoin();
+        }
+
+        /**
+         * Creates {@link HekateFatalErrorPolicy#exitJvm()} bean.
+         *
+         * @return {@link HekateFatalErrorPolicy#exitJvm()} bean.
+         */
+        @Bean
+        @ConditionalOnProperty(value = "hekate.on-fatal-error", havingValue = "exit-jvm")
+        public HekateFatalErrorPolicy hekateFatalErrorPolicyExitJvm() {
+            return HekateFatalErrorPolicy.exitJvm();
+        }
+    }
+
     /**
      * Handler for {@link HekateSpringBootstrap#setDeferredJoin(boolean) deferred join}.
      *
@@ -188,7 +230,7 @@ public class HekateConfigurer {
         }
     }
 
-    private final CodecFactory<Object> codec;
+    private final Optional<CodecFactory<Object>> codec;
 
     private final List<ServiceFactory<?>> services;
 
@@ -200,6 +242,8 @@ public class HekateConfigurer {
 
     private final MeterRegistry metrics;
 
+    private final Optional<HekateFatalErrorPolicy> fatalErrorPolicy;
+
     /**
      * Constructs new instance with autowired dependencies.
      *
@@ -209,6 +253,7 @@ public class HekateConfigurer {
      * @param listeners All {@link LifecycleListener}s found in the application context.
      * @param metrics Metrics registry.
      * @param codec Default codec factory.
+     * @param fatalErrorPolicy Fatal error handling policy.
      */
     public HekateConfigurer(
         Optional<List<PropertyProvider>> propertyProviders,
@@ -216,14 +261,16 @@ public class HekateConfigurer {
         Optional<List<Plugin>> plugins,
         Optional<List<LifecycleListener>> listeners,
         Optional<MeterRegistry> metrics,
+        Optional<HekateFatalErrorPolicy> fatalErrorPolicy,
         @Qualifier("default") Optional<CodecFactory<Object>> codec
     ) {
         this.services = services.orElse(null);
         this.plugins = plugins.orElse(null);
         this.propertyProviders = propertyProviders.orElse(null);
         this.listeners = listeners.orElse(null);
-        this.codec = codec.orElse(null);
+        this.codec = codec;
         this.metrics = metrics.orElse(null);
+        this.fatalErrorPolicy = fatalErrorPolicy;
     }
 
     /**
@@ -252,9 +299,8 @@ public class HekateConfigurer {
         boot.setLifecycleListeners(listeners);
         boot.setMetrics(metrics);
 
-        if (codec != null) {
-            boot.setDefaultCodec(codec);
-        }
+        codec.ifPresent(boot::setDefaultCodec);
+        fatalErrorPolicy.ifPresent(boot::setFatalErrorPolicy);
 
         return boot;
     }

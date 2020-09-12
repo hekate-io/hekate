@@ -18,8 +18,8 @@ package io.hekate.cluster.internal;
 
 import io.hekate.HekateTestBase;
 import io.hekate.HekateTestContext;
-import io.hekate.cluster.ClusterJoinRejectedException;
 import io.hekate.cluster.ClusterNode;
+import io.hekate.cluster.ClusterRejectedJoinException;
 import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.cluster.ClusterView;
@@ -33,6 +33,7 @@ import io.hekate.cluster.internal.gossip.GossipProtocol;
 import io.hekate.cluster.internal.gossip.GossipSpyAdaptor;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateException;
+import io.hekate.core.HekateFatalErrorPolicy;
 import io.hekate.core.JoinFuture;
 import io.hekate.core.LeaveFuture;
 import io.hekate.core.TerminateFuture;
@@ -974,7 +975,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
             fail("Error was expected.");
         } catch (HekateException e) {
-            ClusterJoinRejectedException cause = e.findCause(ClusterJoinRejectedException.class);
+            ClusterRejectedJoinException cause = e.findCause(ClusterRejectedJoinException.class);
 
             assertEquals(rejectReason, cause.rejectReason());
             assertEquals(existing.localNode().address(), cause.rejectedBy());
@@ -986,17 +987,17 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
     @Test
     public void testJoinRejectLoopback() throws Exception {
         HekateTestNode existing = createNode(c ->
-            c.withService(NetworkServiceFactory.class, net -> {
-                net.setHost("any-ip4");
-            })
+            c.withService(NetworkServiceFactory.class, net ->
+                net.withHost("any-ip4")
+            )
         );
 
         existing.join();
 
         HekateTestNode joining = createNode(c ->
-            c.withService(NetworkServiceFactory.class, net -> {
-                net.setHost("127.0.0.1");
-            })
+            c.withService(NetworkServiceFactory.class, net ->
+                net.withHost("127.0.0.1")
+            )
         );
 
         try {
@@ -1007,7 +1008,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
             String reason = "Cluster is configured with non-loopback addresses while node is configured to use a loopback address "
                 + "[rejected-by=" + existing.localNode().address() + ']';
 
-            ClusterJoinRejectedException cause = e.findCause(ClusterJoinRejectedException.class);
+            ClusterRejectedJoinException cause = e.findCause(ClusterRejectedJoinException.class);
 
             assertEquals(reason, cause.rejectReason());
             assertEquals(existing.localNode().address(), cause.rejectedBy());
@@ -1019,17 +1020,17 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
     @Test
     public void testJoinRejectNonLoopback() throws Exception {
         HekateTestNode existing = createNode(c ->
-            c.withService(NetworkServiceFactory.class, net -> {
-                net.setHost("127.0.0.1");
-            })
+            c.withService(NetworkServiceFactory.class, net ->
+                net.withHost("127.0.0.1")
+            )
         );
 
         existing.join();
 
         HekateTestNode joining = createNode(c ->
-            c.withService(NetworkServiceFactory.class, net -> {
-                net.setHost("any-ip4");
-            })
+            c.withService(NetworkServiceFactory.class, net ->
+                net.withHost("any-ip4")
+            )
         );
 
         try {
@@ -1040,7 +1041,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
             String reason = "Cluster is configured with loopback addresses while node is configured to use a non-loopback address "
                 + "[rejected-by=" + existing.localNode().address() + ']';
 
-            ClusterJoinRejectedException cause = e.findCause(ClusterJoinRejectedException.class);
+            ClusterRejectedJoinException cause = e.findCause(ClusterRejectedJoinException.class);
 
             assertEquals(reason, cause.rejectReason());
             assertEquals(existing.localNode().address(), cause.rejectedBy());
@@ -1150,7 +1151,9 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
 
             get(coordinator.joinAsync());
 
-            HekateTestNode joining = createNode();
+            HekateTestNode joining = createNode(c ->
+                c.withFatalErrorPolicy(HekateFatalErrorPolicy.rejoin())
+            );
 
             AtomicInteger inconsistencies = new AtomicInteger();
 

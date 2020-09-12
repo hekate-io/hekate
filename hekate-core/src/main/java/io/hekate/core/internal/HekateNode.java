@@ -36,6 +36,8 @@ import io.hekate.coordinate.CoordinationService;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.HekateException;
+import io.hekate.core.HekateFatalErrorContext;
+import io.hekate.core.HekateFatalErrorPolicy;
 import io.hekate.core.HekateJmx;
 import io.hekate.core.HekateVersion;
 import io.hekate.core.InitializationFuture;
@@ -147,6 +149,8 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
 
     private final HekateLifecycle lifecycle = new HekateLifecycle(this);
 
+    private final HekateFatalErrorPolicy fatalErrorPolicy;
+
     private volatile DefaultClusterTopology topology;
 
     private volatile ScheduledExecutorService sysWorker;
@@ -174,9 +178,12 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
         check.notNull(boot.getDefaultCodec(), "default codec");
         check.isFalse(boot.getDefaultCodec().createCodec().isStateful(), "default codec can't be stateful.");
 
+        check.notNull(boot.getFatalErrorPolicy(), "fatal error policy");
+
         // Basic properties.
         this.name = boot.getNodeName() != null ? boot.getNodeName().trim() : "";
         this.clusterName = boot.getClusterName().trim();
+        this.fatalErrorPolicy = boot.getFatalErrorPolicy();
         this.report = boot.isConfigReport();
 
         // Node roles.
@@ -541,6 +548,31 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
     }
 
     @Override
+    public void fatalError(Throwable error) {
+        fatalErrorPolicy.handleFatalError(error, new HekateFatalErrorContext() {
+            @Override
+            public void rejoin() {
+                doTerminateAsync(true, ClusterLeaveReason.FATAL_ERROR, error);
+            }
+
+            @Override
+            public void terminate() {
+                doTerminateAsync(false, ClusterLeaveReason.FATAL_ERROR, error);
+            }
+
+            @Override
+            public Hekate hekate() {
+                return HekateNode.this;
+            }
+
+            @Override
+            public String toString() {
+                return HekateFatalErrorContext.class.getSimpleName() + "[cause=" + error + ']';
+            }
+        });
+    }
+
+    @Override
     public Hekate hekate() {
         return this;
     }
@@ -732,12 +764,12 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
 
             @Override
             public void rejoin() {
-                doTerminateAsync(true, ClusterLeaveReason.SPLIT_BRAIN, null);
+                doTerminateAsync(true, ClusterLeaveReason.FATAL_ERROR, null);
             }
 
             @Override
             public void terminate() {
-                doTerminateAsync(ClusterLeaveReason.SPLIT_BRAIN);
+                doTerminateAsync(ClusterLeaveReason.FATAL_ERROR);
             }
 
             @Override
@@ -977,7 +1009,7 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
             }
         } else {
             if (log.isErrorEnabled()) {
-                log.error("Terminating because of an unrecoverable error.", cause);
+                log.error("Terminating because of a fatal error.", cause);
             }
         }
 

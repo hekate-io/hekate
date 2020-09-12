@@ -19,9 +19,9 @@ package io.hekate.cluster.internal;
 import io.hekate.cluster.ClusterAcceptor;
 import io.hekate.cluster.ClusterAddress;
 import io.hekate.cluster.ClusterFilter;
-import io.hekate.cluster.ClusterJoinRejectedException;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeId;
+import io.hekate.cluster.ClusterRejectedJoinException;
 import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.cluster.ClusterServiceJmx;
@@ -49,7 +49,6 @@ import io.hekate.cluster.internal.gossip.GossipProtocol.UpdateBase;
 import io.hekate.cluster.internal.gossip.GossipProtocolCodec;
 import io.hekate.cluster.seed.SeedNodeProvider;
 import io.hekate.cluster.seed.multicast.MulticastSeedNodeProvider;
-import io.hekate.cluster.split.SplitBrainAction;
 import io.hekate.cluster.split.SplitBrainDetector;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
@@ -58,7 +57,6 @@ import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
-import io.hekate.core.internal.util.Jvm;
 import io.hekate.core.jmx.JmxService;
 import io.hekate.core.jmx.JmxSupport;
 import io.hekate.core.report.ConfigReporter;
@@ -180,7 +178,6 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
         check.notNull(factory, "configuration");
         check.positive(factory.getGossipInterval(), "gossip interval");
         check.notNull(factory.getFailureDetector(), "failure detector");
-        check.notNull(factory.getSplitBrainAction(), "split-brain action");
 
         // Basic properties.
         this.gossipInterval = factory.getGossipInterval();
@@ -209,7 +206,6 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
         // Split-brain manager.
         splitBrain = new SplitBrainManager(
-            factory.getSplitBrainAction(),
             factory.getSplitBrainCheckInterval(),
             factory.getSplitBrainDetector()
         );
@@ -351,27 +347,11 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             });
 
             // Prepare split-brain manager.
-            splitBrain.initialize(localNode, serviceThread, new SplitBrainManager.Callback() {
-                @Override
-                public void rejoin() {
-                    initCtx.rejoin();
-                }
-
-                @Override
-                public void terminate() {
-                    initCtx.terminate();
-                }
-
-                @Override
-                public void kill() {
-                    Jvm.exit(250);
-                }
-
-                @Override
-                public void error(Throwable t) {
-                    fatalError(t);
-                }
-            });
+            splitBrain.initialize(
+                localNode,
+                serviceThread,
+                this::onFatalError
+            );
 
             // Prepare metrics sink.
             metrics = new ClusterMetricsSink(ctx.metrics());
@@ -511,9 +491,9 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
     @Override
     public void leaveAsync() {
-        guard.withReadLockIfInitialized(() -> {
-            runOnGossipThread(this::doLeave);
-        });
+        guard.withReadLockIfInitialized(() ->
+            runOnGossipThread(this::doLeave)
+        );
     }
 
     @Override
@@ -727,10 +707,6 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
         return splitBrain.detector();
     }
 
-    public SplitBrainAction splitBrainAction() {
-        return splitBrain.action();
-    }
-
     public List<ClusterAcceptor> acceptors() {
         return unmodifiableList(acceptors);
     }
@@ -765,7 +741,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             }
 
             // Schedule the asynchronous join task.
-            joinTask = scheduleOn(serviceThread, DefaultClusterService.this::doJoin, 0, gossipInterval);
+            joinTask = scheduleOn(serviceThread, 0, gossipInterval, DefaultClusterService.this::doJoin);
         });
     }
 
@@ -908,7 +884,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                                     send(reply);
                                 });
                             } catch (Throwable e) {
-                                fatalError(e);
+                                onFatalError(e);
                             }
                         }, gossipThread);
                     } else {
@@ -991,7 +967,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             @Override
             public void onJoinReject(ClusterAddress rejectedBy, String reason) {
                 if (ctx.state() == Hekate.State.JOINING) {
-                    ctx.terminate(new ClusterJoinRejectedException(reason, rejectedBy));
+                    ctx.terminate(new ClusterRejectedJoinException(reason, rejectedBy));
                 }
             }
 
@@ -1038,7 +1014,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                                         startPeriodicSplitBrainChecks();
                                     });
                                 } catch (Throwable e) {
-                                    fatalError(e);
+                                    onFatalError(e);
                                 }
                             }
                         }, gossipThread);
@@ -1118,7 +1094,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                                     splitBrain.checkAsync();
                                 }
                             } catch (Throwable e) {
-                                fatalError(e);
+                                onFatalError(e);
                             }
                         });
                     }
@@ -1179,7 +1155,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                     case JOINING:
                     case SYNCHRONIZING:
                     case UP: {
-                        splitBrain.applyAction();
+                        splitBrain.notifyOnSplitBrain();
 
                         break;
                     }
@@ -1215,10 +1191,8 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
             private void startPeriodicSplitBrainChecks() {
                 if (splitBrain.hasDetector() && splitBrain.checkInterval() > 0) {
-                    scheduleOn(
-                        serviceThread,
-                        () -> guard.withReadLockIfInitialized(splitBrain::checkAsync),
-                        0, splitBrain.checkInterval()
+                    scheduleOn(serviceThread, 0, splitBrain.checkInterval(), () ->
+                        guard.withReadLockIfInitialized(splitBrain::checkAsync)
                     );
                 }
             }
@@ -1272,7 +1246,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             try {
                 task.run();
             } catch (Throwable e) {
-                fatalError(e);
+                onFatalError(e);
             }
         });
     }
@@ -1282,32 +1256,30 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             try {
                 task.run();
             } catch (Throwable e) {
-                fatalError(e);
+                onFatalError(e);
             }
         });
     }
 
     private ScheduledFuture<?> scheduleOn(ScheduledExecutorService executor, Runnable task, long intervalMs) {
-        return scheduleOn(executor, task, intervalMs, intervalMs);
+        return scheduleOn(executor, intervalMs, intervalMs, task);
     }
 
-    private ScheduledFuture<?> scheduleOn(ScheduledExecutorService executor, Runnable task, long delay, long intervalMs) {
+    private ScheduledFuture<?> scheduleOn(ScheduledExecutorService executor, long delay, long intervalMs, Runnable task) {
         return executor.scheduleWithFixedDelay(() -> {
             try {
                 task.run();
             } catch (Throwable e) {
-                fatalError(e);
+                onFatalError(e);
             }
         }, delay, intervalMs, TimeUnit.MILLISECONDS);
     }
 
-    private void fatalError(Throwable e) {
-        log.error("Got an unexpected error.", e);
-
+    private void onFatalError(Throwable e) {
         InitializationContext localCtx = this.ctx;
 
         if (localCtx != null) {
-            localCtx.terminate(e);
+            localCtx.hekate().fatalError(e);
         }
     }
 

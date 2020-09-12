@@ -27,7 +27,6 @@ import io.hekate.cluster.seed.SeedNodeProvider;
 import io.hekate.cluster.seed.SeedNodeProviderGroup;
 import io.hekate.cluster.seed.SeedNodeProviderGroupConfig;
 import io.hekate.cluster.seed.SeedNodeProviderGroupPolicy;
-import io.hekate.cluster.split.SplitBrainAction;
 import io.hekate.cluster.split.SplitBrainDetector;
 import io.hekate.core.Hekate;
 import io.hekate.spring.bean.cluster.ClusterServiceBean;
@@ -70,7 +69,6 @@ import org.springframework.context.annotation.Lazy;
  * <ul>
  * <li>{@link ClusterServiceFactory#setGossipInterval(long) 'hekate.cluster.gossip-interval'}</li>
  * <li>{@link ClusterServiceFactory#setSpeedUpGossipSize(int) 'hekate.cluster.speed-up-gossip-size'}</li>
- * <li>{@link ClusterServiceFactory#setSplitBrainAction(SplitBrainAction) 'hekate.cluster.split-brain-action'}</li>
  * <li>{@link ClusterServiceFactory#setSplitBrainCheckInterval(long)} 'hekate.cluster.split-brain-check-interval'}</li>
  * </ul>
  *

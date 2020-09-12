@@ -14,22 +14,21 @@
  * under the License.
  */
 
-package io.hekate.cluster.event;
-
-import io.hekate.core.Hekate;
+package io.hekate.core;
 
 /**
- * Reason of a {@link ClusterLeaveEvent}.
+ * Context of {@link HekateFatalErrorPolicy}.
  *
- * @see ClusterLeaveEvent#reason()
+ * @see HekateBootstrap#setFatalErrorPolicy(HekateFatalErrorPolicy) 
  */
-public enum ClusterLeaveReason {
-    /** Leaving because of the {@link Hekate#leave()} method call. */
-    LEAVE,
+public interface HekateFatalErrorContext extends HekateSupport {
+    /**
+     * Triggers asynchronous termination and rejoining of {@link Hekate} node.
+     */
+    void rejoin();
 
-    /** Leaving because of the {@link Hekate#terminate()} method call. */
-    TERMINATE,
-
-    /** Leaving because of an unrecoverable error. */
-    FATAL_ERROR
+    /**
+     * Triggers asynchronous termination of {@link Hekate} node.
+     */
+    void terminate();
 }

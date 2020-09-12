@@ -25,7 +25,6 @@ import io.hekate.cluster.health.DefaultFailureDetector;
 import io.hekate.cluster.internal.DefaultClusterService;
 import io.hekate.cluster.seed.jdbc.JdbcSeedNodeProvider;
 import io.hekate.cluster.split.HostReachabilityDetector;
-import io.hekate.cluster.split.SplitBrainAction;
 import io.hekate.cluster.split.SplitBrainDetectorGroup;
 import io.hekate.codec.CodecService;
 import io.hekate.codec.fst.FstCodecFactory;
@@ -204,8 +203,6 @@ public class XsdSingleNodeTest extends HekateTestBase {
         assertEquals(501, detector.heartbeatInterval());
         assertEquals(5, detector.heartbeatLossThreshold());
         assertEquals(3, detector.failureQuorum());
-
-        assertSame(SplitBrainAction.TERMINATE, cluster.splitBrainAction());
 
         SplitBrainDetectorGroup splitBrain = (SplitBrainDetectorGroup)cluster.splitBrainDetector();
 

@@ -19,13 +19,12 @@ package io.hekate.cluster.internal;
 import io.hekate.HekateTestContext;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeId;
-import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.cluster.event.ClusterEvent;
 import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.cluster.event.ClusterLeaveReason;
 import io.hekate.cluster.internal.gossip.GossipNodeStatus;
 import io.hekate.cluster.internal.gossip.GossipSpyAdaptor;
-import io.hekate.cluster.split.SplitBrainAction;
+import io.hekate.core.HekateFatalErrorPolicy;
 import io.hekate.core.LeaveFuture;
 import io.hekate.core.TerminateFuture;
 import io.hekate.core.internal.HekateTestNode;
@@ -59,7 +58,9 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
     public void testRejoinAfterHanged() throws Exception {
         disableNodeFailurePostCheck();
 
-        List<HekateTestNode> nodes = createNodes(3);
+        List<HekateTestNode> nodes = createNodes(3, c ->
+            c.withFatalErrorPolicy(HekateFatalErrorPolicy.rejoin())
+        );
 
         repeat(3, i -> {
             for (HekateTestNode node : nodes) {
@@ -128,7 +129,7 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
                 assertEquals(events.toString(), 2, events.size());
                 assertSame(ClusterEventType.JOIN, events.get(0).type());
                 assertSame(ClusterEventType.LEAVE, events.get(1).type());
-                assertSame(ClusterLeaveReason.SPLIT_BRAIN, events.get(1).asLeave().reason());
+                assertSame(ClusterLeaveReason.FATAL_ERROR, events.get(1).asLeave().reason());
 
                 hanged.stopRecording();
                 hanged.clearEvents();
@@ -295,7 +296,7 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
                 assertEquals(events.toString(), 2, events.size());
                 assertSame(ClusterEventType.JOIN, events.get(0).type());
                 assertSame(ClusterEventType.LEAVE, events.get(1).type());
-                assertSame(ClusterLeaveReason.SPLIT_BRAIN, events.get(1).asLeave().reason());
+                assertSame(ClusterLeaveReason.FATAL_ERROR, events.get(1).asLeave().reason());
 
                 hanged.stopRecording();
                 hanged.clearEvents();
@@ -375,7 +376,7 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
                 assertEquals(events.toString(), 2, events.size());
                 assertSame(ClusterEventType.JOIN, events.get(0).type());
                 assertSame(ClusterEventType.LEAVE, events.get(1).type());
-                assertSame(ClusterLeaveReason.SPLIT_BRAIN, events.get(1).asLeave().reason());
+                assertSame(ClusterLeaveReason.FATAL_ERROR, events.get(1).asLeave().reason());
 
                 hanged.stopRecording();
                 hanged.clearEvents();
@@ -449,7 +450,7 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
         disableNodeFailurePostCheck();
 
         List<HekateTestNode> nodes = createNodes(3, c ->
-            c.service(ClusterServiceFactory.class).get().setSplitBrainAction(SplitBrainAction.TERMINATE)
+            c.setFatalErrorPolicy(HekateFatalErrorPolicy.terminate())
         );
 
         repeat(3, i -> {
@@ -509,7 +510,7 @@ public class ClusterServiceRejoinTest extends ClusterServiceMultipleNodesTestBas
             assertEquals(events.toString(), 2, events.size());
             assertSame(ClusterEventType.JOIN, events.get(0).type());
             assertSame(ClusterEventType.LEAVE, events.get(1).type());
-            assertSame(ClusterLeaveReason.SPLIT_BRAIN, events.get(1).asLeave().reason());
+            assertSame(ClusterLeaveReason.FATAL_ERROR, events.get(1).asLeave().reason());
 
             hanged.stopRecording();
             hanged.clearEvents();

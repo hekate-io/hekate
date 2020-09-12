@@ -17,7 +17,7 @@
 package io.hekate.cluster.internal;
 
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.split.SplitBrainAction;
+import io.hekate.cluster.ClusterSplitBrainException;
 import io.hekate.cluster.split.SplitBrainDetector;
 import io.hekate.core.report.ConfigReportSupport;
 import io.hekate.core.report.ConfigReporter;
@@ -30,14 +30,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 class SplitBrainManager implements ConfigReportSupport {
-    interface Callback {
-        void rejoin();
-
-        void terminate();
-
-        void kill();
-
-        void error(Throwable t);
+    interface ErrorCallback {
+        void onError(Throwable error);
     }
 
     private static final Logger log = LoggerFactory.getLogger(SplitBrainManager.class);
@@ -45,8 +39,6 @@ class SplitBrainManager implements ConfigReportSupport {
     private static final boolean DEBUG = log.isDebugEnabled();
 
     private final long checkInterval;
-
-    private final SplitBrainAction action;
 
     private final SplitBrainDetector detector;
 
@@ -57,26 +49,24 @@ class SplitBrainManager implements ConfigReportSupport {
     private final AtomicBoolean active = new AtomicBoolean();
 
     @ToStringIgnore
-    private final AtomicBoolean actionApplied = new AtomicBoolean();
+    private final AtomicBoolean splitBrainNotified = new AtomicBoolean();
 
     @ToStringIgnore
     private ClusterNode localNode;
 
     @ToStringIgnore
-    private Callback callback;
+    private ErrorCallback callback;
 
     @ToStringIgnore
     private Executor async;
 
-    public SplitBrainManager(SplitBrainAction action, long checkInterval, SplitBrainDetector detector) {
-        this.detector = detector;
+    public SplitBrainManager(long checkInterval, SplitBrainDetector detector) {
         this.checkInterval = checkInterval;
-        this.action = action;
+        this.detector = detector;
     }
 
     @Override
     public void report(ConfigReporter report) {
-        report.value("action", action);
         report.value("check-interval", checkInterval);
         report.value("detector", detector);
     }
@@ -93,16 +83,12 @@ class SplitBrainManager implements ConfigReportSupport {
         return detector;
     }
 
-    public SplitBrainAction action() {
-        return action;
-    }
-
-    public void initialize(ClusterNode localNode, Executor async, Callback callback) {
+    public void initialize(ClusterNode localNode, Executor async, ErrorCallback callback) {
         guard.becomeInitialized(() -> {
             this.localNode = localNode;
             this.async = async;
             this.callback = callback;
-            this.actionApplied.set(false);
+            this.splitBrainNotified.set(false);
         });
     }
 
@@ -134,19 +120,19 @@ class SplitBrainManager implements ConfigReportSupport {
                     runAsync(() -> {
                         try {
                             guard.withReadLockIfInitialized(() -> {
-                                if (!actionApplied.get()) {
+                                if (!splitBrainNotified.get()) {
                                     if (DEBUG) {
                                         log.debug("Checking for cluster split-brain [detector={}]", detector);
                                     }
 
                                     if (!detector.isValid(localNode)) {
-                                        // Make sure that we apply action only once.
-                                        if (actionApplied.compareAndSet(false, true)) {
+                                        // Make sure that we notify only once.
+                                        if (splitBrainNotified.compareAndSet(false, true)) {
                                             if (log.isWarnEnabled()) {
-                                                log.warn("Split-brain detected.");
+                                                log.warn("Cluster split-brain detected.");
                                             }
 
-                                            applyAction();
+                                            notifyOnSplitBrain();
                                         }
                                     }
                                 }
@@ -160,41 +146,10 @@ class SplitBrainManager implements ConfigReportSupport {
         }
     }
 
-    public void applyAction() {
-        guard.withReadLockIfInitialized(() -> {
-            switch (action) {
-                case REJOIN: {
-                    if (log.isWarnEnabled()) {
-                        log.warn("Rejoining due to inconsistency of the cluster state.");
-                    }
-
-                    callback.rejoin();
-
-                    break;
-                }
-                case TERMINATE: {
-                    if (log.isErrorEnabled()) {
-                        log.error("Terminating due to inconsistency of the cluster state.");
-                    }
-
-                    callback.terminate();
-
-                    break;
-                }
-                case KILL_JVM: {
-                    if (log.isErrorEnabled()) {
-                        log.error("Killing the JVM due to inconsistency of the cluster state.");
-                    }
-
-                    callback.kill();
-
-                    break;
-                }
-                default: {
-                    throw new IllegalArgumentException("Unexpected policy: " + action);
-                }
-            }
-        });
+    public void notifyOnSplitBrain() {
+        guard.withReadLockIfInitialized(() ->
+            callback.onError(new ClusterSplitBrainException("Inconsistent cluster state."))
+        );
     }
 
     private void runAsync(Runnable task) {
@@ -202,7 +157,7 @@ class SplitBrainManager implements ConfigReportSupport {
             try {
                 task.run();
             } catch (Throwable e) {
-                callback.error(e);
+                callback.onError(e);
             }
         });
     }

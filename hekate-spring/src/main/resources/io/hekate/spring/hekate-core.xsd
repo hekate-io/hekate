@@ -989,32 +989,6 @@
                 </xsd:annotation>
             </xsd:element>
         </xsd:sequence>
-        <xsd:attribute name="action">
-            <xsd:annotation>
-                <xsd:documentation>
-                    See javadoc of
-                    'io.hekate.cluster.ClusterServiceFactory#setSplitBrainAction(io.hekate.cluster.split.SplitBrainAction)'.
-                </xsd:documentation>
-            </xsd:annotation>
-            <xsd:simpleType>
-                <xsd:restriction base="xsd:string">
-                    <xsd:enumeration value="TERMINATE">
-                        <xsd:annotation>
-                            <xsd:documentation>
-                                See javadoc of 'io.hekate.cluster.split.SplitBrainAction#TERMINATE'.
-                            </xsd:documentation>
-                        </xsd:annotation>
-                    </xsd:enumeration>
-                    <xsd:enumeration value="REJOIN">
-                        <xsd:annotation>
-                            <xsd:documentation>
-                                See javadoc of 'io.hekate.cluster.split.SplitBrainAction#REJOIN'.
-                            </xsd:documentation>
-                        </xsd:annotation>
-                    </xsd:enumeration>
-                </xsd:restriction>
-            </xsd:simpleType>
-        </xsd:attribute>
         <xsd:attribute name="check-interval-ms" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation>

@@ -17,8 +17,8 @@
 package io.hekate.cluster.internal;
 
 import io.hekate.HekateTestBase;
-import io.hekate.cluster.internal.SplitBrainManager.Callback;
-import io.hekate.cluster.split.SplitBrainAction;
+import io.hekate.cluster.ClusterSplitBrainException;
+import io.hekate.cluster.internal.SplitBrainManager.ErrorCallback;
 import io.hekate.cluster.split.SplitBrainDetector;
 import io.hekate.util.format.ToString;
 import java.util.concurrent.Executor;
@@ -27,7 +27,6 @@ import org.mockito.ArgumentCaptor;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -41,10 +40,10 @@ import static org.mockito.Mockito.when;
 public class SplitBrainManagerTest extends HekateTestBase {
     @Test
     public void testInitTerminate() throws Exception {
-        SplitBrainManager mgr = new SplitBrainManager(SplitBrainAction.TERMINATE, 0, null);
+        SplitBrainManager mgr = new SplitBrainManager(0, null);
 
         for (int i = 0; i < 5; i++) {
-            mgr.initialize(newNode(), mock(Executor.class), mock(Callback.class));
+            mgr.initialize(newNode(), mock(Executor.class), mock(ErrorCallback.class));
 
             mgr.terminate();
         }
@@ -52,65 +51,36 @@ public class SplitBrainManagerTest extends HekateTestBase {
 
     @Test
     public void testNoDetector() throws Exception {
-        Callback callback = mock(Callback.class);
+        ErrorCallback callback = mock(ErrorCallback.class);
 
-        SplitBrainManager mgr = new SplitBrainManager(SplitBrainAction.TERMINATE, 0, null);
+        SplitBrainManager mgr = new SplitBrainManager(0, null);
 
         mgr.initialize(newNode(), mock(Executor.class), callback);
 
-        assertSame(SplitBrainAction.TERMINATE, mgr.action());
         assertNull(mgr.detector());
         assertTrue(mgr.check());
     }
 
     @Test
-    public void testApplyActionRejoin() throws Exception {
-        Callback callback = mock(Callback.class);
+    public void testNotifyCallback() throws Exception {
+        ErrorCallback callback = mock(ErrorCallback.class);
 
-        SplitBrainManager mgr = new SplitBrainManager(SplitBrainAction.REJOIN, 0, null);
-
-        mgr.initialize(newNode(), mock(Executor.class), callback);
-
-        mgr.applyAction();
-
-        verify(callback).rejoin();
-        verifyNoMoreInteractions(callback);
-    }
-
-    @Test
-    public void testApplyActionTerminate() throws Exception {
-        Callback callback = mock(Callback.class);
-
-        SplitBrainManager mgr = new SplitBrainManager(SplitBrainAction.TERMINATE, 0, null);
+        SplitBrainManager mgr = new SplitBrainManager(0, null);
 
         mgr.initialize(newNode(), mock(Executor.class), callback);
 
-        mgr.applyAction();
+        mgr.notifyOnSplitBrain();
 
-        verify(callback).terminate();
-        verifyNoMoreInteractions(callback);
-    }
-
-    @Test
-    public void testApplyActionKillJvm() throws Exception {
-        Callback callback = mock(Callback.class);
-
-        SplitBrainManager mgr = new SplitBrainManager(SplitBrainAction.KILL_JVM, 0, null);
-
-        mgr.initialize(newNode(), mock(Executor.class), callback);
-
-        mgr.applyAction();
-
-        verify(callback).kill();
+        verify(callback).onError(any(ClusterSplitBrainException.class));
         verifyNoMoreInteractions(callback);
     }
 
     @Test
     public void testCheckAsync() throws Exception {
         SplitBrainDetector detector = mock(SplitBrainDetector.class);
-        Callback callback = mock(Callback.class);
+        ErrorCallback callback = mock(ErrorCallback.class);
 
-        SplitBrainManager mgr = new SplitBrainManager(SplitBrainAction.TERMINATE, 0, detector);
+        SplitBrainManager mgr = new SplitBrainManager(0, detector);
 
         mgr.initialize(newNode(), Runnable::run, callback);
 
@@ -118,15 +88,15 @@ public class SplitBrainManagerTest extends HekateTestBase {
 
         mgr.checkAsync();
 
-        verify(callback).terminate();
+        verify(callback).onError(any(ClusterSplitBrainException.class));
     }
 
     @Test
     public void testCheckAsyncError() throws Exception {
         SplitBrainDetector detector = mock(SplitBrainDetector.class);
-        Callback callback = mock(Callback.class);
+        ErrorCallback callback = mock(ErrorCallback.class);
 
-        SplitBrainManager mgr = new SplitBrainManager(SplitBrainAction.TERMINATE, 0, detector);
+        SplitBrainManager mgr = new SplitBrainManager(0, detector);
 
         mgr.initialize(newNode(), Runnable::run, callback);
 
@@ -134,17 +104,17 @@ public class SplitBrainManagerTest extends HekateTestBase {
 
         mgr.checkAsync();
 
-        verify(callback).error(eq(TEST_ERROR));
+        verify(callback).onError(eq(TEST_ERROR));
     }
 
     @Test
     public void testStaleAsyncTaskAfterTerminate() throws Exception {
         SplitBrainDetector detector = mock(SplitBrainDetector.class);
-        Callback callback = mock(Callback.class);
+        ErrorCallback callback = mock(ErrorCallback.class);
         Executor async = mock(Executor.class);
         ArgumentCaptor<Runnable> asyncCaptor = ArgumentCaptor.forClass(Runnable.class);
 
-        SplitBrainManager mgr = new SplitBrainManager(SplitBrainAction.TERMINATE, 0, detector);
+        SplitBrainManager mgr = new SplitBrainManager(0, detector);
 
         mgr.initialize(newNode(), async, callback);
 
@@ -167,9 +137,9 @@ public class SplitBrainManagerTest extends HekateTestBase {
         Executor async = mock(Executor.class);
         ArgumentCaptor<Runnable> asyncCaptor = ArgumentCaptor.forClass(Runnable.class);
 
-        SplitBrainManager mgr = new SplitBrainManager(SplitBrainAction.TERMINATE, 0, detector);
+        SplitBrainManager mgr = new SplitBrainManager(0, detector);
 
-        mgr.initialize(newNode(), async, mock(Callback.class));
+        mgr.initialize(newNode(), async, mock(ErrorCallback.class));
 
         for (int i = 0; i < 5; i++) {
             when(detector.isValid(any())).thenReturn(true);
@@ -190,7 +160,7 @@ public class SplitBrainManagerTest extends HekateTestBase {
 
     @Test
     public void testToString() {
-        SplitBrainManager mgr = new SplitBrainManager(SplitBrainAction.TERMINATE, 0, mock(SplitBrainDetector.class));
+        SplitBrainManager mgr = new SplitBrainManager(0, mock(SplitBrainDetector.class));
 
         assertEquals(ToString.format(mgr), mgr.toString());
     }

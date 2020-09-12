@@ -109,6 +109,9 @@ public class HekateBootstrap {
     /** See {@link #setConfigReport(boolean)}. */
     private boolean configReport;
 
+    /** See {@link #setFatalErrorPolicy(HekateFatalErrorPolicy)}. */
+    private HekateFatalErrorPolicy fatalErrorPolicy = HekateFatalErrorPolicy.terminate();
+
     /**
      * Constructs a new {@link Hekate} instance and asynchronously {@link Hekate#joinAsync() joins} the cluster.
      *
@@ -614,6 +617,45 @@ public class HekateBootstrap {
         }
 
         lifecycleListeners.add(listener);
+
+        return this;
+    }
+
+    /**
+     * Returns fatal error handling policy (see {@link #setFatalErrorPolicy(HekateFatalErrorPolicy)}).
+     *
+     * @return Fatal error handling policy.
+     */
+    public HekateFatalErrorPolicy getFatalErrorPolicy() {
+        return fatalErrorPolicy;
+    }
+
+    /**
+     * Sets the fatal error handling policy.
+     *
+     * <p>
+     * This policy is applied if {@link Hekate} node faces an unrecoverable internal error.
+     * </p>
+     *
+     * <p>
+     * If not specified then {@link HekateFatalErrorPolicy#terminate()} policy will be used by default.
+     * </p>
+     *
+     * @param fatalErrorPolicy Fatal error handling policy.
+     */
+    public void setFatalErrorPolicy(HekateFatalErrorPolicy fatalErrorPolicy) {
+        this.fatalErrorPolicy = fatalErrorPolicy;
+    }
+
+    /**
+     * Fluent-style version of {@link #setFatalErrorPolicy(HekateFatalErrorPolicy)}.
+     *
+     * @param fatalErrorPolicy Fatal error handling policy.
+     *
+     * @return Fatal error handling policy.
+     */
+    public HekateBootstrap withFatalErrorPolicy(HekateFatalErrorPolicy fatalErrorPolicy) {
+        setFatalErrorPolicy(fatalErrorPolicy);
 
         return this;
     }

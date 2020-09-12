@@ -19,7 +19,6 @@ package io.hekate;
 import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.cluster.health.DefaultFailureDetector;
 import io.hekate.cluster.health.DefaultFailureDetectorConfig;
-import io.hekate.cluster.split.SplitBrainAction;
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.JdkCodecFactory;
 import io.hekate.core.internal.HekateTestNode;
@@ -119,7 +118,6 @@ public abstract class HekateNodeTestBase extends HekateTestBase {
             cluster.setGossipInterval(ctx.hbInterval());
             cluster.setSpeedUpGossipSize(10);
             cluster.setSeedNodeProvider(seedNodes);
-            cluster.setSplitBrainAction(SplitBrainAction.REJOIN);
             cluster.setFailureDetector(new DefaultFailureDetector(fdCfg));
         });
 

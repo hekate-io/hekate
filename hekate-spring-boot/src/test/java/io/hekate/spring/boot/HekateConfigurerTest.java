@@ -23,6 +23,7 @@ import io.hekate.cluster.event.ClusterLeaveEvent;
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.CodecService;
 import io.hekate.core.Hekate;
+import io.hekate.core.HekateFatalErrorPolicy;
 import io.hekate.core.service.Service;
 import io.hekate.core.service.ServiceFactory;
 import io.hekate.network.NetworkService;
@@ -168,5 +169,26 @@ public class HekateConfigurerTest extends HekateAutoConfigurerTestBase {
         assertTrue(getContext().getBeansOfType(CodecFactory.class).isEmpty());
 
         assertFalse(get(DisableTestConfig.class).node.isPresent());
+    }
+
+    @Test
+    public void testFatalErrorPolicyRejoin() {
+        registerAndRefresh(new String[]{"hekate.on-fatal-error=rejoin"}, DefaultTestConfig.class);
+
+        assertEquals(HekateFatalErrorPolicy.rejoin().getClass(), get(HekateFatalErrorPolicy.class).getClass());
+    }
+
+    @Test
+    public void testFatalErrorPolicyTerminate() {
+        registerAndRefresh(new String[]{"hekate.on-fatal-error=terminate"}, DefaultTestConfig.class);
+
+        assertEquals(HekateFatalErrorPolicy.terminate().getClass(), get(HekateFatalErrorPolicy.class).getClass());
+    }
+
+    @Test
+    public void testFatalErrorPolicyExitJvm() {
+        registerAndRefresh(new String[]{"hekate.on-fatal-error=exit-jvm"}, DefaultTestConfig.class);
+
+        assertEquals(HekateFatalErrorPolicy.exitJvm().getClass(), get(HekateFatalErrorPolicy.class).getClass());
     }
 }

@@ -29,12 +29,12 @@ import io.hekate.cluster.seed.multicast.MulticastSeedNodeProvider;
 import io.hekate.cluster.split.AddressReachabilityDetector;
 import io.hekate.cluster.split.HostReachabilityDetector;
 import io.hekate.cluster.split.JdbcConnectivityDetector;
-import io.hekate.cluster.split.SplitBrainAction;
 import io.hekate.cluster.split.SplitBrainDetector;
 import io.hekate.cluster.split.SplitBrainDetectorGroup;
 import io.hekate.core.Hekate;
 import io.hekate.core.Hekate.State;
 import io.hekate.core.HekateBootstrap;
+import io.hekate.core.HekateFatalErrorPolicy;
 import io.hekate.core.service.DefaultServiceFactory;
 import io.hekate.core.service.Service;
 import java.util.List;
@@ -228,9 +228,8 @@ import java.util.List;
  * </p>
  *
  * <p>
- * Actions that should be performed by the cluster service in case of split-brain problem is controlled by the {@link SplitBrainAction}
- * enumeration that can be configured via {@link ClusterServiceFactory#setSplitBrainAction(SplitBrainAction)} method. Please see the
- * documentation of {@link SplitBrainAction} for details about the available options.
+ * The action to perform upon split-brain is controlled by {@link HekateFatalErrorPolicy} of {@link Hekate} node.
+ * When split-brain is detected, the cluster service will apply this policy with {@link ClusterSplitBrainException} as a cause.
  * </p>
  *
  * <a id="cluster_acceptors"></a>
@@ -245,7 +244,7 @@ import java.util.List;
  * {@link ClusterAcceptor} interface within the cluster service. This interface is used by an existing cluster node when a join
  * request is received from a new node that tries to join the cluster. Implementation of this interface can use the joining node
  * information in order to decide whether the new node should be accepted or it should be rejected. If node gets rejected then it will fail
- * with {@link ClusterJoinRejectedException}.
+ * with {@link ClusterRejectedJoinException}.
  * </p>
  *
  * <p>

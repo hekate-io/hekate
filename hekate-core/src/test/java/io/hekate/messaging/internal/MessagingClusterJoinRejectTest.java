@@ -17,7 +17,7 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.HekateNodeTestBase;
-import io.hekate.cluster.ClusterJoinRejectedException;
+import io.hekate.cluster.ClusterRejectedJoinException;
 import io.hekate.core.HekateException;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.messaging.MessageReceiver;
@@ -88,7 +88,7 @@ public class MessagingClusterJoinRejectTest extends HekateNodeTestBase {
 
             fail("Error not thrown.");
         } catch (HekateException e) {
-            assertTrue(getStacktrace(e), e.isCausedBy(ClusterJoinRejectedException.class));
+            assertTrue(getStacktrace(e), e.isCausedBy(ClusterRejectedJoinException.class));
             assertEquals(
                 "Invalid " + MessagingChannelConfig.class.getSimpleName() + " - "
                     + "'baseType' value mismatch between the joining node and the cluster "
@@ -97,7 +97,7 @@ public class MessagingClusterJoinRejectTest extends HekateNodeTestBase {
                     + ", cluster-type=java.lang.Object"
                     + ", rejected-by=" + existing.localNode().address()
                     + "]",
-                e.findCause(ClusterJoinRejectedException.class).rejectReason()
+                e.findCause(ClusterRejectedJoinException.class).rejectReason()
             );
         }
     }

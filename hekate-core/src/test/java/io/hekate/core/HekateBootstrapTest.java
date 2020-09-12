@@ -233,6 +233,23 @@ public class HekateBootstrapTest extends HekateTestBase {
     }
 
     @Test
+    public void testFatalErrorPolicy() {
+        assertEquals(HekateFatalErrorPolicy.terminate(), bootstrap.getFatalErrorPolicy());
+
+        bootstrap.setFatalErrorPolicy(HekateFatalErrorPolicy.rejoin());
+
+        assertEquals(HekateFatalErrorPolicy.rejoin(), bootstrap.getFatalErrorPolicy());
+
+        assertEquals(bootstrap, bootstrap.withFatalErrorPolicy(HekateFatalErrorPolicy.terminate()));
+
+        assertEquals(HekateFatalErrorPolicy.terminate(), bootstrap.getFatalErrorPolicy());
+
+        bootstrap.setFatalErrorPolicy(null);
+
+        assertNull(bootstrap.getFatalErrorPolicy());
+    }
+
+    @Test
     public void testJoinWithDefaults() throws Exception {
         List<Hekate> nodes = new ArrayList<>();
 

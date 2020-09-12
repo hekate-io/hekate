@@ -105,6 +105,12 @@
       "defaultValue": "jdk"
     },
     {
+      "name": "hekate.on-fatal-error",
+      "type": "java.lang.String",
+      "description": "Fatal error handling policy.",
+      "defaultValue": "terminate"
+    },
+    {
       "name": "hekate.config-report",
       "type": "java.lang.Boolean",
       "description": "Enables/disables printing of this node's configuration details.",
@@ -298,12 +304,6 @@
       "type": "java.lang.Integer",
       "description": "The maximum amount of nodes in the cluster for the gossip protocol to speed up by sending messages at a higher rate\n so that the cluster could converge faster (at the cost of higher network utilization).",
       "defaultValue": 100
-    },
-    {
-      "name": "hekate.cluster.split-brain-action",
-      "type": "io.hekate.cluster.split.SplitBrainAction",
-      "description": "Action in case if the local node is in a split-brain state.",
-      "defaultValue": "terminate"
     },
     {
       "name": "hekate.cluster.split-brain-check-interval",
@@ -788,6 +788,23 @@
       ]
     },
     {
+      "name": "hekate.on-fatal-error",
+      "values": [
+        {
+          "value": "terminate",
+          "description": "Terminate upon any fatal error by calling Hekate#terminate()."
+        },
+        {
+          "value": "rejoin",
+          "description": "Rejoin upon any fatal error."
+        },
+        {
+          "value": "exit-jvm",
+          "description": "Call System#exit(250) upon any fatal error."
+        }
+      ]
+    },
+    {
       "name": "hekate.network.transport",
       "values": [
         {
@@ -885,23 +902,6 @@
         {
           "name": "any",
           "description": "...all other values will be treated as a directly specified address"
-        }
-      ]
-    },
-    {
-      "name": "hekate.cluster.split-brain-action",
-      "values": [
-        {
-          "value": "rejoin",
-          "description": "Try to rejoin the cluster."
-        },
-        {
-          "value": "terminate",
-          "description": "Terminate Hekate node but keep the JVM running."
-        },
-        {
-          "value": "kill_jvm",
-          "description": "Kills the JVM via System#exit() (exit code 250)."
         }
       ]
     },

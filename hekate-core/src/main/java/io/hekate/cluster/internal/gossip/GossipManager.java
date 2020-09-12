@@ -389,7 +389,7 @@ public class GossipManager {
         if (!remote.hasMember(id)) {
             // Check if local node wasn't remove from the cluster.
             // Can happen in case of a long GC pause on this node.
-            // Such pause can make other members to think that this node is dead and remove it from cluster.
+            // Such pause can make other members think that this node is dead and remove it from cluster.
             if (remote.removed().contains(id)) {
                 if (DEBUG) {
                     log.debug("Notifying listener on inconsistency since local node is in removed set "
