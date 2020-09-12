@@ -17,7 +17,6 @@
 package io.hekate.core.jmx.internal;
 
 import io.hekate.core.HekateException;
-import io.hekate.core.HekateUncheckedException;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.jmx.JmxService;
@@ -160,7 +159,7 @@ public class DefaultJmxService implements JmxService, InitializingService, Termi
             return jmxName(domain, jmxInterface, nameAttribute);
         } catch (MalformedObjectNameException e) {
             // Should not happen.
-            throw new HekateUncheckedException("Failed to construct JMX object name.", e);
+            throw new JmxServiceException("Failed to construct JMX object name.", e);
         }
     }
 

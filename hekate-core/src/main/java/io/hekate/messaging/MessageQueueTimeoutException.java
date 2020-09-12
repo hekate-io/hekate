@@ -16,6 +16,8 @@
 
 package io.hekate.messaging;
 
+import io.hekate.core.HekateException;
+
 /**
  * Signals {@link MessagingChannel}'s send queue timeout.
  *
@@ -38,5 +40,14 @@ public class MessageQueueTimeoutException extends MessageTimeoutException {
      */
     public MessageQueueTimeoutException(String message) {
         super(message);
+    }
+
+    private MessageQueueTimeoutException(MessageQueueTimeoutException cause) {
+        super(cause);
+    }
+
+    @Override
+    public HekateException forkFromAsync() {
+        return new MessageQueueTimeoutException(this);
     }
 }

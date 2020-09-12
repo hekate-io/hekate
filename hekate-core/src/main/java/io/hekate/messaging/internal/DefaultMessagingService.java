@@ -415,7 +415,7 @@ public class DefaultMessagingService implements MessagingService, CoreService, N
             timer.repeatWithFixedDelay(() -> {
                 try {
                     ctx.checkIdleConnections();
-                } catch (RuntimeException | Error e) {
+                } catch (Throwable e) {
                     log.error("Got an unexpected error while checking for idle connections [channel={}]", gateway.name(), e);
                 }
 

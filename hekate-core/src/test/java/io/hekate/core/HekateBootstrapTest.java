@@ -254,7 +254,7 @@ public class HekateBootstrapTest extends HekateTestBase {
             for (Hekate node : nodes) {
                 try {
                     node.leave();
-                } catch (InterruptedException e) {
+                } catch (HekateInterruptedException e) {
                     // Ignore.
                 }
             }
@@ -281,7 +281,7 @@ public class HekateBootstrapTest extends HekateTestBase {
             for (LeaveFuture future : leave) {
                 try {
                     get(future);
-                } catch (InterruptedException e) {
+                } catch (HekateInterruptedException e) {
                     // Ignore.
                 }
             }

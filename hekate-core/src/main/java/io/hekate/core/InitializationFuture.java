@@ -17,9 +17,6 @@
 package io.hekate.core;
 
 import io.hekate.util.HekateFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 /**
  * Asynchronous result of {@link Hekate#initializeAsync()} operation.
@@ -27,24 +24,6 @@ import java.util.concurrent.TimeoutException;
  * @see Hekate#initializeAsync()
  */
 public class InitializationFuture extends HekateFuture<Hekate, InitializationFuture> {
-    @Override
-    public Hekate get() throws InterruptedException, HekateFutureException {
-        try {
-            return super.get();
-        } catch (ExecutionException e) {
-            throw new HekateFutureException(e.getCause().getMessage(), e.getCause());
-        }
-    }
-
-    @Override
-    public Hekate get(long timeout, TimeUnit unit) throws InterruptedException, TimeoutException, HekateFutureException {
-        try {
-            return super.get(timeout, unit);
-        } catch (ExecutionException e) {
-            throw new HekateFutureException(e.getCause().getMessage(), e.getCause());
-        }
-    }
-
     @Override
     protected InitializationFuture newInstance() {
         return new InitializationFuture();

@@ -14,29 +14,37 @@
  * under the License.
  */
 
-package io.hekate.test;
+package io.hekate.core;
 
-import io.hekate.core.HekateException;
+import java.util.concurrent.TimeoutException;
 
-/** Checked error for tests. */
-public class HekateTestException extends HekateException {
-    private static final long serialVersionUID = 1;
+/**
+ * Unchecked version of {@link TimeoutException}.
+ */
+public class HekateTimeoutException extends HekateException {
+    private static final long serialVersionUID = 1L;
 
-    public HekateTestException(String message) {
+    /**
+     * Constructs a new instance.
+     *
+     * @param message Error message.
+     */
+    public HekateTimeoutException(String message) {
         super(message);
     }
 
-    private HekateTestException(String message, Throwable cause) {
+    /**
+     * Constructs a new instance.
+     *
+     * @param message Error message.
+     * @param cause Cause.
+     */
+    public HekateTimeoutException(String message, Throwable cause) {
         super(message, cause);
     }
 
     @Override
     public HekateException forkFromAsync() {
-        return new HekateTestException(getMessage(), this);
-    }
-
-    @Override
-    public synchronized Throwable fillInStackTrace() {
-        return this;
+        return new HekateInterruptedException(getMessage(), this);
     }
 }

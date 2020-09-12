@@ -16,6 +16,8 @@
 
 package io.hekate.messaging;
 
+import io.hekate.core.HekateException;
+
 /**
  * Signals that messaging operation timed out.
  *
@@ -32,5 +34,19 @@ public class MessageTimeoutException extends MessagingException {
      */
     public MessageTimeoutException(String message) {
         super(message, null, true, false);
+    }
+
+    /**
+     * Support constructor for {@link #forkFromAsync()}.
+     *
+     * @param cause Cause.
+     */
+    protected MessageTimeoutException(MessageTimeoutException cause) {
+        super(cause.getMessage(), cause);
+    }
+
+    @Override
+    public HekateException forkFromAsync() {
+        return new MessageTimeoutException(this);
     }
 }

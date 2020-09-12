@@ -181,7 +181,7 @@ class HekateLifecycle {
             for (LifecycleListener listener : listeners) {
                 try {
                     listener.onStateChanged(node);
-                } catch (RuntimeException | Error e) {
+                } catch (Throwable e) {
                     log.error("Failed to notify listener on state change [state={}, listener={}]", state, listener, e);
                 }
             }

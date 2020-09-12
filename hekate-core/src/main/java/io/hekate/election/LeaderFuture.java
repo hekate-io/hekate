@@ -18,9 +18,6 @@ package io.hekate.election;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.util.HekateFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 /**
  * Asynchronous result of leader election.
@@ -28,24 +25,6 @@ import java.util.concurrent.TimeoutException;
  * @see ElectionService#leader(String)
  */
 public class LeaderFuture extends HekateFuture<ClusterNode, LeaderFuture> {
-    @Override
-    public ClusterNode get() throws InterruptedException, LeaderException {
-        try {
-            return super.get();
-        } catch (ExecutionException e) {
-            throw new LeaderException(e.getMessage(), e.getCause());
-        }
-    }
-
-    @Override
-    public ClusterNode get(long timeout, TimeUnit unit) throws InterruptedException, LeaderException, TimeoutException {
-        try {
-            return super.get(timeout, unit);
-        } catch (ExecutionException e) {
-            throw new LeaderException(e.getMessage(), e.getCause());
-        }
-    }
-
     @Override
     protected LeaderFuture newInstance() {
         return new LeaderFuture();

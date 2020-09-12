@@ -56,7 +56,7 @@ class NettyMessage extends InputStream implements DataReader, NetworkMessage<Obj
     }
 
     @Override
-    public Object decode() throws IOException {
+    public Object decode() throws CodecException {
         if (decoded == null) {
             try {
                 decoded = codec.decode(this);
@@ -77,7 +77,7 @@ class NettyMessage extends InputStream implements DataReader, NetworkMessage<Obj
                 skipRemainingBytes();
 
                 throw e;
-            } catch (IOException | RuntimeException | Error e) {
+            } catch (Throwable e) {
                 // Mark buffer as fully consumed in case of an error
                 // in order to suppress errors reporting on dirty buffer.
                 skipRemainingBytes();
@@ -106,65 +106,75 @@ class NettyMessage extends InputStream implements DataReader, NetworkMessage<Obj
     }
 
     @Override
-    public <V> V preview(Preview<V> preview) throws IOException {
+    public <V> V preview(Preview<V> preview) {
         int idx = buf.readerIndex();
 
         buf.readerIndex(0);
 
         try {
             return preview.apply(this);
+        } catch (IOException e) {
+            throw new CodecException("Failed to decode message.", e);
         } finally {
             buf.readerIndex(idx);
         }
     }
 
     @Override
-    public int previewInt(PreviewInt preview) throws IOException {
+    public int previewInt(PreviewInt preview) {
         int idx = buf.readerIndex();
 
         buf.readerIndex(0);
 
         try {
             return preview.apply(this);
+        } catch (IOException e) {
+            throw new CodecException("Failed to decode message.", e);
         } finally {
             buf.readerIndex(idx);
         }
     }
 
     @Override
-    public long previewLong(PreviewLong preview) throws IOException {
+    public long previewLong(PreviewLong preview) {
         int idx = buf.readerIndex();
 
         buf.readerIndex(0);
 
         try {
             return preview.apply(this);
+        } catch (IOException e) {
+            throw new CodecException("Failed to decode message.", e);
         } finally {
             buf.readerIndex(idx);
         }
     }
 
     @Override
-    public double previewDouble(PreviewDouble preview) throws IOException {
+    public double previewDouble(PreviewDouble preview) {
         int idx = buf.readerIndex();
 
         buf.readerIndex(0);
 
         try {
             return preview.apply(this);
+        } catch (IOException e) {
+            throw new CodecException("Failed to decode message.", e);
         } finally {
             buf.readerIndex(idx);
         }
     }
 
     @Override
-    public boolean previewBoolean(PreviewBoolean preview) throws IOException {
+    public boolean previewBoolean(PreviewBoolean preview) {
         int idx = buf.readerIndex();
 
         buf.readerIndex(0);
 
         try {
             return preview.apply(this);
+        } catch (IOException e) {
+            throw new CodecException("Failed to decode message.", e);
         } finally {
             buf.readerIndex(idx);
         }

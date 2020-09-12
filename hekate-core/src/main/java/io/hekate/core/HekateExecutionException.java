@@ -14,25 +14,37 @@
  * under the License.
  */
 
-package io.hekate.messaging;
+package io.hekate.core;
 
-import io.hekate.core.HekateFutureException;
+import java.util.concurrent.ExecutionException;
 
 /**
- * Failure of an asynchronous messaging operation.
- *
- * @see MessagingService
+ * Unchecked version of {@link ExecutionException}.
  */
-public class MessagingFutureException extends HekateFutureException {
+public class HekateExecutionException extends HekateException {
     private static final long serialVersionUID = 1;
 
     /**
-     * Constructs new instance.
+     * Constructs a new instance.
      *
      * @param message Error message.
-     * @param cause Error cause.
      */
-    public MessagingFutureException(String message, Throwable cause) {
+    public HekateExecutionException(String message) {
+        super(message);
+    }
+
+    /**
+     * Constructs a new instance.
+     *
+     * @param message Error message.
+     * @param cause Cause.
+     */
+    public HekateExecutionException(String message, Throwable cause) {
         super(message, cause);
+    }
+
+    @Override
+    public HekateException forkFromAsync() {
+        return new HekateExecutionException(getMessage(), this);
     }
 }

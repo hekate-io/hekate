@@ -17,9 +17,6 @@
 package io.hekate.coordinate;
 
 import io.hekate.util.HekateFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 /**
  * Coordination future.
@@ -27,24 +24,6 @@ import java.util.concurrent.TimeoutException;
  * @see CoordinationService#futureOf(String)
  */
 public class CoordinationFuture extends HekateFuture<CoordinationProcess, CoordinationFuture> {
-    @Override
-    public CoordinationProcess get() throws InterruptedException, CoordinationException {
-        try {
-            return super.get();
-        } catch (ExecutionException e) {
-            throw new CoordinationException(e.getMessage(), e.getCause());
-        }
-    }
-
-    @Override
-    public CoordinationProcess get(long timeout, TimeUnit unit) throws InterruptedException, CoordinationException, TimeoutException {
-        try {
-            return super.get(timeout, unit);
-        } catch (ExecutionException e) {
-            throw new CoordinationException(e.getMessage(), e.getCause());
-        }
-    }
-
     @Override
     protected CoordinationFuture newInstance() {
         return new CoordinationFuture();

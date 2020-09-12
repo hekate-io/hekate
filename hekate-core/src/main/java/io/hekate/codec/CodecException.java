@@ -16,12 +16,13 @@
 
 package io.hekate.codec;
 
-import java.io.IOException;
+import io.hekate.core.HekateException;
+import io.hekate.core.HekateIoException;
 
 /**
  * Generic data encoding/decoding error.
  */
-public class CodecException extends IOException {
+public class CodecException extends HekateIoException {
     private static final long serialVersionUID = 1;
 
     /**
@@ -41,5 +42,10 @@ public class CodecException extends IOException {
      */
     public CodecException(String message, Throwable cause) {
         super(message, cause);
+    }
+
+    @Override
+    public HekateException forkFromAsync() {
+        return new CodecException(getMessage(), this);
     }
 }

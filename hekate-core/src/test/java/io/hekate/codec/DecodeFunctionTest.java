@@ -14,27 +14,30 @@
  * under the License.
  */
 
-package io.hekate.core;
+package io.hekate.codec;
 
-import io.hekate.util.HekateFutureTestBase;
+import io.hekate.HekateTestBase;
+import java.io.IOException;
 import org.junit.Test;
 
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
-public class LeaveFutureTest extends HekateFutureTestBase<Hekate, LeaveFuture> {
+public class DecodeFunctionTest extends HekateTestBase {
     @Test
-    public void testCompleted() {
-        assertTrue(LeaveFuture.completed(mock(Hekate.class)).isSuccess());
+    public void testDecodeUncheckedWithIoException() {
+        DecodeFunction<Object> decode = in -> {
+            throw new IOException("TEST");
+        };
+
+        expect(CodecException.class, () -> decode.decodeUnchecked(mock(DataReader.class)));
     }
 
-    @Override
-    protected LeaveFuture createFuture() {
-        return new LeaveFuture();
-    }
+    @Test
+    public void testDecodeUncheckedWithRuntimeException() {
+        DecodeFunction<Object> decode1 = in -> {
+            throw new RuntimeException("TEST");
+        };
 
-    @Override
-    protected Hekate createValue() {
-        return mock(Hekate.class);
+        expect(RuntimeException.class, () -> decode1.decodeUnchecked(mock(DataReader.class)));
     }
 }

@@ -103,7 +103,7 @@ public class DistributedLockAsyncTest extends LockServiceTestBase {
                     if (lock.isHeldByCurrentThread()) {
                         lock.unlock();
                     }
-                } catch (RuntimeException | Error e) {
+                } catch (Throwable e) {
                     errRef.set(new AssertionError(e));
                 } finally {
                     done.countDown();

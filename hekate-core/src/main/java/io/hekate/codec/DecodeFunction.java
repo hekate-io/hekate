@@ -35,4 +35,21 @@ public interface DecodeFunction<T> {
      * @throws IOException If object couldn't be decoded.
      */
     T decode(DataReader in) throws IOException;
+
+    /**
+     * Same as {@link #decode(DataReader)}  but throws an unchecked exception.
+     *
+     * @param in Data reader.
+     *
+     * @return Decoded object.
+     *
+     * @throws CodecException If object couldn't be decoded.
+     */
+    default T decodeUnchecked(DataReader in) throws CodecException {
+        try {
+            return decode(in);
+        } catch (IOException e) {
+            throw new CodecException("Failed to decode data.", e);
+        }
+    }
 }

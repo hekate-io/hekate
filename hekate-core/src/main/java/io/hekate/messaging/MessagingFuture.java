@@ -17,9 +17,6 @@
 package io.hekate.messaging;
 
 import io.hekate.util.HekateFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 /**
  * Asynchronous result of a messaging operation.
@@ -27,24 +24,6 @@ import java.util.concurrent.TimeoutException;
  * @param <T> Type of operation result.
  */
 public class MessagingFuture<T> extends HekateFuture<T, MessagingFuture<T>> {
-    @Override
-    public T get() throws InterruptedException, MessagingFutureException {
-        try {
-            return super.get();
-        } catch (ExecutionException e) {
-            throw new MessagingFutureException("Messaging operation failed (see cause for details).", e.getCause());
-        }
-    }
-
-    @Override
-    public T get(long timeout, TimeUnit unit) throws InterruptedException, MessagingFutureException, TimeoutException {
-        try {
-            return super.get(timeout, unit);
-        } catch (ExecutionException e) {
-            throw new MessagingFutureException("Messaging operation failed (see cause for details).", e.getCause());
-        }
-    }
-
     @Override
     protected MessagingFuture<T> newInstance() {
         return new MessagingFuture<>();

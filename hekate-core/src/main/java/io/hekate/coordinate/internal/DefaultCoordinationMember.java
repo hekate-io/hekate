@@ -211,8 +211,8 @@ class DefaultCoordinationMember implements CoordinationMember {
 
                     callback.onCancel();
                 }
-            } catch (RuntimeException | Error e) {
-                log.error("Got an unexpected runtime error while notifying coordination request callback.", e);
+            } catch (Throwable e) {
+                log.error("Got an unexpected error while notifying coordination request callback.", e);
             }
         }, async);
 

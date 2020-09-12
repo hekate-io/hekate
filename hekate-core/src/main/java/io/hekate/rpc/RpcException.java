@@ -16,12 +16,13 @@
 
 package io.hekate.rpc;
 
-import io.hekate.core.HekateUncheckedException;
+import io.hekate.core.HekateException;
 
 /**
  * Generic error that signals an RPC operation failure.
  */
-public class RpcException extends HekateUncheckedException {
+public class RpcException extends HekateException {
+    /** Serial version. */
     private static final long serialVersionUID = 1;
 
     /**
@@ -41,5 +42,10 @@ public class RpcException extends HekateUncheckedException {
      */
     public RpcException(String message, Throwable cause) {
         super(message, cause);
+    }
+
+    @Override
+    public HekateException forkFromAsync() {
+        return new RpcException(getMessage(), this);
     }
 }

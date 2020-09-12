@@ -36,7 +36,6 @@ import io.hekate.coordinate.CoordinationService;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.HekateException;
-import io.hekate.core.HekateFutureException;
 import io.hekate.core.HekateJmx;
 import io.hekate.core.HekateVersion;
 import io.hekate.core.InitializationFuture;
@@ -368,8 +367,8 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
     }
 
     @Override
-    public Hekate initialize() throws InterruptedException, HekateFutureException {
-        return initializeAsync().get();
+    public Hekate initialize() {
+        return initializeAsync().sync();
     }
 
     @Override
@@ -381,14 +380,14 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
         initializeAsync().thenRun(() ->
             runOnSysThread(() ->
                 guard.withWriteLock(() -> {
-                    try {
-                        if (state == INITIALIZED) {
+                    if (state == INITIALIZED) {
+                        try {
                             become(JOINING);
 
                             clusterMgr.joinAsync();
+                        } catch (Throwable e) {
+                            doTerminateAsync(ClusterLeaveReason.TERMINATE, e);
                         }
-                    } catch (RuntimeException | Error e) {
-                        doTerminateAsync(ClusterLeaveReason.TERMINATE, e);
                     }
                 })
             )
@@ -398,8 +397,8 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
     }
 
     @Override
-    public Hekate join() throws HekateFutureException, InterruptedException {
-        return joinAsync().get();
+    public Hekate join() {
+        return joinAsync().sync();
     }
 
     @Override
@@ -473,8 +472,8 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
     }
 
     @Override
-    public Hekate leave() throws InterruptedException, HekateFutureException {
-        return leaveAsync().get();
+    public Hekate leave() {
+        return leaveAsync().sync();
     }
 
     @Override
@@ -485,8 +484,8 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
     }
 
     @Override
-    public Hekate terminate() throws InterruptedException, HekateFutureException {
-        return terminateAsync().get();
+    public Hekate terminate() {
+        return terminateAsync().sync();
     }
 
     @Override
@@ -594,7 +593,7 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
                     log.debug("Stopped initialization sequence due to a concurrent leave/terminate event.");
                 }
             }
-        } catch (HekateException | RuntimeException | Error e) {
+        } catch (Throwable e) {
             // Schedule termination while still holding the write lock.
             doTerminateAsync(ClusterLeaveReason.TERMINATE, e);
         } finally {
@@ -694,7 +693,7 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
                     log.debug("Stopped initialization sequence due to a concurrent leave/terminate event.");
                 }
             }
-        } catch (HekateException | RuntimeException | Error e) {
+        } catch (Throwable e) {
             // Schedule termination while still holding the write lock.
             doTerminateAsync(ClusterLeaveReason.TERMINATE, e);
         } finally {
@@ -1086,8 +1085,8 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
         sysWorker.execute(() -> {
             try {
                 task.run();
-            } catch (RuntimeException | Error e) {
-                log.error("Got an unexpected runtime error.", e);
+            } catch (Throwable e) {
+                log.error("Got an unexpected error.", e);
             }
         });
     }

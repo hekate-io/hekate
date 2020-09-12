@@ -182,7 +182,7 @@ class RpcSplitAggregateMethodHandler extends RpcMethodHandler {
                 from.channel().executor().execute(() -> {
                     try {
                         super.doHandle(partArgs, from, aggregateCallback);
-                    } catch (RuntimeException | Error e) {
+                    } catch (Throwable e) {
                         if (log.isErrorEnabled()) {
                             log.error("RPC failure [from={}, method={}#{}]", from.remoteAddress(), rpc().name(), method().signature(), e);
                         }

@@ -201,7 +201,7 @@ class SplitBrainManager implements ConfigReportSupport {
         async.execute(() -> {
             try {
                 task.run();
-            } catch (RuntimeException | Error e) {
+            } catch (Throwable e) {
                 callback.error(e);
             }
         });

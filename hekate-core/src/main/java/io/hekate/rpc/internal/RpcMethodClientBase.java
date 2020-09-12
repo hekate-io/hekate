@@ -16,13 +16,12 @@
 
 package io.hekate.rpc.internal;
 
+import io.hekate.core.HekateException;
+import io.hekate.core.HekateExecutionException;
 import io.hekate.messaging.MessagingChannel;
-import io.hekate.messaging.MessagingFutureException;
 import io.hekate.rpc.RpcException;
 import io.hekate.rpc.RpcInterfaceInfo;
 import io.hekate.rpc.RpcMethodInfo;
-import java.lang.reflect.Method;
-import java.util.concurrent.TimeoutException;
 
 abstract class RpcMethodClientBase<T> {
     private final RpcInterfaceInfo<T> rpc;
@@ -48,8 +47,7 @@ abstract class RpcMethodClientBase<T> {
         }
     }
 
-    protected abstract Object doInvoke(Object affinity, Object[] args) throws MessagingFutureException, InterruptedException,
-        TimeoutException;
+    protected abstract Object doInvoke(Object affinity, Object[] args);
 
     public Object invoke(Object[] args) throws Exception {
         Object affinity;
@@ -63,16 +61,12 @@ abstract class RpcMethodClientBase<T> {
         try {
             try {
                 return doInvoke(affinity, args);
-            } catch (MessagingFutureException e) {
+            } catch (HekateExecutionException e) {
                 // Unwrap asynchronous messaging error.
                 throw e.getCause();
             }
         } catch (Throwable e) {
-            // Try to throw as is.
-            tryThrow(method.javaMethod(), e);
-
-            // Re-throw as unchecked exception.
-            throw new RpcException("RPC failed [method=" + rpc.name() + '#' + method.signature() + ']', e);
+            throw reThrow(e);
         }
     }
 
@@ -96,17 +90,33 @@ abstract class RpcMethodClientBase<T> {
         return methodIdxKey;
     }
 
-    private static void tryThrow(Method meth, Throwable error) throws Exception {
-        if (error instanceof RuntimeException) {
+    private Exception reThrow(Throwable error) throws Exception {
+        if (error instanceof RpcException) {
+            // Re-throw RPC errors as is.
+            throw (RpcException)error;
+        } else if (error instanceof HekateException) {
+            // Wrap internal errors (network errors, messaging errors, etc).
+            throw asRpcError(error);
+        } else if (error instanceof RuntimeException) {
+            // Re-throw runtime exceptions as is.
             throw (RuntimeException)error;
         } else if (error instanceof Error) {
+            // Re-throw errors as is.
             throw (Error)error;
         } else {
-            for (Class<?> declared : meth.getExceptionTypes()) {
+            // Re-throw as is if this error is declared in the method signature.
+            for (Class<?> declared : method.javaMethod().getExceptionTypes()) {
                 if (declared.isAssignableFrom(error.getClass())) {
                     throw (Exception)error;
                 }
             }
         }
+
+        // Last resort (all foreseen cases should be covered by the logic above).
+        throw asRpcError(error);
+    }
+
+    private RpcException asRpcError(Throwable error) {
+        return new RpcException("RPC failed [method=" + rpc.name() + '#' + method.signature() + ']', error);
     }
 }

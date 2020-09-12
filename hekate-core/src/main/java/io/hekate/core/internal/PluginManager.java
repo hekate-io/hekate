@@ -63,7 +63,7 @@ class PluginManager {
 
                 try {
                     plugin.stop();
-                } catch (HekateException e) {
+                } catch (Throwable e) {
                     log.error("Failed to stop plugin [plugin={}]", plugin, e);
                 } finally {
                     started = false;

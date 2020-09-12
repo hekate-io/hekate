@@ -18,6 +18,7 @@ package io.hekate.network.internal;
 
 import io.hekate.HekateNodeParamTestBase;
 import io.hekate.HekateTestContext;
+import io.hekate.core.HekateException;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.network.NetworkClient;
@@ -26,7 +27,6 @@ import io.hekate.network.NetworkConnectorConfig;
 import io.hekate.network.NetworkServiceFactory;
 import io.hekate.test.NetworkClientCallbackMock;
 import java.io.IOException;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
@@ -144,7 +144,7 @@ public class NettyNetworkServiceTest extends HekateNodeParamTestBase {
             ).join();
 
             fail("Error was expected.");
-        } catch (ExecutionException e) {
+        } catch (HekateException e) {
             assertTrue(ErrorUtils.isCausedBy(IOException.class, e));
         }
     }

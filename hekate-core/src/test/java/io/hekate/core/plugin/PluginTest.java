@@ -21,7 +21,6 @@ import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.HekateConfigurationException;
 import io.hekate.core.HekateException;
-import io.hekate.core.HekateFutureException;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.core.service.Service;
 import io.hekate.core.service.ServiceFactory;
@@ -171,7 +170,7 @@ public class PluginTest extends HekateNodeTestBase {
                 node.join();
 
                 fail("Error was expected.");
-            } catch (HekateFutureException e) {
+            } catch (HekateException e) {
                 assertEquals(HekateTestError.MESSAGE, e.getCause().getMessage());
             }
 

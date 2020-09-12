@@ -450,10 +450,10 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                                     return;
                                 }
 
-                                // Start seed nodes discovery.
+                                // Start discovery of seed nodes.
                                 try {
                                     localSeedNodeMgr.startDiscovery(address.socket());
-                                } catch (HekateException e) {
+                                } catch (Exception e) {
                                     // Try to schedule a new join attempt.
                                     boolean scheduled = guard.withReadLockIfInitialized(() -> {
                                         log.error("Failed to start seed nodes discovery "
@@ -493,11 +493,11 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                                     // Make sure that failure detector is terminated.
                                     try {
                                         failureDetector.terminate();
-                                    } catch (RuntimeException | Error e) {
+                                    } catch (Throwable e) {
                                         log.error("Got an unexpected runtime error during the failure detector termination.", e);
                                     }
                                 }
-                            } catch (HekateException | RuntimeException | Error e) {
+                            } catch (Throwable e) {
                                 ctx.terminate(e);
                             }
                         }
@@ -788,8 +788,8 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                         }
                     })
                 );
-            } catch (HekateException e) {
-                log.error("Failed to obtain seed nodes ...will wait for {} ms before trying another attempt.", gossipInterval, e);
+            } catch (Exception e) {
+                log.error("Failed to find seed nodes ...will wait for {} ms before making another attempt.", gossipInterval, e);
             }
         });
     }
@@ -907,7 +907,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
                                     send(reply);
                                 });
-                            } catch (RuntimeException | Error e) {
+                            } catch (Throwable e) {
                                 fatalError(e);
                             }
                         }, gossipThread);
@@ -1037,7 +1037,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
                                         startPeriodicSplitBrainChecks();
                                     });
-                                } catch (RuntimeException | Error e) {
+                                } catch (Throwable e) {
                                     fatalError(e);
                                 }
                             }
@@ -1117,7 +1117,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                                 if (!event.removed().isEmpty()) {
                                     splitBrain.checkAsync();
                                 }
-                            } catch (RuntimeException | Error e) {
+                            } catch (Throwable e) {
                                 fatalError(e);
                             }
                         });
@@ -1271,7 +1271,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
         gossipThread.execute(() -> {
             try {
                 task.run();
-            } catch (RuntimeException | Error e) {
+            } catch (Throwable e) {
                 fatalError(e);
             }
         });
@@ -1281,7 +1281,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
         serviceThread.execute(() -> {
             try {
                 task.run();
-            } catch (RuntimeException | Error e) {
+            } catch (Throwable e) {
                 fatalError(e);
             }
         });
@@ -1295,14 +1295,14 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
         return executor.scheduleWithFixedDelay(() -> {
             try {
                 task.run();
-            } catch (RuntimeException | Error e) {
+            } catch (Throwable e) {
                 fatalError(e);
             }
         }, delay, intervalMs, TimeUnit.MILLISECONDS);
     }
 
     private void fatalError(Throwable e) {
-        log.error("Got an unexpected runtime error.", e);
+        log.error("Got an unexpected error.", e);
 
         InitializationContext localCtx = this.ctx;
 

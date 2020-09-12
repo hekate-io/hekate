@@ -16,13 +16,13 @@
 
 package io.hekate.messaging.operation;
 
+import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessageTimeoutException;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
-import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.loadbalance.LoadBalancer;
 import io.hekate.messaging.retry.GenericRetryConfigurer;
 import java.util.concurrent.TimeUnit;
@@ -181,11 +181,10 @@ public interface Send<T> {
     /**
      * Synchronously executes this operation.
      *
-     * @throws MessagingFutureException if operations fails.
-     * @throws InterruptedException if thread got interrupted while awaiting for this operation to complete.
+     * @throws HekateException If execution fails.
      */
-    default void sync() throws MessagingFutureException, InterruptedException {
-        submit().get();
+    default void sync() throws HekateException {
+        submit().sync();
     }
 
     /**

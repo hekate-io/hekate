@@ -17,7 +17,6 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.messaging.MessagingChannelClosedException;
-import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.MessagingServiceFactory;
 import io.hekate.messaging.intercept.ServerMessageInterceptor;
 import io.hekate.messaging.intercept.ServerReceiveContext;
@@ -94,7 +93,7 @@ public class MessagingServiceTest extends MessagingServiceTestBase {
 
             sender.leave();
 
-            MessagingFutureException err = expect(MessagingFutureException.class, () ->
+            MessagingChannelClosedException err = expect(MessagingChannelClosedException.class, () ->
                 get(sender.channel().forNode(receiver.nodeId()).newRequest("fail").submit())
             );
 

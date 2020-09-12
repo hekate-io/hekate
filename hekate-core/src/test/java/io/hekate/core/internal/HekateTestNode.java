@@ -27,7 +27,6 @@ import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.cluster.internal.gossip.GossipListener;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
-import io.hekate.core.HekateFutureException;
 import io.hekate.util.StateGuard;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -154,7 +153,7 @@ public class HekateTestNode extends HekateNode {
     }
 
     @Override
-    public HekateTestNode join() throws HekateFutureException, InterruptedException {
+    public HekateTestNode join() {
         super.join();
 
         return this;

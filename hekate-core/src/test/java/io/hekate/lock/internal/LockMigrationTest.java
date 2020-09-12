@@ -17,7 +17,6 @@
 package io.hekate.lock.internal;
 
 import io.hekate.cluster.ClusterNode;
-import io.hekate.core.HekateFutureException;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.lock.DistributedLock;
 import io.hekate.lock.LockRegionConfig;
@@ -415,7 +414,7 @@ public class LockMigrationTest extends LockServiceTestBase {
         checkLiveLocksAreBusy();
     }
 
-    private void leave(HekateTestNode node) throws InterruptedException, HekateFutureException {
+    private void leave(HekateTestNode node) {
         nodes.remove(node);
 
         node.leave();

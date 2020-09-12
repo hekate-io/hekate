@@ -133,13 +133,13 @@ class NetworkProtocolCodec {
             }
         }
 
-        private Object decodeUser(ByteBuf in, int offset, int length) throws IOException {
+        private Object decodeUser(ByteBuf in, int offset, int length) throws Exception {
             // Make sure that buffer will not be recycled until message is processed.
             in.retain();
 
             try {
                 return message(in, offset, length);
-            } catch (RuntimeException | Error | IOException e) {
+            } catch (Throwable e) {
                 in.release();
 
                 throw e;
@@ -194,7 +194,7 @@ class NetworkProtocolCodec {
             }
         }
 
-        private NettyMessage message(ByteBuf in, int offset, int length) throws IOException {
+        private NettyMessage message(ByteBuf in, int offset, int length) {
             int start = in.readerIndex();
 
             // Slice buffer from the current position to the end of message.

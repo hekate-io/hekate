@@ -21,7 +21,6 @@ import io.hekate.codec.CodecService;
 import io.hekate.core.Hekate;
 import io.hekate.core.Hekate.LifecycleListener;
 import io.hekate.core.HekateBootstrap;
-import io.hekate.core.HekateFutureException;
 import io.hekate.core.PropertyProvider;
 import io.hekate.core.plugin.Plugin;
 import io.hekate.core.service.ServiceFactory;
@@ -42,7 +41,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.ApplicationContextException;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -183,15 +181,9 @@ public class HekateConfigurer {
 
         @Override
         public void onApplicationEvent(ApplicationReadyEvent event) {
-            try {
-                // Handle deferred join when application is ready.
-                if (hekate.state() == Hekate.State.INITIALIZED) {
-                    hekate.join();
-                }
-            } catch (InterruptedException e) {
-                throw new ApplicationContextException("Thread got interrupted while awaiting for cluster join.", e);
-            } catch (HekateFutureException e) {
-                throw new ApplicationContextException("Failed to join the cluster.", e);
+            // Handle deferred join when application is ready.
+            if (hekate.state() == Hekate.State.INITIALIZED) {
+                hekate.join();
             }
         }
     }

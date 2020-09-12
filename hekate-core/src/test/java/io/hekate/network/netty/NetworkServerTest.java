@@ -22,7 +22,9 @@ import io.hekate.core.HekateConfigurationException;
 import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.core.internal.util.Utils;
 import io.hekate.network.NetworkClient;
+import io.hekate.network.NetworkConnectTimeoutException;
 import io.hekate.network.NetworkEndpoint;
+import io.hekate.network.NetworkEndpointClosedException;
 import io.hekate.network.NetworkMessage;
 import io.hekate.network.NetworkSendCallbackMock;
 import io.hekate.network.NetworkServer;
@@ -36,10 +38,8 @@ import io.hekate.test.NetworkClientCallbackMock;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -303,7 +303,7 @@ public class NetworkServerTest extends NetworkTestBase {
 
             fail();
         } catch (ExecutionException e) {
-            assertTrue(ErrorUtils.isCausedBy(ConnectException.class, e));
+            assertEquals(NetworkConnectTimeoutException.class, e.getCause().getClass());
         }
 
         server.startAccepting();
@@ -520,7 +520,7 @@ public class NetworkServerTest extends NetworkTestBase {
 
         failCallback.awaitForErrors("fail");
 
-        assertTrue(failCallback.getFailure("fail") instanceof ClosedChannelException);
+        assertTrue(failCallback.getFailure("fail").toString(), failCallback.getFailure("fail") instanceof NetworkEndpointClosedException);
     }
 
     @Test

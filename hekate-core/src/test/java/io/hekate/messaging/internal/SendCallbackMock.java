@@ -30,7 +30,7 @@ public class SendCallbackMock implements SendCallback {
                 onSendSuccess();
 
                 latch.complete(null);
-            } catch (RuntimeException | Error e) {
+            } catch (Throwable e) {
                 latch.completeExceptionally(e);
             }
         } else {

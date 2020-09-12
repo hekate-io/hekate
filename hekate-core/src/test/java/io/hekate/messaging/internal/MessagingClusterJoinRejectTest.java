@@ -18,7 +18,7 @@ package io.hekate.messaging.internal;
 
 import io.hekate.HekateNodeTestBase;
 import io.hekate.cluster.ClusterJoinRejectedException;
-import io.hekate.core.HekateFutureException;
+import io.hekate.core.HekateException;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingChannelConfig;
@@ -87,7 +87,7 @@ public class MessagingClusterJoinRejectTest extends HekateNodeTestBase {
             ).join();
 
             fail("Error not thrown.");
-        } catch (HekateFutureException e) {
+        } catch (HekateException e) {
             assertTrue(getStacktrace(e), e.isCausedBy(ClusterJoinRejectedException.class));
             assertEquals(
                 "Invalid " + MessagingChannelConfig.class.getSimpleName() + " - "

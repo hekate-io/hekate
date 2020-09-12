@@ -17,8 +17,8 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterNodeId;
+import io.hekate.core.HekateException;
 import io.hekate.messaging.MessagingException;
-import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.loadbalance.EmptyTopologyException;
 import io.hekate.messaging.operation.SendFuture;
 import io.hekate.messaging.retry.RetryRoutingPolicy;
@@ -218,7 +218,7 @@ public class RetrySendTest extends RetryTestBase {
             get(future);
 
             fail("Error was expected.");
-        } catch (MessagingFutureException e) {
+        } catch (HekateException e) {
             assertTrue(e.getCause().toString(), e.getCause() instanceof MessagingException);
             assertEquals("Channel closed [channel=test-channel]", e.getCause().getMessage());
         }
@@ -244,7 +244,7 @@ public class RetrySendTest extends RetryTestBase {
             );
 
             fail("Error was expected.");
-        } catch (MessagingFutureException e) {
+        } catch (HekateException e) {
             assertTrue(getStacktrace(e), e.isCausedBy(EmptyTopologyException.class));
         }
 

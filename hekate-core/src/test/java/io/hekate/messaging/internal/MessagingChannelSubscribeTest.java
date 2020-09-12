@@ -20,7 +20,7 @@ import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessagingException;
 import io.hekate.messaging.operation.SendCallback;
-import java.nio.channels.ClosedChannelException;
+import io.hekate.network.NetworkEndpointClosedException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -240,7 +240,7 @@ public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
             Throwable partialErr = errExchanger.exchange(null, AWAIT_TIMEOUT, TimeUnit.SECONDS);
 
             assertTrue(getStacktrace(partialErr), partialErr instanceof MessagingException);
-            assertTrue(getStacktrace(partialErr), ErrorUtils.isCausedBy(ClosedChannelException.class, partialErr));
+            assertTrue(getStacktrace(partialErr), ErrorUtils.isCausedBy(NetworkEndpointClosedException.class, partialErr));
         }
 
         msg.reply("fail", err -> {
@@ -254,6 +254,6 @@ public class MessagingChannelSubscribeTest extends MessagingServiceTestBase {
         Throwable err = errExchanger.exchange(null, AWAIT_TIMEOUT, TimeUnit.SECONDS);
 
         assertTrue(getStacktrace(err), err instanceof MessagingException);
-        assertTrue(getStacktrace(err), ErrorUtils.isCausedBy(ClosedChannelException.class, err));
+        assertTrue(getStacktrace(err), ErrorUtils.isCausedBy(NetworkEndpointClosedException.class, err));
     }
 }

@@ -16,7 +16,6 @@
 
 package io.hekate.codec;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
@@ -35,10 +34,10 @@ public interface EncoderDecoder<T> {
      * @param obj Object.
      * @param out Stream.
      *
-     * @throws IOException Signals encoding failure.
+     * @throws CodecException Signals encoding failure.
      * @see #decode(InputStream)
      */
-    void encode(T obj, OutputStream out) throws IOException;
+    void encode(T obj, OutputStream out) throws CodecException;
 
     /**
      * Encodes the specified object into the specified writer.
@@ -46,10 +45,10 @@ public interface EncoderDecoder<T> {
      * @param obj Object.
      * @param out Writer.
      *
-     * @throws IOException Signals encoding failure.
+     * @throws CodecException Signals encoding failure.
      * @see #decode(DataReader)
      */
-    void encode(T obj, DataWriter out) throws IOException;
+    void encode(T obj, DataWriter out) throws CodecException;
 
     /**
      * Encodes the specified object into an array of bytes.
@@ -58,10 +57,10 @@ public interface EncoderDecoder<T> {
      *
      * @return Bytes.
      *
-     * @throws IOException Signals encoding failure.
+     * @throws CodecException Signals encoding failure.
      * @see #decode(byte[])
      */
-    byte[] encode(T obj) throws IOException;
+    byte[] encode(T obj) throws CodecException;
 
     /**
      * Decodes an object from the specified stream.
@@ -70,10 +69,10 @@ public interface EncoderDecoder<T> {
      *
      * @return Decoded object.
      *
-     * @throws IOException Signals decoding failure.
+     * @throws CodecException Signals decoding failure.
      * @see #encode(Object, OutputStream)
      */
-    T decode(InputStream in) throws IOException;
+    T decode(InputStream in) throws CodecException;
 
     /**
      * Decodes an object from the specified reader.
@@ -82,10 +81,10 @@ public interface EncoderDecoder<T> {
      *
      * @return Decoded object.
      *
-     * @throws IOException Signals decoding failure.
+     * @throws CodecException Signals decoding failure.
      * @see #encode(Object, DataWriter)
      */
-    T decode(DataReader in) throws IOException;
+    T decode(DataReader in) throws CodecException;
 
     /**
      * Decodes an object from the specified array of bytes.
@@ -94,9 +93,9 @@ public interface EncoderDecoder<T> {
      *
      * @return Decoded object.
      *
-     * @throws IOException Signals decoding failure.
+     * @throws CodecException Signals decoding failure.
      */
-    T decode(byte[] bytes) throws IOException;
+    T decode(byte[] bytes) throws CodecException;
 
     /**
      * Decodes an object from the specified array of bytes.
@@ -107,7 +106,7 @@ public interface EncoderDecoder<T> {
      *
      * @return Decoded object.
      *
-     * @throws IOException Signals decoding failure.
+     * @throws CodecException Signals decoding failure.
      */
-    T decode(byte[] bytes, int offset, int limit) throws IOException;
+    T decode(byte[] bytes, int offset, int limit) throws CodecException;
 }

@@ -32,7 +32,7 @@ import io.hekate.cluster.internal.gossip.GossipNodeStatus;
 import io.hekate.cluster.internal.gossip.GossipProtocol;
 import io.hekate.cluster.internal.gossip.GossipSpyAdaptor;
 import io.hekate.core.Hekate;
-import io.hekate.core.HekateFutureException;
+import io.hekate.core.HekateException;
 import io.hekate.core.JoinFuture;
 import io.hekate.core.LeaveFuture;
 import io.hekate.core.TerminateFuture;
@@ -973,7 +973,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
             joining.join();
 
             fail("Error was expected.");
-        } catch (HekateFutureException e) {
+        } catch (HekateException e) {
             ClusterJoinRejectedException cause = e.findCause(ClusterJoinRejectedException.class);
 
             assertEquals(rejectReason, cause.rejectReason());
@@ -1003,7 +1003,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
             joining.join();
 
             fail("Error was expected.");
-        } catch (HekateFutureException e) {
+        } catch (HekateException e) {
             String reason = "Cluster is configured with non-loopback addresses while node is configured to use a loopback address "
                 + "[rejected-by=" + existing.localNode().address() + ']';
 
@@ -1036,7 +1036,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
             joining.join();
 
             fail("Error was expected.");
-        } catch (HekateFutureException e) {
+        } catch (HekateException e) {
             String reason = "Cluster is configured with loopback addresses while node is configured to use a non-loopback address "
                 + "[rejected-by=" + existing.localNode().address() + ']';
 

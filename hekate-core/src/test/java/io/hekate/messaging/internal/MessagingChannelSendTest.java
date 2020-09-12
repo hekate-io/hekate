@@ -18,23 +18,23 @@ package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.codec.CodecException;
+import io.hekate.core.HekateException;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.messaging.MessagingChannelClosedException;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingException;
-import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.MessagingServiceFactory;
 import io.hekate.messaging.loadbalance.EmptyTopologyException;
 import io.hekate.messaging.loadbalance.LoadBalancerException;
 import io.hekate.messaging.loadbalance.UnknownRouteException;
 import io.hekate.messaging.operation.SendFuture;
+import io.hekate.network.NetworkEndpointClosedException;
 import io.hekate.network.NetworkFuture;
 import io.hekate.test.HekateTestError;
 import io.hekate.util.async.Waiting;
 import java.io.NotSerializableException;
 import java.net.Socket;
-import java.nio.channels.ClosedChannelException;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
@@ -96,7 +96,7 @@ public class MessagingChannelSendTest extends MessagingServiceTestBase {
             channel.channel().forNode(newNodeId()).newSend("failed").sync();
 
             fail("Error was expected.");
-        } catch (MessagingFutureException e) {
+        } catch (HekateException e) {
             assertTrue("" + e, e.isCausedBy(EmptyTopologyException.class));
         }
     }
@@ -171,8 +171,8 @@ public class MessagingChannelSendTest extends MessagingServiceTestBase {
                 sender.channel().forNode(receiver.nodeId()).newSend("request" + i).sync();
 
                 fail("Error was expected.");
-            } catch (MessagingFutureException e) {
-                assertTrue(ErrorUtils.stackTrace(e), e.isCausedBy(ClosedChannelException.class));
+            } catch (HekateException e) {
+                assertTrue(ErrorUtils.stackTrace(e), e.isCausedBy(NetworkEndpointClosedException.class));
             }
         });
     }
@@ -213,7 +213,7 @@ public class MessagingChannelSendTest extends MessagingServiceTestBase {
                 get(sendFuture);
 
                 fail("Error was expected.");
-            } catch (MessagingFutureException e) {
+            } catch (HekateException e) {
                 Throwable cause = e.getCause();
 
                 assertTrue(getStacktrace(cause), cause instanceof MessagingChannelClosedException);
@@ -324,10 +324,10 @@ public class MessagingChannelSendTest extends MessagingServiceTestBase {
                 .submit();
 
             try {
-                future.get();
+                future.sync();
 
                 fail("Error was expected.");
-            } catch (MessagingFutureException e) {
+            } catch (HekateException e) {
                 assertTrue(e.isCausedBy(LoadBalancerException.class));
                 assertEquals(HekateTestError.MESSAGE, e.getCause().getMessage());
             }
@@ -350,10 +350,10 @@ public class MessagingChannelSendTest extends MessagingServiceTestBase {
                 .submit();
 
             try {
-                future.get();
+                future.sync();
 
                 fail("Error was expected.");
-            } catch (MessagingFutureException e) {
+            } catch (HekateException e) {
                 assertTrue(e.isCausedBy(LoadBalancerException.class));
                 assertEquals("Load balancer failed to select a target node.", e.getCause().getMessage());
             }
@@ -381,10 +381,10 @@ public class MessagingChannelSendTest extends MessagingServiceTestBase {
                 .submit();
 
             try {
-                future.get();
+                future.sync();
 
                 fail("Error was expected.");
-            } catch (MessagingFutureException e) {
+            } catch (HekateException e) {
                 assertTrue(e.isCausedBy(UnknownRouteException.class));
                 assertEquals("Node is not within the channel topology [id=" + invalidNodeId + ']', e.getCause().getMessage());
             }
@@ -406,7 +406,7 @@ public class MessagingChannelSendTest extends MessagingServiceTestBase {
             get(channel.channel().forNode(channel.nodeId()).newSend("test").submit());
 
             fail("Error was expected.");
-        } catch (MessagingFutureException e) {
+        } catch (HekateException e) {
             assertTrue(e.getCause().toString(), e.getCause() instanceof LoadBalancerException);
             assertEquals("No suitable receivers [channel=test-channel]", e.getCause().getMessage());
         }
@@ -415,10 +415,10 @@ public class MessagingChannelSendTest extends MessagingServiceTestBase {
             channel.channel().forNode(channel.nodeId())
                 .newSend("test")
                 .submit()
-                .get();
+                .sync();
 
             fail("Error was expected.");
-        } catch (MessagingFutureException e) {
+        } catch (HekateException e) {
             assertTrue(ErrorUtils.stackTrace(e), e.isCausedBy(LoadBalancerException.class));
             assertEquals("No suitable receivers [channel=test-channel]", e.findCause(LoadBalancerException.class).getMessage());
         }
@@ -438,7 +438,7 @@ public class MessagingChannelSendTest extends MessagingServiceTestBase {
             get(channel.channel().forNode(channel.nodeId()).newSend("test").submit());
 
             fail("Error was expected.");
-        } catch (MessagingFutureException e) {
+        } catch (HekateException e) {
             assertTrue(e.getCause().toString(), e.getCause() instanceof MessagingChannelClosedException);
             assertEquals("Channel closed [channel=test-channel]", e.getCause().getMessage());
         }
@@ -449,7 +449,7 @@ public class MessagingChannelSendTest extends MessagingServiceTestBase {
                 .sync();
 
             fail("Error was expected.");
-        } catch (MessagingFutureException e) {
+        } catch (HekateException e) {
             assertTrue(e.getCause().toString(), e.getCause() instanceof MessagingChannelClosedException);
             assertEquals("Channel closed [channel=test-channel]", e.getCause().getMessage());
         }
@@ -473,7 +473,7 @@ public class MessagingChannelSendTest extends MessagingServiceTestBase {
         })).join();
 
         repeat(5, i -> {
-            MessagingFutureException err = expect(MessagingFutureException.class, () ->
+            MessagingException err = expect(MessagingException.class, () ->
                 get(sender.messaging().channel("test").forRemotes().newSend(new Socket()).submit())
             );
 

@@ -16,6 +16,7 @@
 
 package io.hekate.messaging.loadbalance;
 
+import io.hekate.core.HekateException;
 import io.hekate.messaging.MessagingException;
 
 /**
@@ -33,5 +34,20 @@ public class LoadBalancerException extends MessagingException {
      */
     public LoadBalancerException(String message) {
         super(message);
+    }
+
+    /**
+     * Constructs new instance.
+     *
+     * @param message Error message.
+     * @param cause Error cause.
+     */
+    public LoadBalancerException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    @Override
+    public HekateException forkFromAsync() {
+        return new LoadBalancerException(getMessage(), this);
     }
 }

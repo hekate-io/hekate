@@ -122,7 +122,7 @@ public interface CoordinationHandler {
     }
 
     /**
-     * Gets called during the {@link CoordinationService} initialization.
+     * Gets called during the {@link CoordinationService} termination.
      *
      * <p>
      * Default implementation of this method is empty.

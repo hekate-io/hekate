@@ -18,7 +18,6 @@ package io.hekate.network;
 
 import io.hekate.util.format.ToString;
 import java.net.SocketAddress;
-import java.net.SocketTimeoutException;
 import java.net.StandardSocketOptions;
 import java.nio.channels.ServerSocketChannel;
 
@@ -166,7 +165,7 @@ public abstract class NetworkServerFactoryBase {
      * <p>
      * This setting works in conjunction with {@link #setHeartbeatInterval(int)} to calculate the total amount of time for a TCP connection
      * to stay inactive (i.e. do not send any heartbeats or application data). When this timeout elapses then connection is considered to
-     * be failed and will be closed with a {@link SocketTimeoutException}.
+     * be failed and will be closed with a {@link NetworkTimeoutException}.
      * </p>
      *
      * <p>

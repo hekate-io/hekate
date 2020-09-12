@@ -177,20 +177,19 @@ public class SeedNodeProviderGroup implements SeedNodeProvider, JmxSupport<Colle
     public void startDiscovery(String cluster, InetSocketAddress node) throws HekateException {
         try {
             withPolicy("start discovery", allProviders, provider -> {
-                    try {
-                        provider.startDiscovery(cluster, node);
+                try {
+                    provider.startDiscovery(cluster, node);
 
-                        // Add to live provider only if started successfully.
-                        liveProviders.add(provider);
-                    } catch (HekateException | RuntimeException | Error e) {
-                        // Cleanup this provider if it failed to start.
-                        failSafeStop(provider, cluster, node);
+                    // Add to live provider only if started successfully.
+                    liveProviders.add(provider);
+                } catch (Throwable e) {
+                    // Cleanup this provider if it failed to start.
+                    failSafeStop(provider, cluster, node);
 
-                        throw e;
-                    }
+                    throw e;
                 }
-            );
-        } catch (RuntimeException | Error | HekateException e) {
+            });
+        } catch (Throwable e) {
             // Cleanup partially started providers.
             stopDiscovery(cluster, node);
 
@@ -251,7 +250,7 @@ public class SeedNodeProviderGroup implements SeedNodeProvider, JmxSupport<Colle
                     task.execute(provider);
 
                     success++;
-                } catch (HekateException | RuntimeException e) {
+                } catch (Exception e) {
                     if (policy == SeedNodeProviderGroupPolicy.FAIL_ON_FIRST_ERROR) {
                         throw e;
                     } else {

@@ -261,7 +261,7 @@ class CandidateHandler implements AsyncLockCallback, JmxSupport<CandidateJmx> {
                 if (doTerminate) {
                     candidate.terminate();
                 }
-            } catch (RuntimeException | Error e) {
+            } catch (Throwable e) {
                 log.error("Failed to execute election worker thread termination task.", e);
             } finally {
                 followerCtx = null;

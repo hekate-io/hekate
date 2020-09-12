@@ -24,7 +24,6 @@ import io.hekate.cluster.event.ClusterEventListener;
 import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateException;
-import io.hekate.core.HekateFutureException;
 import io.hekate.core.InitializationFuture;
 import io.hekate.core.JoinFuture;
 import io.hekate.core.LeaveFuture;
@@ -399,11 +398,10 @@ public class HekateNodeTest extends HekateNodeTestBase {
                     node.join();
 
                     fail();
-                } catch (HekateFutureException e) {
-                    HekateException cause = e.findCause(HekateException.class);
+                } catch (HekateException e) {
+                    IOException cause = e.findCause(IOException.class);
 
-                    assertNotNull(cause.toString(), cause.getCause());
-                    assertTrue(cause.getCause().toString(), cause.getCause() instanceof IOException);
+                    assertNotNull(cause.toString(), cause);
                     assertTrue(cause.getMessage().contains("Address already in use"));
 
                     say(cause);

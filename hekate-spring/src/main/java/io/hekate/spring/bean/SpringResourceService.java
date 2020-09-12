@@ -16,7 +16,7 @@
 
 package io.hekate.spring.bean;
 
-import io.hekate.core.resource.ResourceLoadingException;
+import io.hekate.core.resource.ResourceLoadException;
 import io.hekate.core.resource.ResourceService;
 import io.hekate.core.service.ServiceFactory;
 import java.io.IOException;
@@ -45,11 +45,11 @@ class SpringResourceService implements ResourceService {
     }
 
     @Override
-    public InputStream load(String path) throws ResourceLoadingException {
+    public InputStream load(String path) throws ResourceLoadException {
         try {
             return ctx.getResource(path).getInputStream();
         } catch (IOException e) {
-            throw new ResourceLoadingException("Failed to load resource [path=" + path + ']', e);
+            throw new ResourceLoadException("Failed to load resource [path=" + path + ']', e);
         }
     }
 

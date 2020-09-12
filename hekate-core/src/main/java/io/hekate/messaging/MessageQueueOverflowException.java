@@ -16,6 +16,8 @@
 
 package io.hekate.messaging;
 
+import io.hekate.core.HekateException;
+
 /**
  * Signals {@link MessagingChannel}'s send queue overflow.
  *
@@ -38,5 +40,14 @@ public class MessageQueueOverflowException extends MessagingException {
      */
     public MessageQueueOverflowException(String message) {
         super(message);
+    }
+
+    private MessageQueueOverflowException(MessageQueueOverflowException cause) {
+        super(cause.getMessage(), cause);
+    }
+
+    @Override
+    public HekateException forkFromAsync() {
+        return new MessageQueueOverflowException(this);
     }
 }

@@ -18,7 +18,6 @@ package io.hekate.core.jmx.internal;
 
 import io.hekate.HekateNodeTestBase;
 import io.hekate.core.Hekate;
-import io.hekate.core.HekateUncheckedException;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.core.jmx.JmxService;
@@ -98,7 +97,7 @@ public class JmxServiceTest extends HekateNodeTestBase {
         assertEquals(name1, jmx.nameFor(TestMxBeanA.class));
         assertEquals(name2, jmx.nameFor(TestMxBeanB.class, "test-name"));
 
-        HekateUncheckedException err = expect(HekateUncheckedException.class, () -> jmx.nameFor(TestMxBeanA.class, ","));
+        JmxServiceException err = expect(JmxServiceException.class, () -> jmx.nameFor(TestMxBeanA.class, ","));
 
         assertTrue(ErrorUtils.stackTrace(err), err.isCausedBy(MalformedObjectNameException.class));
     }

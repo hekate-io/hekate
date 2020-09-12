@@ -16,8 +16,10 @@
 
 package io.hekate.messaging.loadbalance;
 
+import io.hekate.core.HekateException;
+
 /**
- * Signals that the node load balanced node couldn't be found in the cluster topology.
+ * Signals that the load balanced node couldn't be found in the cluster topology.
  *
  * @see LoadBalancer#route(Object, LoadBalancerContext)
  */
@@ -31,5 +33,20 @@ public class UnknownRouteException extends LoadBalancerException {
      */
     public UnknownRouteException(String message) {
         super(message);
+    }
+
+    /**
+     * Constructs a new instance.
+     *
+     * @param message Error message.
+     * @param cause Error cause.
+     */
+    public UnknownRouteException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    @Override
+    public HekateException forkFromAsync() {
+        return new UnknownRouteException(getMessage(), this);
     }
 }

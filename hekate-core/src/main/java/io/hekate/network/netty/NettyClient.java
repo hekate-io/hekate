@@ -23,6 +23,7 @@ import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.network.NetworkClient;
 import io.hekate.network.NetworkClientCallback;
 import io.hekate.network.NetworkEndpoint;
+import io.hekate.network.NetworkEndpointClosedException;
 import io.hekate.network.NetworkFuture;
 import io.hekate.network.NetworkSendCallback;
 import io.hekate.network.internal.NettyChannelSupport;
@@ -32,7 +33,6 @@ import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.handler.ssl.SslContext;
 import io.netty.util.internal.ThrowableUtil;
 import java.net.InetSocketAddress;
-import java.nio.channels.ClosedChannelException;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicReference;
@@ -45,8 +45,8 @@ import static io.hekate.network.NetworkClient.State.CONNECTING;
 import static io.hekate.network.NetworkClient.State.DISCONNECTED;
 
 class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
-    private static final ClosedChannelException CLOSED_CHANNEL_EXCEPTION = ThrowableUtil.unknownStackTrace(
-        new ClosedChannelException(), NettyClient.class, "doSend()"
+    private static final NetworkEndpointClosedException CLOSED_CHANNEL_EXCEPTION = ThrowableUtil.unknownStackTrace(
+        new NetworkEndpointClosedException("Connection closed."), NettyClient.class, "send()"
     );
 
     private final AtomicReference<NettyClientContext<T>> ctx = new AtomicReference<>();
@@ -300,7 +300,7 @@ class NettyClient<T> implements NetworkClient<T>, NettyChannelSupport {
     private void notifyOnError(T msg, NetworkSendCallback<T> onSend, Throwable error) {
         try {
             onSend.onComplete(msg, error);
-        } catch (RuntimeException | Error e) {
+        } catch (Throwable e) {
             log.error("Failed to notify callback on network operation failure.", e);
         }
     }

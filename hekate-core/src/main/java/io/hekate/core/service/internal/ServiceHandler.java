@@ -146,7 +146,7 @@ class ServiceHandler {
 
             try {
                 term.preTerminate();
-            } catch (HekateException | RuntimeException | Error e) {
+            } catch (Throwable e) {
                 log.error("Failed to pre-terminate service [service={}]", term, e);
             }
         }
@@ -162,7 +162,7 @@ class ServiceHandler {
 
             try {
                 term.terminate();
-            } catch (HekateException | RuntimeException | Error e) {
+            } catch (Throwable e) {
                 log.error("Failed to terminate service [service={}]", term, e);
             }
 
@@ -182,7 +182,7 @@ class ServiceHandler {
 
             try {
                 term.postTerminate();
-            } catch (HekateException | RuntimeException | Error e) {
+            } catch (Throwable e) {
                 log.error("Failed to post-terminate service [service={}]", term, e);
             }
         }

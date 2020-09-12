@@ -42,4 +42,9 @@ public class JmxServiceException extends HekateException {
     public JmxServiceException(String message, Throwable cause) {
         super(message, cause);
     }
+
+    @Override
+    public HekateException forkFromAsync() {
+        return new JmxServiceException(getMessage(), this);
+    }
 }

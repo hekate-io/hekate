@@ -16,17 +16,17 @@
 
 package io.hekate.network.netty;
 
+import io.hekate.network.NetworkConnectTimeoutException;
+import io.hekate.network.NetworkTimeoutException;
 import io.hekate.network.netty.NetworkProtocol.Heartbeat;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
-import io.netty.channel.ConnectTimeoutException;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
-import java.net.SocketTimeoutException;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 
@@ -174,9 +174,9 @@ class NettyClientTimeoutHandler extends SimpleChannelInboundHandler {
                         ignoreTimeouts--;
                     } else {
                         if (handshakeDone) {
-                            ctx.fireExceptionCaught(new SocketTimeoutException("Timeout while reading data from " + id));
+                            ctx.fireExceptionCaught(new NetworkTimeoutException("Timeout while reading data from " + id));
                         } else {
-                            ctx.fireExceptionCaught(new ConnectTimeoutException("Timeout while connecting to " + id));
+                            ctx.fireExceptionCaught(new NetworkConnectTimeoutException("Timeout while connecting to " + id));
                         }
                     }
                 }

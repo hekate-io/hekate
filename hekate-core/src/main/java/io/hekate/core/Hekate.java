@@ -393,11 +393,10 @@ public interface Hekate extends HekateSupport {
      *
      * @return This instance.
      *
-     * @throws HekateFutureException If failure occurred during initialization.
-     * @throws InterruptedException If thread gets interrupted while awaiting for completion of this operation.
+     * @throws HekateException If failure occurred during initialization.
      * @see #initializeAsync()
      */
-    Hekate initialize() throws InterruptedException, HekateFutureException;
+    Hekate initialize() throws HekateException;
 
     /**
      * Asynchronously initializes this instance and joins the cluster.
@@ -420,11 +419,10 @@ public interface Hekate extends HekateSupport {
      *
      * @return This instance.
      *
-     * @throws HekateFutureException If failure occurred while initializing or joining to cluster.
-     * @throws InterruptedException If thread gets interrupted while awaiting for completion of this operation.
+     * @throws HekateException If failure occurred while initializing or joining to cluster.
      * @see #joinAsync()
      */
-    Hekate join() throws InterruptedException, HekateFutureException;
+    Hekate join() throws HekateException;
 
     /**
      * Asynchronously leaves the cluster and terminates this instance.
@@ -447,11 +445,10 @@ public interface Hekate extends HekateSupport {
      *
      * @return This instance.
      *
-     * @throws HekateFutureException If failure occurred while leaving the cluster.
-     * @throws InterruptedException If thread gets interrupted while awaiting for completion of this operation.
+     * @throws HekateException If failure occurred while leaving the cluster.
      * @see #leaveAsync()
      */
-    Hekate leave() throws InterruptedException, HekateFutureException;
+    Hekate leave() throws HekateException;
 
     /**
      * Asynchronously terminates this instance.
@@ -486,11 +483,10 @@ public interface Hekate extends HekateSupport {
      *
      * @return This instance.
      *
-     * @throws HekateFutureException If failure occurred during termination.
-     * @throws InterruptedException If thread gets interrupted while awaiting for completion of this operation.
+     * @throws HekateException If failure occurred during termination.
      * @see #terminateAsync()
      */
-    Hekate terminate() throws InterruptedException, HekateFutureException;
+    Hekate terminate() throws HekateException;
 
     /**
      * Adds <a href="#lifecycle">lifecycle</a> listener.

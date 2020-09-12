@@ -22,7 +22,7 @@ import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.cluster.split.SplitBrainAction;
 import io.hekate.core.Hekate;
-import io.hekate.core.HekateFutureException;
+import io.hekate.core.HekateException;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.core.internal.util.Jvm;
 import io.hekate.test.SplitBrainDetectorMock;
@@ -178,7 +178,7 @@ public class ClusterServiceSplitBrainTest extends HekateNodeParamTestBase {
             node.join();
 
             fail("Error was expected.");
-        } catch (HekateFutureException e) {
+        } catch (HekateException e) {
             assertSame(TEST_ERROR, e.getCause());
         }
     }

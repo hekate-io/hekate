@@ -48,7 +48,7 @@ public interface ResourceService extends Service {
      *
      * @return Input stream.
      *
-     * @throws ResourceLoadingException Signals that resource couldn't be loaded.
+     * @throws ResourceLoadException Signals that resource couldn't be loaded.
      */
-    InputStream load(String path) throws ResourceLoadingException;
+    InputStream load(String path) throws ResourceLoadException;
 }

@@ -27,10 +27,10 @@ import io.hekate.messaging.internal.MessagingProtocol.ResponseChunk;
 import io.hekate.network.NetworkClient;
 import io.hekate.network.NetworkClientCallback;
 import io.hekate.network.NetworkEndpoint;
+import io.hekate.network.NetworkEndpointClosedException;
 import io.hekate.network.NetworkFuture;
 import io.hekate.network.NetworkMessage;
 import io.hekate.network.NetworkSendCallback;
-import java.nio.channels.ClosedChannelException;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
@@ -104,7 +104,12 @@ class MessagingConnectionOut<T> extends MessagingConnection<T> {
                         }
                     }
 
-                    discardRequestsWithError(localEpoch, wrapError(cause.orElseGet(ClosedChannelException::new)));
+                    discardRequestsWithError(
+                        localEpoch,
+                        wrapError(cause.orElseGet(() ->
+                            new NetworkEndpointClosedException("Connection closed"))
+                        )
+                    );
                 }
             });
         }
@@ -284,9 +289,9 @@ class MessagingConnectionOut<T> extends MessagingConnection<T> {
             msg.prepareReceive(this, req.attempt());
 
             req.attempt().receive(msg);
-        } catch (RuntimeException | Error e) {
+        } catch (Throwable e) {
             if (log.isErrorEnabled()) {
-                log.error("Got an unexpected runtime error during response processing [from={}, message={}]", msg.from(), msg, e);
+                log.error("Got an unexpected error during response processing [from={}, message={}]", msg.from(), msg, e);
             }
         }
     }
@@ -296,9 +301,9 @@ class MessagingConnectionOut<T> extends MessagingConnection<T> {
             msg.prepareReceive(this, req.attempt());
 
             req.attempt().receive(msg);
-        } catch (RuntimeException | Error e) {
+        } catch (Throwable e) {
             if (log.isErrorEnabled()) {
-                log.error("Got an unexpected runtime error during response chunk processing [from={}, message={}]", msg.from(), msg, e);
+                log.error("Got an unexpected error during response chunk processing [from={}, message={}]", msg.from(), msg, e);
             }
 
             doNotifyOnRequestFailure(req, e);
@@ -308,11 +313,11 @@ class MessagingConnectionOut<T> extends MessagingConnection<T> {
     private void doReceiveVoidResponse(RequestHandle<T> req) {
         try {
             req.attempt().receive(null);
-        } catch (RuntimeException | Error e) {
+        } catch (Throwable e) {
             if (log.isErrorEnabled()) {
                 T msg = req.attempt().operation().message();
 
-                log.error("Got an unexpected runtime error during confirmation processing [from={}, message={}]", remoteAddress(), msg, e);
+                log.error("Got an unexpected error during confirmation processing [from={}, message={}]", remoteAddress(), msg, e);
             }
         }
     }
@@ -342,7 +347,7 @@ class MessagingConnectionOut<T> extends MessagingConnection<T> {
 
         try {
             req.attempt().fail(msgError);
-        } catch (RuntimeException | Error e) {
+        } catch (Throwable e) {
             if (log.isErrorEnabled()) {
                 log.error("Failed to notify on messaging failure [to={}, failure={}, message={}]",
                     remoteAddress(), err.toString(), req.message(), e);

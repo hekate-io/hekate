@@ -26,6 +26,7 @@ import io.hekate.codec.CodecFactory;
 import io.hekate.codec.DataReader;
 import io.hekate.codec.DataWriter;
 import io.hekate.codec.SingletonCodecFactory;
+import io.hekate.core.HekateTimeoutException;
 import io.hekate.core.ServiceInfo;
 import io.hekate.core.ServiceProperty;
 import io.hekate.core.internal.util.ErrorUtils;
@@ -33,6 +34,7 @@ import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.service.internal.DefaultServiceInfo;
 import io.hekate.network.address.AddressPattern;
 import io.hekate.test.HekateTestError;
+import io.hekate.util.HekateFuture;
 import java.io.IOException;
 import java.lang.management.LockInfo;
 import java.lang.management.ManagementFactory;
@@ -311,6 +313,16 @@ public abstract class HekateTestBase {
         try {
             return future.get(AWAIT_TIMEOUT, TimeUnit.SECONDS);
         } catch (TimeoutException e) {
+            System.out.println(threadDump());
+
+            throw e;
+        }
+    }
+
+    public static <T> T get(HekateFuture<T, ?> future) {
+        try {
+            return future.sync(AWAIT_TIMEOUT, TimeUnit.SECONDS);
+        } catch (HekateTimeoutException e) {
             System.out.println(threadDump());
 
             throw e;

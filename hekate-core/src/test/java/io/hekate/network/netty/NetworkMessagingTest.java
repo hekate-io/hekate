@@ -19,6 +19,7 @@ package io.hekate.network.netty;
 import io.hekate.HekateTestContext;
 import io.hekate.network.NetworkClient;
 import io.hekate.network.NetworkClientCallback;
+import io.hekate.network.NetworkEndpointClosedException;
 import io.hekate.network.NetworkFuture;
 import io.hekate.network.NetworkMessage;
 import io.hekate.network.NetworkSendCallbackMock;
@@ -33,7 +34,6 @@ import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
-import java.nio.channels.ClosedChannelException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -613,9 +613,9 @@ public class NetworkMessagingTest extends NetworkTestBase {
 
             msgCallback.awaitForErrors("A", "B", "C");
 
-            assertTrue("" + msgCallback.getFailure("A"), msgCallback.getFailure("A") instanceof ClosedChannelException);
-            assertTrue("" + msgCallback.getFailure("B"), msgCallback.getFailure("B") instanceof ClosedChannelException);
-            assertTrue("" + msgCallback.getFailure("C"), msgCallback.getFailure("C") instanceof ClosedChannelException);
+            assertTrue("" + msgCallback.getFailure("A"), msgCallback.getFailure("A") instanceof NetworkEndpointClosedException);
+            assertTrue("" + msgCallback.getFailure("B"), msgCallback.getFailure("B") instanceof NetworkEndpointClosedException);
+            assertTrue("" + msgCallback.getFailure("C"), msgCallback.getFailure("C") instanceof NetworkEndpointClosedException);
 
             NetworkFuture<String> connect = client.connect(server.address(), clientCallback);
 

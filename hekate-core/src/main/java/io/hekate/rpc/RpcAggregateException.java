@@ -17,6 +17,7 @@
 package io.hekate.rpc;
 
 import io.hekate.cluster.ClusterNode;
+import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.ArgAssert;
 import java.util.Map;
 
@@ -61,6 +62,18 @@ public class RpcAggregateException extends RpcException {
     }
 
     /**
+     * Support constructor for {@link #forkFromAsync()}.
+     *
+     * @param cause Cause.
+     */
+    private RpcAggregateException(RpcAggregateException cause) {
+        super(cause.getMessage(), cause);
+
+        this.errors = cause.errors();
+        this.partialResults = cause.partialResults();
+    }
+
+    /**
      * Returns the map of failed nodes and their corresponding errors.
      *
      * @return Map of failed nodes and their corresponding errors.
@@ -76,6 +89,11 @@ public class RpcAggregateException extends RpcException {
      */
     public Map<ClusterNode, Object> partialResults() {
         return partialResults;
+    }
+
+    @Override
+    public HekateException forkFromAsync() {
+        return new RpcAggregateException(this);
     }
 
     private static String remoteErrorsSummary(Map<ClusterNode, Throwable> errors) {

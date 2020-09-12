@@ -30,7 +30,6 @@ import io.hekate.cluster.seed.StaticSeedNodeProvider;
 import io.hekate.cluster.seed.StaticSeedNodeProviderConfig;
 import io.hekate.core.Hekate.State;
 import io.hekate.core.HekateException;
-import io.hekate.core.HekateFutureException;
 import io.hekate.core.JoinFuture;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.test.HekateTestError;
@@ -475,10 +474,10 @@ public class ClusterServiceSingleNodeTest extends HekateNodeParamTestBase {
             });
 
             try {
-                node.joinAsync().get();
+                node.joinAsync().sync();
 
                 fail();
-            } catch (HekateFutureException e) {
+            } catch (HekateException e) {
                 assertTrue(e.isCausedBy(AssertionError.class));
                 assertEquals(HekateTestError.MESSAGE, e.getCause().getMessage());
             }

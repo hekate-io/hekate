@@ -320,11 +320,11 @@ class MessagingGatewayContext<T> {
             attempt = route(op, prevFailure);
         } catch (ClientSelectionRejectedException e) {
             notifyOnErrorAsync(op, e.getCause());
-        } catch (HekateException e) {
+        } catch (Exception e) {
             notifyOnErrorAsync(op, e);
-        } catch (RuntimeException | Error e) {
+        } catch (Error e) {
             if (log.isErrorEnabled()) {
-                log.error("Got an unexpected runtime error during message routing.", e);
+                log.error("Got an unexpected error during message routing.", e);
             }
 
             notifyOnErrorAsync(op, e);
@@ -569,7 +569,7 @@ class MessagingGatewayContext<T> {
                             Runnable retry = () -> {
                                 try {
                                     callback.retry(routing, Optional.of(failure.withRouting(routing)));
-                                } catch (RuntimeException | Error e) {
+                                } catch (Throwable e) {
                                     log.error("Got an unexpected error while retrying.", e);
                                 }
                             };
@@ -609,7 +609,7 @@ class MessagingGatewayContext<T> {
                 } finally {
                     lock.unlockRead(readLock);
                 }
-            } catch (RuntimeException | Error e) {
+            } catch (Throwable e) {
                 log.error("Got an unexpected error while retrying.", e);
             }
         }
@@ -875,8 +875,8 @@ class MessagingGatewayContext<T> {
     private void doNotifyOnError(MessageOperation<T> op, Throwable err) {
         try {
             op.complete(err, null);
-        } catch (RuntimeException | Error e) {
-            log.error("Got an unexpected runtime error while notifying on another error [cause={}]", err, e);
+        } catch (Throwable e) {
+            log.error("Got an unexpected error while notifying on another error [cause={}]", err, e);
         }
     }
 

@@ -19,7 +19,6 @@ package io.hekate.codec;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.service.Service;
-import java.io.IOException;
 
 /**
  * <span class="startHere">&laquo; start here</span>Main entry point to data serialization API.
@@ -97,10 +96,10 @@ public interface CodecService extends Service {
      *
      * @return Byte array of encoded data.
      *
-     * @throws IOException If object couldn't be decoded.
+     * @throws CodecException If object couldn't be decoded.
      * @see #decode(byte[], DecodeFunction)
      */
-    <T> byte[] encode(T obj, EncodeFunction<T> encoder) throws IOException;
+    <T> byte[] encode(T obj, EncodeFunction<T> encoder) throws CodecException;
 
     /**
      * Encodes the specified object into an array of bytes.
@@ -109,10 +108,10 @@ public interface CodecService extends Service {
      *
      * @return Bytes.
      *
-     * @throws IOException Signals encoding failure.
+     * @throws CodecException Signals encoding failure.
      * @see #decode(byte[])
      */
-    byte[] encode(Object obj) throws IOException;
+    byte[] encode(Object obj) throws CodecException;
 
     /**
      * Decodes an object from the specified byte array by using the supplied decode function.
@@ -123,10 +122,10 @@ public interface CodecService extends Service {
      *
      * @return Decoded object.
      *
-     * @throws IOException If object couldn't be decoded.
+     * @throws CodecException If object couldn't be decoded.
      * @see #encode(Object, EncodeFunction)
      */
-    <T> T decode(byte[] bytes, DecodeFunction<T> decoder) throws IOException;
+    <T> T decode(byte[] bytes, DecodeFunction<T> decoder) throws CodecException;
 
     /**
      * Decodes an object from the specified array of bytes.
@@ -137,9 +136,9 @@ public interface CodecService extends Service {
      *
      * @return Decoded object.
      *
-     * @throws IOException Signals decoding failure.
+     * @throws CodecException Signals decoding failure.
      */
-    Object decode(byte[] bytes, int offset, int limit) throws IOException;
+    Object decode(byte[] bytes, int offset, int limit) throws CodecException;
 
     /**
      * Decodes an object from the specified array of bytes.
@@ -148,10 +147,10 @@ public interface CodecService extends Service {
      *
      * @return Decoded object.
      *
-     * @throws IOException Signals decoding failure.
+     * @throws CodecException Signals decoding failure.
      * @see #encode(Object)
      */
-    Object decode(byte[] bytes) throws IOException;
+    Object decode(byte[] bytes) throws CodecException;
 
     /**
      * Decodes an object from the specified byte array by using the supplied decode function.
@@ -164,7 +163,7 @@ public interface CodecService extends Service {
      *
      * @return Decoded object.
      *
-     * @throws IOException If object couldn't be decoded.
+     * @throws CodecException If object couldn't be decoded.
      */
-    <T> T decode(byte[] bytes, int offset, int limit, DecodeFunction<T> decoder) throws IOException;
+    <T> T decode(byte[] bytes, int offset, int limit, DecodeFunction<T> decoder) throws CodecException;
 }

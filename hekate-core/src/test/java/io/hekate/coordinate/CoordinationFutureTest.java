@@ -20,15 +20,10 @@ import io.hekate.util.HekateFutureTestBase;
 
 import static org.mockito.Mockito.mock;
 
-public class CoordinationFutureTest extends HekateFutureTestBase<CoordinationProcess, CoordinationFuture, CoordinationException> {
+public class CoordinationFutureTest extends HekateFutureTestBase<CoordinationProcess, CoordinationFuture> {
     @Override
     protected CoordinationFuture createFuture() {
         return new CoordinationFuture();
-    }
-
-    @Override
-    protected Class<CoordinationException> errorType() {
-        return CoordinationException.class;
     }
 
     @Override

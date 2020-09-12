@@ -14,25 +14,28 @@
  * under the License.
  */
 
-package io.hekate.coordinate;
+package io.hekate.network;
 
-import io.hekate.core.HekateFutureException;
+import io.hekate.core.HekateException;
 
 /**
- * Failure of a coordination process.
- *
- * @see CoordinationService
+ * Signals that an error occurred while attempting to establish a network connection.
  */
-public class CoordinationException extends HekateFutureException {
+public class NetworkConnectException extends NetworkException {
     private static final long serialVersionUID = 1;
 
     /**
-     * Constructs new instance.
+     * Constructs a new instance.
      *
      * @param message Error message.
-     * @param cause Error cause.
+     * @param cause Cause.
      */
-    public CoordinationException(String message, Throwable cause) {
+    public NetworkConnectException(String message, Throwable cause) {
         super(message, cause);
+    }
+
+    @Override
+    public HekateException forkFromAsync() {
+        return new NetworkConnectException(getMessage(), this);
     }
 }

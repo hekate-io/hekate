@@ -36,7 +36,11 @@ public class RejectedResponseException extends HekateException {
      * @param response Rejected response.
      */
     public RejectedResponseException(String message, Object response) {
-        super(message, null, true, false);
+        this(message, response, null);
+    }
+
+    private RejectedResponseException(String message, Object response, Throwable cause) {
+        super(message, cause, true, cause != null);
 
         this.response = response;
     }
@@ -53,5 +57,10 @@ public class RejectedResponseException extends HekateException {
     @Override
     public String getMessage() {
         return super.getMessage() + " [response=" + response + ']';
+    }
+
+    @Override
+    public HekateException forkFromAsync() {
+        return new RejectedResponseException(getMessage(), response(), this);
     }
 }

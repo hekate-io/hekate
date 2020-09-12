@@ -17,7 +17,6 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.core.internal.util.ArgAssert;
-import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.operation.RequestRetryConfigurer;
 import io.hekate.messaging.operation.RequestRetryPolicy;
 import io.hekate.messaging.operation.Subscribe;
@@ -108,7 +107,7 @@ class SubscribeOperationBuilder<T> extends MessageOperationBuilder<T> implements
     }
 
     @Override
-    public List<T> responses() throws InterruptedException, MessagingFutureException {
+    public List<T> responses() {
         List<T> results = new ArrayList<>();
 
         SubscribeFuture<T> future = submit((err, rsp) -> {
@@ -117,7 +116,7 @@ class SubscribeOperationBuilder<T> extends MessageOperationBuilder<T> implements
             }
         });
 
-        future.get();
+        future.sync();
 
         return results;
     }

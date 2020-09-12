@@ -16,6 +16,9 @@
 
 package io.hekate.messaging.internal;
 
+import io.hekate.core.HekateException;
+import io.hekate.core.HekateInterruptedException;
+import io.hekate.core.HekateTimeoutException;
 import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessageQueueOverflowException;
@@ -27,8 +30,6 @@ import io.hekate.util.format.ToString;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -80,9 +81,9 @@ public abstract class BackPressureTestBase extends MessagingServiceTestBase {
             get(channel.newRequest("fail-on-back-pressure").submit());
 
             return false;
-        } catch (TimeoutException | InterruptedException e) {
+        } catch (HekateTimeoutException | HekateInterruptedException e) {
             throw new AssertionError(e);
-        } catch (ExecutionException e) {
+        } catch (HekateException e) {
             return ErrorUtils.isCausedBy(MessageQueueOverflowException.class, e);
         }
     }

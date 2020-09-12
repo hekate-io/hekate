@@ -17,7 +17,6 @@
 package io.hekate.rpc.internal;
 
 import io.hekate.messaging.MessagingChannel;
-import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.operation.AggregateFuture;
 import io.hekate.messaging.operation.AggregateResult;
 import io.hekate.messaging.retry.GenericRetryConfigurer;
@@ -28,7 +27,6 @@ import io.hekate.rpc.RpcMethodInfo;
 import io.hekate.rpc.RpcService;
 import io.hekate.rpc.internal.RpcProtocol.RpcCall;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import org.slf4j.Logger;
@@ -100,7 +98,7 @@ class RpcBroadcastMethodClient<T> extends RpcMethodClientBase<T> {
     }
 
     @Override
-    protected Object doInvoke(Object affinity, Object[] args) throws MessagingFutureException, InterruptedException, TimeoutException {
+    protected Object doInvoke(Object affinity, Object[] args) {
         RpcCall<T> call = new RpcCall<>(methodIdxKey(), rpc(), tag(), method(), args);
 
         AggregateFuture<RpcProtocol> future = channel().newAggregate(call)
@@ -116,7 +114,7 @@ class RpcBroadcastMethodClient<T> extends RpcMethodClientBase<T> {
         if (method().isAsync()) {
             return future.thenApply(converter);
         } else {
-            return converter.apply(future.get());
+            return converter.apply(future.sync());
         }
     }
 }

@@ -393,9 +393,9 @@ class NettyClientContext<T> {
 
             // Notify user callback.
             if (onSend != null) {
-                Throwable mayBeError = NettyErrorUtils.unwrap(result.cause());
+                Throwable err = NettyErrorUtils.unwrap(result.cause());
 
-                onSend.onComplete(msg, mayBeError);
+                onSend.onComplete(msg, err);
             }
         });
 
@@ -469,8 +469,8 @@ class NettyClientContext<T> {
         if (callback != null) {
             try {
                 callback.accept(endpoint);
-            } catch (RuntimeException | Error e) {
-                log.error("Got an unexpected runtime error while notifying callback on network outbound receive status change "
+            } catch (Throwable e) {
+                log.error("Got an unexpected error while notifying callback on network outbound receive status change "
                     + "[pause={}, to={}]", pause, id, e);
             }
         }
@@ -508,7 +508,7 @@ class NettyClientContext<T> {
     private void notifyOnError(T msg, NetworkSendCallback<T> onSend, Throwable error) {
         try {
             onSend.onComplete(msg, error);
-        } catch (RuntimeException | Error e) {
+        } catch (Throwable e) {
             log.error("Failed to notify callback on network operation failure [to={}, message={}]", id, msg, e);
         }
     }

@@ -413,8 +413,8 @@ class LockControllerServer {
                                 break;
                             }
                         }
-                    } catch (RuntimeException | Error e) {
-                        log.error("Got an unexpected runtime error while processing lock timeout [request={}]", request, e);
+                    } catch (Throwable e) {
+                        log.error("Got an unexpected error while processing lock timeout [request={}]", request, e);
                     } finally {
                         sync.unlock();
                     }

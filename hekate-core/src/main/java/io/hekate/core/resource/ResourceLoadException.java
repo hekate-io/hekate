@@ -14,14 +14,16 @@
  * under the License.
  */
 
-package io.hekate.core;
+package io.hekate.core.resource;
 
-import io.hekate.core.internal.util.ErrorUtils;
+import io.hekate.core.HekateException;
 
 /**
- * Generic base class for unchecked errors.
+ * Signals a resource loading error.
+ *
+ * @see ResourceService#load(String)
  */
-public class HekateUncheckedException extends RuntimeException {
+public class ResourceLoadException extends HekateException {
     private static final long serialVersionUID = 1;
 
     /**
@@ -29,7 +31,7 @@ public class HekateUncheckedException extends RuntimeException {
      *
      * @param message Error message.
      */
-    public HekateUncheckedException(String message) {
+    public ResourceLoadException(String message) {
         super(message);
     }
 
@@ -39,18 +41,12 @@ public class HekateUncheckedException extends RuntimeException {
      * @param message Error message.
      * @param cause Cause.
      */
-    public HekateUncheckedException(String message, Throwable cause) {
+    public ResourceLoadException(String message, Throwable cause) {
         super(message, cause);
     }
 
-    /**
-     * Returns {@code true} if this exception is caused by an error of the specified type.
-     *
-     * @param causeType Error type.
-     *
-     * @return {@code true} if this exception is caused by an error of the specified type.
-     */
-    public boolean isCausedBy(Class<? extends Throwable> causeType) {
-        return ErrorUtils.isCausedBy(causeType, this);
+    @Override
+    public HekateException forkFromAsync() {
+        return new ResourceLoadException(getMessage(), this);
     }
 }

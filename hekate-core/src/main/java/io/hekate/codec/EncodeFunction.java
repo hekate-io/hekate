@@ -34,4 +34,20 @@ public interface EncodeFunction<T> {
      * @throws IOException If object couldn't be encoded.
      */
     void encode(T obj, DataWriter out) throws IOException;
+
+    /**
+     * Same as {@link #encode(Object, DataWriter)} but throws an unchecked exception.
+     *
+     * @param obj Object to encode.
+     * @param out Data writer.
+     *
+     * @throws CodecException If object couldn't be encoded.
+     */
+    default void encodeUnchecked(T obj, DataWriter out) throws CodecException {
+        try {
+            encode(obj, out);
+        } catch (IOException e) {
+            throw new CodecException("Failed to encode object of type " + (obj != null ? obj.getClass().getName() : "null"), e);
+        }
+    }
 }

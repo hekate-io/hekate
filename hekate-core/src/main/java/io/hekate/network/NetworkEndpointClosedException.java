@@ -14,29 +14,37 @@
  * under the License.
  */
 
-package io.hekate.test;
+package io.hekate.network;
 
 import io.hekate.core.HekateException;
 
-/** Checked error for tests. */
-public class HekateTestException extends HekateException {
+/**
+ * Signals an attempt to perform a networking operation on a {@link NetworkEndpoint} that is closed.
+ */
+public class NetworkEndpointClosedException extends NetworkException {
     private static final long serialVersionUID = 1;
 
-    public HekateTestException(String message) {
+    /**
+     * Constructs a new instance.
+     *
+     * @param message Error message.
+     */
+    public NetworkEndpointClosedException(String message) {
         super(message);
     }
 
-    private HekateTestException(String message, Throwable cause) {
+    /**
+     * Constructs a new instance.
+     *
+     * @param message Error message.
+     * @param cause Cause.
+     */
+    public NetworkEndpointClosedException(String message, Throwable cause) {
         super(message, cause);
     }
 
     @Override
     public HekateException forkFromAsync() {
-        return new HekateTestException(getMessage(), this);
-    }
-
-    @Override
-    public synchronized Throwable fillInStackTrace() {
-        return this;
+        return new NetworkEndpointClosedException(getMessage(), this);
     }
 }

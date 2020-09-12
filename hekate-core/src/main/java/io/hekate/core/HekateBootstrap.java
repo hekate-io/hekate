@@ -114,9 +114,9 @@ public class HekateBootstrap {
      *
      * @return Future result of this operation.
      *
-     * @throws HekateConfigurationException If configuration is invalid.
+     * @throws HekateException If configuration is invalid.
      */
-    public JoinFuture joinAsync() throws HekateConfigurationException {
+    public JoinFuture joinAsync() throws HekateException {
         return create().joinAsync();
     }
 
@@ -125,11 +125,9 @@ public class HekateBootstrap {
      *
      * @return new {@link Hekate} instance.
      *
-     * @throws HekateConfigurationException If configuration is invalid.
-     * @throws HekateFutureException If failure occurred while initializing or joining to cluster.
-     * @throws InterruptedException If the current thread was interrupted while awaiting for completion of this operation.
+     * @throws HekateException If failure occurred while initializing or joining to cluster.
      */
-    public Hekate join() throws HekateConfigurationException, InterruptedException, HekateFutureException {
+    public Hekate join() throws HekateException {
         return create().join();
     }
 
@@ -142,11 +140,9 @@ public class HekateBootstrap {
      *
      * @return new {@link Hekate} instance.
      *
-     * @throws HekateConfigurationException If configuration is invalid.
-     * @throws HekateFutureException If failure occurred while initializing or joining to cluster.
-     * @throws InterruptedException If the current thread was interrupted while awaiting for completion of this operation.
+     * @throws HekateException If failure occurred while initializing or joining to cluster.
      */
-    public Hekate initialize() throws HekateFutureException, InterruptedException {
+    public Hekate initialize() throws HekateException {
         return create().initialize();
     }
 

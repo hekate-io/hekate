@@ -16,10 +16,10 @@
 
 package io.hekate.messaging.operation;
 
+import io.hekate.core.HekateException;
 import io.hekate.messaging.MessageTimeoutException;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
-import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.loadbalance.LoadBalancer;
 import io.hekate.messaging.retry.GenericRetryConfigurer;
 import java.util.concurrent.TimeUnit;
@@ -140,11 +140,10 @@ public interface Request<T> {
      *
      * @return Response's payload (see {@link Response#payload()}).
      *
-     * @throws MessagingFutureException if operations fails.
-     * @throws InterruptedException if thread got interrupted while awaiting for this operation to complete.
+     * @throws HekateException if operations fails.
      */
-    default T response() throws MessagingFutureException, InterruptedException {
-        return submit().get().payload();
+    default T response() {
+        return submit().sync().payload();
     }
 
     /**
@@ -155,11 +154,10 @@ public interface Request<T> {
      *
      * @return Response.
      *
-     * @throws MessagingFutureException if operations fails.
-     * @throws InterruptedException if thread got interrupted while awaiting for this operation to complete.
+     * @throws HekateException if operations fails.
      */
-    default <R extends T> R response(Class<R> responseType) throws MessagingFutureException, InterruptedException {
-        return submit().get().payload(responseType);
+    default <R extends T> R response(Class<R> responseType) throws HekateException {
+        return submit().sync().payload(responseType);
     }
 
     /**
@@ -167,10 +165,9 @@ public interface Request<T> {
      *
      * @return Response.
      *
-     * @throws MessagingFutureException if operations fails.
-     * @throws InterruptedException if thread got interrupted while awaiting for this operation to complete.
+     * @throws HekateException if operations fails.
      */
-    default Response<T> get() throws MessagingFutureException, InterruptedException {
-        return submit().get();
+    default Response<T> get() throws HekateException {
+        return submit().sync();
     }
 }

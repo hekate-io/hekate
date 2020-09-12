@@ -16,8 +16,16 @@
 
 package io.hekate.util;
 
+import io.hekate.core.HekateException;
+import io.hekate.core.HekateExecutionException;
+import io.hekate.core.HekateInterruptedException;
+import io.hekate.core.HekateTimeoutException;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Base class for asynchronous operation results.
@@ -36,6 +44,50 @@ public abstract class HekateFuture<T, F extends HekateFuture<T, F>> extends Comp
      * @return New instance.
      */
     protected abstract F newInstance();
+
+    /**
+     * Same as {@link #get()} but throws unchecked exceptions.
+     *
+     * @return Result value.
+     *
+     * @throws HekateInterruptedException If thread got interrupted.
+     * @throws HekateExecutionException If this future completed exceptionally.
+     * @throws CancellationException If this future was cancelled.
+     */
+    public T sync() {
+        try {
+            return super.get();
+        } catch (InterruptedException e) {
+            throw new HekateInterruptedException("Thread interrupted while getting a value from " + getClass().getName(), e);
+        } catch (ExecutionException e) {
+            throw rethrow(e);
+        }
+    }
+
+    /**
+     * Same as {@link #get(long, TimeUnit)} but throws unchecked exceptions.
+     *
+     * @param timeout Maximum time to wait.
+     * @param unit Time unit of the timeout argument.
+     *
+     * @return Result value.
+     *
+     * @throws HekateInterruptedException If thread got interrupted.
+     * @throws HekateTimeoutException If the wait timed out.
+     * @throws HekateExecutionException If this future completed exceptionally.
+     * @throws CancellationException If this future was cancelled.
+     */
+    public T sync(long timeout, TimeUnit unit) {
+        try {
+            return super.get(timeout, unit);
+        } catch (InterruptedException e) {
+            throw new HekateInterruptedException("Thread interrupted while getting a value from " + getClass().getName(), e);
+        } catch (ExecutionException e) {
+            throw rethrow(e);
+        } catch (TimeoutException e) {
+            throw new HekateTimeoutException("Timeout while while getting a value from " + getClass().getName(), e);
+        }
+    }
 
     /**
      * Returns {@code true} if this future {@link #isDone() completed} successfully without an {@link #isCompletedExceptionally() error}.
@@ -80,5 +132,13 @@ public abstract class HekateFuture<T, F extends HekateFuture<T, F>> extends Comp
         }
 
         return dep;
+    }
+
+    private static HekateException rethrow(ExecutionException e) {
+        if (e.getCause() instanceof HekateException) {
+            return ((HekateException)e.getCause()).forkFromAsync();
+        } else {
+            return new HekateExecutionException(e.getMessage(), e.getCause());
+        }
     }
 }

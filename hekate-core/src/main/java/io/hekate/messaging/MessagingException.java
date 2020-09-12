@@ -56,4 +56,9 @@ public class MessagingException extends HekateException {
     protected MessagingException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
     }
+
+    @Override
+    public HekateException forkFromAsync() {
+        return new MessagingException(getMessage(), this);
+    }
 }

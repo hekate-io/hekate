@@ -142,7 +142,7 @@ public class NettyMessageTest extends HekateTestBase {
             msg.handleAsync(thread, m -> {
                 try {
                     ref.exchange(m.decode());
-                } catch (InterruptedException | IOException e) {
+                } catch (InterruptedException e) {
                     // No-op.
                 }
             });

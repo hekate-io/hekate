@@ -44,6 +44,13 @@ public class ClusterJoinRejectedException extends HekateException {
         this.rejectedBy = rejectedBy;
     }
 
+    private ClusterJoinRejectedException(ClusterJoinRejectedException cause) {
+        super(cause.getMessage(), cause);
+
+        this.rejectReason = cause.rejectReason();
+        this.rejectedBy = cause.rejectedBy();
+    }
+
     /**
      * Returns reject reason as it was returned by {@link ClusterAcceptor#acceptJoin(ClusterNode, Hekate)}.
      *
@@ -60,5 +67,10 @@ public class ClusterJoinRejectedException extends HekateException {
      */
     public ClusterAddress rejectedBy() {
         return rejectedBy;
+    }
+
+    @Override
+    public HekateException forkFromAsync() {
+        return new ClusterJoinRejectedException(this);
     }
 }

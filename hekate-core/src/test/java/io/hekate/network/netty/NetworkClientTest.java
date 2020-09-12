@@ -20,8 +20,10 @@ import io.hekate.HekateTestContext;
 import io.hekate.codec.CodecException;
 import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.network.NetworkClient;
+import io.hekate.network.NetworkConnectException;
 import io.hekate.network.NetworkConnectTimeoutException;
 import io.hekate.network.NetworkEndpoint;
+import io.hekate.network.NetworkException;
 import io.hekate.network.NetworkFuture;
 import io.hekate.network.NetworkMessage;
 import io.hekate.network.NetworkSendCallbackMock;
@@ -81,14 +83,14 @@ public class NetworkClientTest extends NetworkTestBase {
 
                 fail("Error was expected");
             } catch (ExecutionException e) {
-                assertTrue(e.getCause().toString(), ErrorUtils.isCausedBy(ConnectException.class, e));
+                assertEquals(NetworkConnectException.class, e.getCause().getClass());
             }
 
             assertSame(NetworkClient.State.DISCONNECTED, client.state());
             callback.assertConnects(0);
             callback.assertDisconnects(1);
             callback.assertErrors(1);
-            callback.getErrors().forEach(e -> assertTrue(e.toString(), e instanceof ConnectException));
+            callback.getErrors().forEach(e -> assertTrue(e.toString(), e instanceof NetworkConnectException));
         });
     }
 
@@ -112,7 +114,7 @@ public class NetworkClientTest extends NetworkTestBase {
 
                 fail("Error was expected");
             } catch (ExecutionException e) {
-                assertTrue(e.getCause().toString(), ErrorUtils.isCausedBy(IOException.class, e));
+                assertTrue(e.getCause().toString(), e.getCause() instanceof NetworkException);
             }
 
             sendCallback.awaitForErrors("test");
@@ -126,7 +128,7 @@ public class NetworkClientTest extends NetworkTestBase {
             callback.assertConnects(0);
             callback.assertDisconnects(1);
             callback.assertErrors(1);
-            callback.getErrors().forEach(e -> assertTrue(e.toString(), e instanceof ConnectException));
+            callback.getErrors().forEach(e -> assertTrue(e.toString(), e instanceof NetworkConnectException));
         });
     }
 
@@ -803,7 +805,7 @@ public class NetworkClientTest extends NetworkTestBase {
 
             fail("Error was expected");
         } catch (ExecutionException e) {
-            assertTrue(e.getCause().toString(), ErrorUtils.isCausedBy(ConnectException.class, e));
+            assertEquals(NetworkConnectException.class, e.getCause().getClass());
         }
 
         assertSame(NetworkClient.State.DISCONNECTED, client.state());
@@ -811,7 +813,7 @@ public class NetworkClientTest extends NetworkTestBase {
         callback.assertConnects(0);
         callback.assertDisconnects(1);
         callback.assertErrors(1);
-        callback.getErrors().forEach(e -> assertTrue(e.toString(), e instanceof ConnectException));
+        callback.getErrors().forEach(e -> assertTrue(e.toString(), e instanceof NetworkConnectException));
     }
 
     @Test
@@ -869,7 +871,7 @@ public class NetworkClientTest extends NetworkTestBase {
 
                 fail("Error was expected");
             } catch (ExecutionException e) {
-                assertTrue(e.getCause().toString(), ErrorUtils.isCausedBy(ConnectException.class, e));
+                assertEquals(NetworkConnectException.class, e.getCause().getClass());
             }
 
             messageCallback.awaitForSentOrFailed(i + 1);
@@ -882,7 +884,7 @@ public class NetworkClientTest extends NetworkTestBase {
             callback.assertConnects(0);
             callback.assertDisconnects(1);
             callback.assertErrors(1);
-            callback.getErrors().forEach(e -> assertTrue(e.toString(), e instanceof ConnectException));
+            callback.getErrors().forEach(e -> assertTrue(e.toString(), e instanceof NetworkConnectException));
         });
     }
 
@@ -917,7 +919,7 @@ public class NetworkClientTest extends NetworkTestBase {
 
             fail("Error was expected");
         } catch (ExecutionException e) {
-            assertTrue(e.getCause().toString(), ErrorUtils.isCausedBy(ConnectException.class, e));
+            assertEquals(NetworkConnectException.class, e.getCause().getClass());
         }
 
         assertSame(NetworkClient.State.DISCONNECTED, client.state());
@@ -925,7 +927,7 @@ public class NetworkClientTest extends NetworkTestBase {
         callback.assertConnects(1);
         callback.assertDisconnects(2);
         callback.assertErrors(1);
-        callback.getErrors().forEach(e -> assertTrue(e.toString(), e instanceof ConnectException));
+        callback.getErrors().forEach(e -> assertTrue(e.toString(), e instanceof NetworkConnectException));
     }
 
     @Test
@@ -977,7 +979,7 @@ public class NetworkClientTest extends NetworkTestBase {
 
                     fail("Error was expected");
                 } catch (ExecutionException e) {
-                    assertTrue(e.getCause().toString(), ErrorUtils.isCausedBy(ConnectTimeoutException.class, e));
+                    assertEquals(NetworkConnectTimeoutException.class, e.getCause().getClass());
                 }
             });
 

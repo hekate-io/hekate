@@ -17,10 +17,10 @@
 package io.hekate.messaging.operation;
 
 import io.hekate.core.Hekate;
+import io.hekate.core.HekateException;
 import io.hekate.messaging.MessageTimeoutException;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
-import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.retry.GenericRetryConfigurer;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
@@ -174,11 +174,10 @@ public interface Aggregate<T> {
      *
      * @return Result (see {@link AggregateResult#results()}).
      *
-     * @throws MessagingFutureException If operations fails.
-     * @throws InterruptedException If thread got interrupted while awaiting for this operation to complete.
+     * @throws HekateException If operations fails.
      */
-    default Collection<T> results() throws MessagingFutureException, InterruptedException {
-        return submit().get().results();
+    default Collection<T> results() throws HekateException {
+        return submit().sync().results();
     }
 
     /**
@@ -186,10 +185,9 @@ public interface Aggregate<T> {
      *
      * @return Result.
      *
-     * @throws MessagingFutureException If operations fails.
-     * @throws InterruptedException If thread got interrupted while awaiting for this operation to complete.
+     * @throws HekateException If operations fails.
      */
-    default AggregateResult<T> get() throws MessagingFutureException, InterruptedException {
-        return submit().get();
+    default AggregateResult<T> get() throws HekateException {
+        return submit().sync();
     }
 }

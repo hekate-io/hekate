@@ -20,15 +20,10 @@ import io.hekate.util.HekateFutureTestBase;
 
 import static org.mockito.Mockito.mock;
 
-public class InitializationFutureTest extends HekateFutureTestBase<Hekate, InitializationFuture, HekateFutureException> {
+public class InitializationFutureTest extends HekateFutureTestBase<Hekate, InitializationFuture> {
     @Override
     protected InitializationFuture createFuture() {
         return new InitializationFuture();
-    }
-
-    @Override
-    protected Class<HekateFutureException> errorType() {
-        return HekateFutureException.class;
     }
 
     @Override

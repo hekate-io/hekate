@@ -16,6 +16,8 @@
 
 package io.hekate.messaging.loadbalance;
 
+import io.hekate.core.HekateException;
+
 /**
  * Signals that there are no suitable cluster nodes to perform load balancing.
  */
@@ -29,5 +31,20 @@ public class EmptyTopologyException extends UnknownRouteException {
      */
     public EmptyTopologyException(String message) {
         super(message);
+    }
+
+    /**
+     * Constructs new instance.
+     *
+     * @param message Error message.
+     * @param cause Error cause.
+     */
+    public EmptyTopologyException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    @Override
+    public HekateException forkFromAsync() {
+        return new EmptyTopologyException(getMessage(), this);
     }
 }

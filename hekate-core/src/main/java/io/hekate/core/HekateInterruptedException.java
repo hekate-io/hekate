@@ -16,25 +16,33 @@
 
 package io.hekate.core;
 
-import io.hekate.util.HekateFutureTestBase;
-import org.junit.Test;
+/**
+ * Unchecked version of {@link InterruptedException}.
+ */
+public class HekateInterruptedException extends HekateException {
+    private static final long serialVersionUID = 1L;
 
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
+    /**
+     * Constructs a new instance.
+     *
+     * @param message Error message.
+     */
+    public HekateInterruptedException(String message) {
+        super(message);
+    }
 
-public class LeaveFutureTest extends HekateFutureTestBase<Hekate, LeaveFuture> {
-    @Test
-    public void testCompleted() {
-        assertTrue(LeaveFuture.completed(mock(Hekate.class)).isSuccess());
+    /**
+     * Constructs a new instance.
+     *
+     * @param message Error message.
+     * @param cause Cause.
+     */
+    public HekateInterruptedException(String message, Throwable cause) {
+        super(message, cause);
     }
 
     @Override
-    protected LeaveFuture createFuture() {
-        return new LeaveFuture();
-    }
-
-    @Override
-    protected Hekate createValue() {
-        return mock(Hekate.class);
+    public HekateException forkFromAsync() {
+        return new HekateInterruptedException(getMessage(), this);
     }
 }

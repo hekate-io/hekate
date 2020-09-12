@@ -87,7 +87,7 @@ class SeedNodeManager {
 
     public void startDiscovery(InetSocketAddress address) throws HekateException {
         if (DEBUG) {
-            log.debug("Starting seed nodes discovery [cluster={}, address={}]", cluster, address);
+            log.debug("Starting discovery of seed nodes [cluster={}, address={}]", cluster, address);
         }
 
         started.set(true);
@@ -95,23 +95,23 @@ class SeedNodeManager {
         provider.startDiscovery(cluster, address);
 
         if (DEBUG) {
-            log.debug("Started seed nodes discovery [cluster={}, address={}]", cluster, address);
+            log.debug("Started discovery of seed nodes [cluster={}, address={}]", cluster, address);
         }
     }
 
     public void suspendDiscovery() {
         if (DEBUG) {
-            log.debug("Suspending seed nodes discovery...");
+            log.debug("Suspending discovery of seed nodes...");
         }
 
         try {
             provider.suspendDiscovery();
 
             if (DEBUG) {
-                log.debug("Suspended seed nodes discovery.");
+                log.debug("Suspended discovery of seed nodes.");
             }
         } catch (Throwable t) {
-            log.error("Failed to suspend seed nodes discovery.", t);
+            log.error("Failed to suspend discovery of seed nodes.", t);
         }
     }
 
@@ -119,16 +119,16 @@ class SeedNodeManager {
         if (started.compareAndSet(true, false)) {
             try {
                 if (DEBUG) {
-                    log.debug("Stopping seed nodes discovery [cluster={}, address={}]", cluster, address);
+                    log.debug("Stopping discovery of seed nodes [cluster={}, address={}]", cluster, address);
                 }
 
                 provider.stopDiscovery(cluster, address);
 
                 if (DEBUG) {
-                    log.debug("Done stopping seed nodes discovery [cluster={}, address={}]", cluster, address);
+                    log.debug("Done stopping discovery of seed nodes [cluster={}, address={}]", cluster, address);
                 }
             } catch (Throwable t) {
-                log.error("Failed to stop seed nodes discovery [cluster={}, address={}]", cluster, address, t);
+                log.error("Failed to stop discovery of seed nodes [cluster={}, address={}]", cluster, address, t);
             }
         }
     }
@@ -263,14 +263,11 @@ class SeedNodeManager {
                                             }
 
                                             provider.unregisterRemote(cluster, addr);
-                                        } catch (HekateException e) {
-                                            if (log.isWarnEnabled()) {
-                                                log.warn("Failed to unregister failed seed node address "
+                                        } catch (Throwable e) {
+                                            if (log.isErrorEnabled()) {
+                                                log.error("Failed to unregister seed node address "
                                                     + "[cluster={}, address={}]", cluster, addr, e);
                                             }
-                                        } catch (RuntimeException | Error e) {
-                                            log.error("Got an unexpected runtime error while unregistering failed seed node address "
-                                                + "[address={}]", addr, e);
                                         }
                                     });
                                 }
@@ -296,10 +293,8 @@ class SeedNodeManager {
             if (DEBUG) {
                 log.debug("Done running seed nodes cleanup task [cluster={}]", cluster);
             }
-        } catch (HekateException e) {
-            log.warn("Failed to cleanup stale seed nodes.", e);
-        } catch (RuntimeException | Error e) {
-            log.error("Got an unexpected runtime error while cleaning stale stale seed nodes.", e);
+        } catch (Throwable e) {
+            log.error("Got an error while cleaning stale seed nodes.", e);
         }
     }
 

@@ -23,7 +23,6 @@ import io.hekate.messaging.Message;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
-import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.MessagingServiceFactory;
 import io.hekate.messaging.operation.AckMode;
 import io.hekate.messaging.operation.AggregateFuture;
@@ -273,8 +272,7 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
         // End:unicast_request_async
     }
 
-    private void unicastRequestSyncExample(MessagingChannel<String> channel)
-        throws MessagingFutureException, InterruptedException {
+    private void unicastRequestSyncExample(MessagingChannel<String> channel) {
         // Start:unicast_request_sync
         // Submit request and synchronously await for the response.
         String response = channel.newRequest("example request").response();

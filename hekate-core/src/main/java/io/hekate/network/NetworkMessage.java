@@ -17,6 +17,7 @@
 package io.hekate.network;
 
 import io.hekate.codec.Codec;
+import io.hekate.codec.CodecException;
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.DataReader;
 import java.io.IOException;
@@ -131,10 +132,10 @@ public interface NetworkMessage<T> {
      *
      * @return Decoded message.
      *
-     * @throws IOException Message decoding failure.
+     * @throws CodecException Message decoding failure.
      * @see NetworkConnectorConfig#setMessageCodec(CodecFactory)
      */
-    T decode() throws IOException;
+    T decode() throws CodecException;
 
     /**
      * Asynchronously this message on a thread of the specified executor.
@@ -153,9 +154,9 @@ public interface NetworkMessage<T> {
      *
      * @return Result of function application.
      *
-     * @throws IOException Message reading failure.
+     * @throws CodecException Message reading failure.
      */
-    <V> V preview(Preview<V> preview) throws IOException;
+    <V> V preview(Preview<V> preview) throws CodecException;
 
     /**
      * Applies the specified preview function to this message. Such function can be used to inspect the content of this message
@@ -165,9 +166,9 @@ public interface NetworkMessage<T> {
      *
      * @return Result of function application.
      *
-     * @throws IOException Message reading failure.
+     * @throws CodecException Message reading failure.
      */
-    int previewInt(PreviewInt preview) throws IOException;
+    int previewInt(PreviewInt preview) throws CodecException;
 
     /**
      * Applies the specified preview function to this message. Such function can be used to inspect the content of this message
@@ -177,9 +178,9 @@ public interface NetworkMessage<T> {
      *
      * @return Result of function application.
      *
-     * @throws IOException Message reading failure.
+     * @throws CodecException Message reading failure.
      */
-    long previewLong(PreviewLong preview) throws IOException;
+    long previewLong(PreviewLong preview) throws CodecException;
 
     /**
      * Applies the specified preview function to this message. Such function can be used to inspect the content of this message
@@ -189,9 +190,9 @@ public interface NetworkMessage<T> {
      *
      * @return Result of function application.
      *
-     * @throws IOException Message reading failure.
+     * @throws CodecException Message reading failure.
      */
-    double previewDouble(PreviewDouble preview) throws IOException;
+    double previewDouble(PreviewDouble preview) throws CodecException;
 
     /**
      * Applies the specified preview function to this message. Such function can be used to inspect the content of this message
@@ -201,7 +202,7 @@ public interface NetworkMessage<T> {
      *
      * @return Result of function application.
      *
-     * @throws IOException Message reading failure.
+     * @throws CodecException Message reading failure.
      */
-    boolean previewBoolean(PreviewBoolean preview) throws IOException;
+    boolean previewBoolean(PreviewBoolean preview) throws CodecException;
 }

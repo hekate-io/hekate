@@ -91,14 +91,14 @@ class ClusterAcceptManager {
                 async.execute(() -> {
                     try {
                         guard.withReadLockIfInitialized(() -> {
-                            String rejectReason = doAccept(joining, hekate);
+                            String reject = doAccept(joining, hekate);
 
-                            future.complete(Optional.ofNullable(rejectReason));
+                            future.complete(Optional.ofNullable(reject));
                         });
-                    } catch (RuntimeException | Error e) {
-                        log.error("Got an unexpected error during the joining node acceptance testing [node={}]", joining, e);
+                    } catch (Throwable e) {
+                        log.error("Got an unexpected error while accepting the joining node [node={}]", joining, e);
                     } finally {
-                        // Allow subsequent checks of this node.
+                        // Allow subsequent checks for this node.
                         activeChecks.remove(joining.id());
                     }
                 });

@@ -16,13 +16,22 @@
 
 package io.hekate.network;
 
-import java.io.IOException;
+import io.hekate.core.HekateException;
 
 /**
  * Signals a network operation timed out.
  */
-public class NetworkTimeoutException extends IOException {
+public class NetworkTimeoutException extends NetworkException {
     private static final long serialVersionUID = 1L;
+
+    /**
+     * Constructs a new instance.
+     *
+     * @param message Error message.
+     */
+    public NetworkTimeoutException(String message) {
+        super(message);
+    }
 
     /**
      * Constructs a new instance.
@@ -32,5 +41,10 @@ public class NetworkTimeoutException extends IOException {
      */
     public NetworkTimeoutException(String message, Throwable cause) {
         super(message, cause);
+    }
+
+    @Override
+    public HekateException forkFromAsync() {
+        return new NetworkTimeoutException(getMessage(), this);
     }
 }
