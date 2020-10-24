@@ -73,7 +73,7 @@
         <aws.sdk.version>1.11.717</aws.sdk.version>
 
         <!-- Test dependencies.-->
-        <junit.version>4.12</junit.version>
+        <junit.version>4.13.1</junit.version>
 
         <!-- Maven plugins.-->
         <maven.compiler.plugin.version>3.8.0</maven.compiler.plugin.version>
