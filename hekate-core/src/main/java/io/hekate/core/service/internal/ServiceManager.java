@@ -50,8 +50,6 @@ public class ServiceManager {
 
     private final String nodeName;
 
-    private final String clusterName;
-
     private final Hekate container;
 
     private final ServiceInitOrder initOrder = new ServiceInitOrder();
@@ -76,7 +74,6 @@ public class ServiceManager {
 
     public ServiceManager(
         String nodeName,
-        String clusterName,
         Hekate container,
         MeterRegistry metrics,
         List<? extends Service> builtInServices,
@@ -84,7 +81,6 @@ public class ServiceManager {
         List<? extends ServiceFactory<?>> factories
     ) {
         this.nodeName = nodeName;
-        this.clusterName = clusterName;
         this.container = container;
         this.metrics = metrics;
         this.builtInServices = builtInServices;
@@ -94,10 +90,6 @@ public class ServiceManager {
 
     public String nodeName() {
         return nodeName;
-    }
-
-    public String clusterName() {
-        return clusterName;
     }
 
     public Hekate container() {

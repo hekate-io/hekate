@@ -107,8 +107,6 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
 
     private final String name;
 
-    private final String clusterName;
-
     private final Set<String> roles;
 
     private final Map<String, String> props;
@@ -170,9 +168,6 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
         // Check configuration.
         ConfigCheck check = ConfigCheck.get(HekateBootstrap.class);
 
-        check.notEmpty(boot.getClusterName(), "cluster name");
-        check.validSysName(boot.getClusterName(), "cluster name");
-
         check.validSysName(boot.getNodeName(), "node name");
 
         check.notNull(boot.getDefaultCodec(), "default codec");
@@ -182,7 +177,6 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
 
         // Basic properties.
         this.name = boot.getNodeName() != null ? boot.getNodeName().trim() : "";
-        this.clusterName = boot.getClusterName().trim();
         this.fatalErrorPolicy = boot.getFatalErrorPolicy();
         this.report = boot.isConfigReport();
 
@@ -689,7 +683,6 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
                         r.value("id", node.id());
                         r.value("address", node.address().socket());
                         r.value("name", node.name());
-                        r.value("cluster", clusterName);
                         r.value("roles", node.roles());
                         r.value("properties", node.properties());
                         r.value("pid", node.runtime().pid());
@@ -737,11 +730,6 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
         ClusterContext cluster = createClusterContext();
 
         return new InitializationContext() {
-            @Override
-            public String clusterName() {
-                return clusterName;
-            }
-
             @Override
             public State state() {
                 return state;
@@ -825,7 +813,7 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
                                         if (err == null) {
                                             // Check that state wasn't changed while we were waiting for synchronization.
                                             if (state == SYNCHRONIZING) {
-                                                log.info("Hekate is UP and running [cluster={}, node={}]", clusterName, node);
+                                                log.info("Hekate is UP and running [node={}]", node);
 
                                                 become(UP);
                                             }
@@ -1104,7 +1092,6 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
 
         return new ServiceManager(
             name,
-            clusterName,
             this,
             metrics,
             builtInServices,

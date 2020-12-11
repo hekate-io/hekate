@@ -35,7 +35,7 @@
                     cleanup-interval-ms="-1"
                     query-timeout-sec="5"
                     table="cn"
-                    cluster-column="c"
+                    namespace-column="c"
                     host-column="h"
                     port-column="p">
                     <h:datasource ref="dataSource"/>
@@ -51,7 +51,7 @@
                     cleanup-interval-ms="-1"
                     query-timeout-sec="5"
                     table="cn"
-                    cluster-column="c"
+                    namespace-column="c"
                     host-column="h"
                     port-column="p">
                     <h:datasource ref="dataSource"/>

@@ -67,6 +67,7 @@ import org.springframework.context.annotation.Lazy;
  * For example:
  * </p>
  * <ul>
+ * <li>{@link ClusterServiceFactory#setNamespace(String) 'hekate.cluster.namespace'}</li>
  * <li>{@link ClusterServiceFactory#setGossipInterval(long) 'hekate.cluster.gossip-interval'}</li>
  * <li>{@link ClusterServiceFactory#setSpeedUpGossipSize(int) 'hekate.cluster.speed-up-gossip-size'}</li>
  * <li>{@link ClusterServiceFactory#setSplitBrainCheckInterval(long)} 'hekate.cluster.split-brain-check-interval'}</li>

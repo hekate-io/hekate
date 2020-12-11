@@ -131,7 +131,6 @@ import org.springframework.stereotype.Component;
  * </p>
  * <ul>
  * <li>{@link HekateBootstrap#setNodeName(String) 'hekate.node-name'}</li>
- * <li>{@link HekateBootstrap#setClusterName(String) 'hekate.cluster-name'}</li>
  * <li>{@link HekateBootstrap#setRoles(List) 'hekate.roles'}</li>
  * <li>{@link HekateBootstrap#setProperties(Map) 'hekate.properties'}</li>
  * <li>{@link HekateBootstrap#setConfigReport(boolean)} 'hekate.config-report'}</li>

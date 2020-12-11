@@ -21,7 +21,6 @@ import com.orbitz.consul.KeyValueClient;
 import com.orbitz.consul.model.kv.Value;
 import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.cluster.seed.SeedNodeProvider;
-import io.hekate.core.HekateBootstrap;
 import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.AddressUtils;
 import io.hekate.core.internal.util.ArgAssert;
@@ -54,14 +53,14 @@ import static java.util.stream.Collectors.toList;
  * <p>
  * When this provider start it registers the local node's address using the following key structure:<br>
  * {@link ConsulSeedNodeProviderConfig#setBasePath(String) [base_path]}/
- * {@link HekateBootstrap#setClusterName(String) [cluster_name]}/
+ * {@link ClusterServiceFactory#setNamespace(String) [namespace]}/
  * [node_address]
  * </p>
  *
  * <p>
  * In order to find existing seed nodes this provider scans for keys that has the following prefix:<br>
  * {@link ConsulSeedNodeProviderConfig#setBasePath(String) [base_path]}/
- * {@link HekateBootstrap#setClusterName(String) [cluster_name]}/
+ * {@link ClusterServiceFactory#setNamespace(String) [namespace]}/
  * </p>
  *
  * <p>
@@ -182,8 +181,8 @@ public class ConsulSeedNodeProvider implements SeedNodeProvider, ConfigReportSup
     }
 
     @Override
-    public List<InetSocketAddress> findSeedNodes(String cluster) throws HekateException {
-        String clusterPath = makeClusterPath(cluster);
+    public List<InetSocketAddress> findSeedNodes(String namespace) throws HekateException {
+        String clusterPath = makeClusterPath(namespace);
 
         if (DEBUG) {
             log.debug("Searching for seed nodes [cluster-path={}]", clusterPath);
@@ -201,8 +200,8 @@ public class ConsulSeedNodeProvider implements SeedNodeProvider, ConfigReportSup
     }
 
     @Override
-    public void startDiscovery(String cluster, InetSocketAddress node) throws HekateException {
-        doRegister(cluster, node, true);
+    public void startDiscovery(String namespace, InetSocketAddress node) throws HekateException {
+        doRegister(namespace, node, true);
     }
 
     @Override
@@ -211,8 +210,8 @@ public class ConsulSeedNodeProvider implements SeedNodeProvider, ConfigReportSup
     }
 
     @Override
-    public void stopDiscovery(String cluster, InetSocketAddress node) throws HekateException {
-        doUnregister(cluster, node, true);
+    public void stopDiscovery(String namespace, InetSocketAddress node) throws HekateException {
+        doUnregister(namespace, node, true);
     }
 
     @Override
@@ -221,13 +220,13 @@ public class ConsulSeedNodeProvider implements SeedNodeProvider, ConfigReportSup
     }
 
     @Override
-    public void registerRemote(String cluster, InetSocketAddress node) throws HekateException {
-        doRegister(cluster, node, false);
+    public void registerRemote(String namespace, InetSocketAddress node) throws HekateException {
+        doRegister(namespace, node, false);
     }
 
     @Override
-    public void unregisterRemote(String cluster, InetSocketAddress node) throws HekateException {
-        doUnregister(cluster, node, false);
+    public void unregisterRemote(String namespace, InetSocketAddress node) throws HekateException {
+        doUnregister(namespace, node, false);
     }
 
     private void doRegister(String cluster, InetSocketAddress node, boolean local) throws HekateException {

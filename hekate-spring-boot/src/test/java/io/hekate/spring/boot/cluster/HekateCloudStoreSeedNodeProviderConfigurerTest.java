@@ -60,7 +60,7 @@ public class HekateCloudStoreSeedNodeProviderConfigurerTest extends HekateAutoCo
         String testRegion = HekateTestProps.get("AWS_TEST_REGION");
 
         registerAndRefresh(new String[]{
-            "hekate.cluster=" + UUID.randomUUID().toString(),
+            "hekate.cluster.namespace=" + UUID.randomUUID().toString(),
             "hekate.cluster.seed.cloudstore.enable=true",
             "hekate.cluster.seed.cloudstore.provider=aws-s3",
             "hekate.cluster.seed.cloudstore.container=" + testContainer,

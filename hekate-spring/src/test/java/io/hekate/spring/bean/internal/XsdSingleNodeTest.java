@@ -166,7 +166,6 @@ public class XsdSingleNodeTest extends HekateTestBase {
     }
 
     private void verifyLocalNode() {
-        assertEquals("test-cluster", bootstrap.getClusterName());
         assertEquals("test-node", hekate.localNode().name());
 
         assertEquals(3, hekate.localNode().roles().size());
@@ -190,6 +189,8 @@ public class XsdSingleNodeTest extends HekateTestBase {
 
     private void verifyCluster() {
         DefaultClusterService cluster = hekate.get(DefaultClusterService.class);
+
+        assertEquals("test-cluster", cluster.namespace());
 
         JdbcSeedNodeProvider jdbc = (JdbcSeedNodeProvider)cluster.seedNodeProvider();
 

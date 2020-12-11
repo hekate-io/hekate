@@ -39,7 +39,6 @@ public class HekateJmxTest extends HekateNodeTestBase {
         ObjectName name = node.get(JmxService.class).nameFor(HekateJmx.class);
 
         Assert.assertEquals(HekateVersion.fullVersion(), jmxAttribute(name, "Version", String.class, node));
-        assertEquals(node.cluster().clusterName(), jmxAttribute(name, "ClusterName", String.class, node));
         assertEquals(node.localNode().name(), jmxAttribute(name, "NodeName", String.class, node));
         assertEquals(node.localNode().id().toString(), jmxAttribute(name, "NodeId", String.class, node));
         assertEquals(node.localNode().address().host(), jmxAttribute(name, "Host", String.class, node));

@@ -18,7 +18,6 @@ package io.hekate.cluster.seed.zookeeper;
 
 import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.cluster.seed.SeedNodeProvider;
-import io.hekate.core.HekateBootstrap;
 import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.AddressUtils;
 import io.hekate.core.internal.util.ArgAssert;
@@ -44,14 +43,15 @@ import org.slf4j.LoggerFactory;
  * ZooKeeper-based implementation of {@link SeedNodeProvider} interface.
  *
  * <p>
- * This provides uses a ZooKeeper cluster to store and discover seed node addresses. When provider starts discovering other nodes it
- * creates a new empty Z-node whose name contains local node's host address and under the
- * {@link ZooKeeperSeedNodeProviderConfig#setBasePath(String) [base_path]}/{@link HekateBootstrap#setClusterName(String) [cluster_name]}/
- * path. In order to find other seed nodes it reads the list of all Z-nodes in that folder and parses addresses from their names.
+ * This provides uses a ZooKeeper cluster to store and discover seed node addresses. When provider starts discovering other nodes it creates
+ * a new empty Z-node whose name contains local node's host address and under the {@link ZooKeeperSeedNodeProviderConfig#setBasePath(String)
+ * [base_path]}/{@link ClusterServiceFactory#setNamespace(String) [namespace]} path. In order to find other seed nodes it reads the list of
+ * all Z-nodes in that folder and parses addresses from their names.
  * </p>
  *
  * <p>
- * Please see the documentation of {@link ZooKeeperSeedNodeProviderConfig} class for more details about the available configuration options.
+ * Please see the documentation of {@link ZooKeeperSeedNodeProviderConfig} class for more details about the available configuration
+ * options.
  * </p>
  *
  * @see ClusterServiceFactory#setSeedNodeProvider(SeedNodeProvider)
@@ -161,8 +161,8 @@ public class ZooKeeperSeedNodeProvider implements SeedNodeProvider, ConfigReport
     }
 
     @Override
-    public List<InetSocketAddress> findSeedNodes(String cluster) throws HekateException {
-        String path = basePath + cluster;
+    public List<InetSocketAddress> findSeedNodes(String namespace) throws HekateException {
+        String path = basePath + namespace;
 
         if (DEBUG) {
             log.debug("Searching for seed nodes [path={}]", path);
@@ -197,20 +197,20 @@ public class ZooKeeperSeedNodeProvider implements SeedNodeProvider, ConfigReport
     }
 
     @Override
-    public void startDiscovery(String cluster, InetSocketAddress node) throws HekateException {
+    public void startDiscovery(String namespace, InetSocketAddress node) throws HekateException {
         if (log.isInfoEnabled()) {
-            log.info("Starting discovery [cluster={}, {}]", cluster, ToString.formatProperties(this));
+            log.info("Starting discovery [namespace={}, {}]", namespace, ToString.formatProperties(this));
         }
 
         withZooKeeper(client ->
-            doRegister(client, cluster, node, true)
+            doRegister(client, namespace, node, true)
         );
     }
 
     @Override
-    public void stopDiscovery(String cluster, InetSocketAddress node) throws HekateException {
+    public void stopDiscovery(String namespace, InetSocketAddress node) throws HekateException {
         withZooKeeper(client ->
-            doUnregister(client, cluster, node, true)
+            doUnregister(client, namespace, node, true)
         );
     }
 
@@ -220,16 +220,16 @@ public class ZooKeeperSeedNodeProvider implements SeedNodeProvider, ConfigReport
     }
 
     @Override
-    public void registerRemote(String cluster, InetSocketAddress node) throws HekateException {
+    public void registerRemote(String namespace, InetSocketAddress node) throws HekateException {
         withZooKeeper(client ->
-            doRegister(client, cluster, node, false)
+            doRegister(client, namespace, node, false)
         );
     }
 
     @Override
-    public void unregisterRemote(String cluster, InetSocketAddress node) throws HekateException {
+    public void unregisterRemote(String namespace, InetSocketAddress node) throws HekateException {
         withZooKeeper(client ->
-            doUnregister(client, cluster, node, false)
+            doUnregister(client, namespace, node, false)
         );
     }
 
@@ -238,9 +238,9 @@ public class ZooKeeperSeedNodeProvider implements SeedNodeProvider, ConfigReport
         // No-op.
     }
 
-    private void doRegister(CuratorFramework client, String cluster, InetSocketAddress node, boolean local) throws HekateException {
+    private void doRegister(CuratorFramework client, String namespace, InetSocketAddress node, boolean local) throws HekateException {
         try {
-            String clusterDir = basePath + cluster;
+            String clusterDir = basePath + namespace;
 
             String seedPath = clusterDir + '/' + AddressUtils.toFileName(node);
 
@@ -255,12 +255,12 @@ public class ZooKeeperSeedNodeProvider implements SeedNodeProvider, ConfigReport
         } catch (NodeExistsException e) {
             // Ignore (node already registered).
         } catch (Exception e) {
-            throw new HekateException("Failed to register seed node to ZooKeeper [cluster=" + cluster + ", node=" + node + ']', e);
+            throw new HekateException("Failed to register seed node to ZooKeeper [namespace=" + namespace + ", node=" + node + ']', e);
         }
     }
 
-    private void doUnregister(CuratorFramework client, String cluster, InetSocketAddress node, boolean local) throws HekateException {
-        String seedPath = basePath + cluster + '/' + AddressUtils.toFileName(node);
+    private void doUnregister(CuratorFramework client, String namespace, InetSocketAddress node, boolean local) throws HekateException {
+        String seedPath = basePath + namespace + '/' + AddressUtils.toFileName(node);
 
         try {
             if (log.isInfoEnabled()) {
@@ -271,7 +271,7 @@ public class ZooKeeperSeedNodeProvider implements SeedNodeProvider, ConfigReport
         } catch (NoNodeException e) {
             // Ignore.
         } catch (Exception e) {
-            throw new HekateException("Failed to unregister seed node from ZooKeeper [cluster=" + cluster + ", node=" + node + ']', e);
+            throw new HekateException("Failed to unregister seed node from ZooKeeper [namespace=" + namespace + ", node=" + node + ']', e);
         }
     }
 

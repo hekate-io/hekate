@@ -36,15 +36,6 @@ public interface HekateJmx {
     String getVersion();
 
     /**
-     * Returns the cluster name.
-     *
-     * @return Cluster name.
-     *
-     * @see HekateBootstrap#setClusterName(String)
-     */
-    String getClusterName();
-
-    /**
      * Returns the local node's name.
      *
      * @return Name of the local node.

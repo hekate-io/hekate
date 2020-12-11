@@ -25,13 +25,6 @@ import io.micrometer.core.instrument.MeterRegistry;
  */
 public interface InitializationContext {
     /**
-     * Returns the cluster name.
-     *
-     * @return Cluster name.
-     */
-    String clusterName();
-
-    /**
      * Returns the current state of {@link Hekate} instance that this service belongs to.
      *
      * @return State.

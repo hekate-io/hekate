@@ -18,7 +18,6 @@ package io.hekate.cluster.seed.fs;
 
 import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.cluster.seed.SeedNodeProvider;
-import io.hekate.core.HekateBootstrap;
 import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.AddressUtils;
 import io.hekate.core.internal.util.ArgAssert;
@@ -42,8 +41,8 @@ import org.slf4j.LoggerFactory;
  * <p>
  * This provider uses a shared folder to store seed node addresses. When provider starts discovering other nodes it creates a new empty
  * file whose name contains local node's host address and port in the
- * {@link FsSeedNodeProviderConfig#setWorkDir(File) [work_dir]}/{@link HekateBootstrap#setClusterName(String) [cluster_name]}/ folder.
- * In order to find other seed nodes it reads the list of all files in that folder and parses addresses from their names.
+ * {@link FsSeedNodeProviderConfig#setWorkDir(File) [work_dir]}/{@link ClusterServiceFactory#setNamespace(String) [cluster_namespace]}
+ * folder. In order to find other seed nodes it reads the list of all files in that folder and parses addresses from their names.
  * </p>
  *
  * <p>
@@ -107,10 +106,10 @@ public class FsSeedNodeProvider implements SeedNodeProvider, JmxSupport<FsSeedNo
     }
 
     @Override
-    public List<InetSocketAddress> findSeedNodes(String cluster) throws HekateException {
+    public List<InetSocketAddress> findSeedNodes(String namespace) throws HekateException {
         List<InetSocketAddress> seedNodes = new ArrayList<>();
 
-        File dir = clusterDir(cluster);
+        File dir = clusterDir(namespace);
 
         if (DEBUG) {
             log.debug("Searching for seed node files [dir={}]", dir);
@@ -142,10 +141,10 @@ public class FsSeedNodeProvider implements SeedNodeProvider, JmxSupport<FsSeedNo
     }
 
     @Override
-    public void startDiscovery(String cluster, InetSocketAddress node) throws HekateException {
-        log.info("Starting discovery [cluster={}, {}]", cluster, ToString.formatProperties(this));
+    public void startDiscovery(String namespace, InetSocketAddress node) throws HekateException {
+        log.info("Starting discovery [namespace={}, {}]", namespace, ToString.formatProperties(this));
 
-        doRegister(cluster, node);
+        doRegister(namespace, node);
     }
 
     @Override
@@ -154,10 +153,10 @@ public class FsSeedNodeProvider implements SeedNodeProvider, JmxSupport<FsSeedNo
     }
 
     @Override
-    public void stopDiscovery(String cluster, InetSocketAddress node) throws HekateException {
-        log.info("Stopping seed nodes discovery [cluster={}, address={}]", cluster, node);
+    public void stopDiscovery(String namespace, InetSocketAddress node) throws HekateException {
+        log.info("Stopping seed nodes discovery [namespace={}, address={}]", namespace, node);
 
-        doUnregister(cluster, node);
+        doUnregister(namespace, node);
     }
 
     @Override
@@ -166,21 +165,21 @@ public class FsSeedNodeProvider implements SeedNodeProvider, JmxSupport<FsSeedNo
     }
 
     @Override
-    public void registerRemote(String cluster, InetSocketAddress node) throws HekateException {
+    public void registerRemote(String namespace, InetSocketAddress node) throws HekateException {
         if (DEBUG) {
-            log.debug("Registering remote address [cluster={}], node={}]", cluster, node);
+            log.debug("Registering remote address [namespace={}], node={}]", namespace, node);
         }
 
-        doRegister(cluster, node);
+        doRegister(namespace, node);
     }
 
     @Override
-    public void unregisterRemote(String cluster, InetSocketAddress node) throws HekateException {
+    public void unregisterRemote(String namespace, InetSocketAddress node) throws HekateException {
         if (DEBUG) {
-            log.debug("Unregistering remote address [cluster={}], node={}]", cluster, node);
+            log.debug("Unregistering remote address [namespace={}], node={}]", namespace, node);
         }
 
-        doUnregister(cluster, node);
+        doUnregister(namespace, node);
     }
 
     /**

@@ -53,6 +53,10 @@ import org.slf4j.LoggerFactory;
  * @see SeedNodeProvider
  */
 public class JdbcSeedNodeProvider implements SeedNodeProvider, JmxSupport<JdbcSeedNodeProviderJmx>, ConfigReportSupport {
+    private interface TxTask {
+        void execute(Connection conn) throws SQLException;
+    }
+
     private static final Logger log = LoggerFactory.getLogger(JdbcSeedNodeProvider.class);
 
     private static final boolean DEBUG = log.isDebugEnabled();
@@ -86,7 +90,7 @@ public class JdbcSeedNodeProvider implements SeedNodeProvider, JmxSupport<JdbcSe
         check.notEmpty(cfg.getTable(), "table");
         check.notEmpty(cfg.getHostColumn(), "host column");
         check.notEmpty(cfg.getPortColumn(), "port column");
-        check.notEmpty(cfg.getClusterColumn(), "cluster name column");
+        check.notEmpty(cfg.getNamespaceColumn(), "namespace column");
 
         ds = cfg.getDataSource();
         queryTimeout = cfg.getQueryTimeout();
@@ -95,11 +99,11 @@ public class JdbcSeedNodeProvider implements SeedNodeProvider, JmxSupport<JdbcSe
         String table = cfg.getTable().trim();
         String host = cfg.getHostColumn().trim();
         String port = cfg.getPortColumn().trim();
-        String cluster = cfg.getClusterColumn().trim();
+        String namespace = cfg.getNamespaceColumn().trim();
 
-        selSql = "SELECT " + host + ", " + port + " FROM " + table + " WHERE " + cluster + " = ?";
-        delSql = "DELETE FROM " + table + " WHERE " + host + " = ? AND " + port + " = ? AND " + cluster + " = ?";
-        insSql = "INSERT INTO " + table + " (" + host + ", " + port + ", " + cluster + ") VALUES (?, ?, ?)";
+        selSql = "SELECT " + host + ", " + port + " FROM " + table + " WHERE " + namespace + " = ?";
+        delSql = "DELETE FROM " + table + " WHERE " + host + " = ? AND " + port + " = ? AND " + namespace + " = ?";
+        insSql = "INSERT INTO " + table + " (" + host + ", " + port + ", " + namespace + ") VALUES (?, ?, ?)";
     }
 
     @Override
@@ -113,20 +117,20 @@ public class JdbcSeedNodeProvider implements SeedNodeProvider, JmxSupport<JdbcSe
     }
 
     @Override
-    public List<InetSocketAddress> findSeedNodes(String cluster) throws HekateException {
+    public List<InetSocketAddress> findSeedNodes(String namespace) throws HekateException {
         try (
             Connection conn = ds.getConnection();
             PreparedStatement st = conn.prepareStatement(selSql)
         ) {
             if (DEBUG) {
-                log.debug("Executing SQL query [sql={}, cluster={}]", selSql, cluster);
+                log.debug("Executing SQL query [sql={}, namespace={}]", selSql, namespace);
             }
 
             if (queryTimeout > 0) {
                 st.setQueryTimeout(queryTimeout);
             }
 
-            st.setString(1, cluster);
+            st.setString(1, namespace);
 
             try (ResultSet rs = st.executeQuery()) {
                 List<InetSocketAddress> result = new ArrayList<>();
@@ -135,13 +139,11 @@ public class JdbcSeedNodeProvider implements SeedNodeProvider, JmxSupport<JdbcSe
                     String host = rs.getString(1);
                     int port = rs.getInt(2);
 
-                    InetSocketAddress address = new InetSocketAddress(host, port);
-
-                    result.add(address);
+                    result.add(new InetSocketAddress(host, port));
                 }
 
                 if (DEBUG) {
-                    log.debug("Loaded data from a database [result={}]", result);
+                    log.debug("Loaded data from database [result={}]", result);
                 }
 
                 return result;
@@ -152,13 +154,13 @@ public class JdbcSeedNodeProvider implements SeedNodeProvider, JmxSupport<JdbcSe
     }
 
     @Override
-    public void startDiscovery(String cluster, InetSocketAddress node) throws HekateException {
-        doRegister(cluster, node);
+    public void startDiscovery(String namespace, InetSocketAddress node) throws HekateException {
+        doRegister(namespace, node);
     }
 
     @Override
-    public void stopDiscovery(String cluster, InetSocketAddress node) throws HekateException {
-        doUnregister(cluster, node);
+    public void stopDiscovery(String namespace, InetSocketAddress node) throws HekateException {
+        doUnregister(namespace, node);
     }
 
     @Override
@@ -167,13 +169,13 @@ public class JdbcSeedNodeProvider implements SeedNodeProvider, JmxSupport<JdbcSe
     }
 
     @Override
-    public void registerRemote(String cluster, InetSocketAddress node) throws HekateException {
-        doRegister(cluster, node);
+    public void registerRemote(String namespace, InetSocketAddress node) throws HekateException {
+        doRegister(namespace, node);
     }
 
     @Override
-    public void unregisterRemote(String cluster, InetSocketAddress node) throws HekateException {
-        doUnregister(cluster, node);
+    public void unregisterRemote(String namespace, InetSocketAddress node) throws HekateException {
+        doUnregister(namespace, node);
     }
 
     @Override
@@ -271,98 +273,120 @@ public class JdbcSeedNodeProvider implements SeedNodeProvider, JmxSupport<JdbcSe
         };
     }
 
-    private void doUnregister(String cluster, InetSocketAddress address) throws HekateException {
-        try (Connection conn = ds.getConnection()) {
-            conn.setAutoCommit(false);
+    private void doUnregister(String namespace, InetSocketAddress address) throws HekateException {
+        try {
+            runWithTx(conn -> {
+                try (PreparedStatement delSt = conn.prepareStatement(delSql)) {
+                    if (queryTimeout > 0) {
+                        delSt.setQueryTimeout(queryTimeout);
+                    }
 
-            try (PreparedStatement delSt = conn.prepareStatement(delSql)) {
-                if (queryTimeout > 0) {
-                    delSt.setQueryTimeout(queryTimeout);
+                    String host = AddressUtils.host(address);
+                    int port = address.getPort();
+
+                    if (DEBUG) {
+                        log.debug("Executing SQL query [sql={}, host={}, port={}, namespace={}]", delSql, host, port, namespace);
+                    }
+
+                    delSt.setString(1, host);
+                    delSt.setInt(2, port);
+                    delSt.setString(3, namespace);
+
+                    int deleted = delSt.executeUpdate();
+
+                    if (DEBUG) {
+                        log.debug("Done executing SQL delete query [deleted-records={}]", deleted);
+                    }
                 }
-
-                String host = AddressUtils.host(address);
-                int port = address.getPort();
-
-                if (DEBUG) {
-                    log.debug("Executing SQL query [sql={}, host={}, port={}, cluster={}]", delSql, host, port, cluster);
-                }
-
-                delSt.setString(1, host);
-                delSt.setInt(2, port);
-                delSt.setString(3, cluster);
-
-                int updated = delSt.executeUpdate();
-
-                if (DEBUG) {
-                    log.debug("Done executing SQL query [updated-records={}]", updated);
-                }
-
-                conn.commit();
-            } catch (SQLException e) {
-                rollback(conn);
-
-                throw e;
-            }
+            });
         } catch (SQLException e) {
             throw new HekateException("Failed to register seed node within a database "
-                + "[cluster=" + cluster + ", node=" + address + ']', e);
+                + "[namespace=" + namespace + ", node=" + address + ']', e);
         }
     }
 
-    private void doRegister(String cluster, InetSocketAddress node) throws HekateException {
+    private void doRegister(String namespace, InetSocketAddress node) throws HekateException {
+        try {
+            runWithTx(conn -> {
+                try (
+                    PreparedStatement delSt = conn.prepareStatement(delSql);
+                    PreparedStatement insSt = conn.prepareStatement(insSql)
+                ) {
+                    if (queryTimeout > 0) {
+                        delSt.setQueryTimeout(queryTimeout);
+                        insSt.setQueryTimeout(queryTimeout);
+                    }
+
+                    String host = node.getAddress().getHostAddress();
+                    int port = node.getPort();
+
+                    if (DEBUG) {
+                        log.debug("Executing SQL query [sql={}, host={}, port={}, namespace={}]", delSql, host, port, namespace);
+                    }
+
+                    delSt.setString(1, host);
+                    delSt.setInt(2, port);
+                    delSt.setString(3, namespace);
+
+                    int deleted = delSt.executeUpdate();
+
+                    if (DEBUG) {
+                        log.debug("Done executing SQL delete query [deleted-records={}]", deleted);
+                    }
+
+                    if (DEBUG) {
+                        log.debug("Executing SQL query [sql={}, host={}, port={}, namespace={}]", insSql, host, port, namespace);
+                    }
+
+                    insSt.setString(1, host);
+                    insSt.setInt(2, port);
+                    insSt.setString(3, namespace);
+
+                    insSt.executeUpdate();
+
+                    if (DEBUG) {
+                        log.debug("Done executing SQL insert query.");
+                    }
+                }
+            });
+        } catch (SQLException e) {
+            throw new HekateException("Failed to register seed node [namespace=" + namespace + ", node=" + node + ']', e);
+        }
+    }
+
+    private void runWithTx(TxTask task) throws SQLException {
         try (Connection conn = ds.getConnection()) {
+            boolean oldAutoCommit = conn.getAutoCommit();
+
             conn.setAutoCommit(false);
 
-            try (
-                PreparedStatement delSt = conn.prepareStatement(delSql);
-                PreparedStatement insSt = conn.prepareStatement(insSql)
-            ) {
-                if (queryTimeout > 0) {
-                    delSt.setQueryTimeout(queryTimeout);
-                    insSt.setQueryTimeout(queryTimeout);
-                }
-
-                String host = node.getAddress().getHostAddress();
-                int port = node.getPort();
-
-                if (DEBUG) {
-                    log.debug("Executing SQL query [sql={}, host={}, port={}, cluster={}]", delSql, host, port, cluster);
-                }
-
-                delSt.setString(1, host);
-                delSt.setInt(2, port);
-                delSt.setString(3, cluster);
-
-                delSt.executeUpdate();
-
-                if (DEBUG) {
-                    log.debug("Executing SQL query [sql={}, host={}, port={}, cluster={}]", insSql, host, port, cluster);
-                }
-
-                insSt.setString(1, host);
-                insSt.setInt(2, port);
-                insSt.setString(3, cluster);
-
-                insSt.executeUpdate();
+            try {
+                task.execute(conn);
 
                 conn.commit();
-            } catch (SQLException e) {
+            } catch (Exception e) {
                 rollback(conn);
 
                 throw e;
+            } finally {
+                resetAutoCommit(oldAutoCommit, conn);
             }
-        } catch (SQLException e) {
-            throw new HekateException("Failed to register seed node [cluster=" + cluster + ", node=" + node + ']', e);
         }
     }
 
     private void rollback(Connection conn) {
-        if (conn != null) {
-            try {
-                conn.rollback();
-            } catch (SQLException e) {
-                // No-op.
-            }
+        try {
+            conn.rollback();
+        } catch (SQLException e) {
+            // No-op.
+        }
+    }
+
+    private void resetAutoCommit(boolean oldAutoCommit, Connection conn) {
+        try {
+            conn.setAutoCommit(oldAutoCommit);
+        } catch (SQLException e) {
+            // No-op.
         }
     }
 

@@ -138,7 +138,6 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
     @Override
     protected void doParse(Element rootEl, ParserContext ctx, BeanDefinitionBuilder boot) {
         setProperty(boot, rootEl, "nodeName", "name");
-        setProperty(boot, rootEl, "clusterName", "cluster");
         setProperty(boot, rootEl, "configReport", "config-report");
 
         parseNodeRoles(boot, rootEl);
@@ -235,6 +234,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
         if (clusterEl != null) {
             BeanDefinitionBuilder cluster = newBean(ClusterServiceFactory.class, clusterEl);
 
+            setProperty(cluster, clusterEl, "namespace", "namespace");
             setProperty(cluster, clusterEl, "gossipInterval", "gossip-interval-ms");
             setProperty(cluster, clusterEl, "speedUpGossipSize", "gossip-speedup-size");
 
@@ -486,7 +486,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
         setProperty(cfg, el, "table", "table");
         setProperty(cfg, el, "hostColumn", "host-column");
         setProperty(cfg, el, "portColumn", "port-column");
-        setProperty(cfg, el, "clusterColumn", "cluster-column");
+        setProperty(cfg, el, "namespaceColumn", "namespace-column");
 
         setBeanOrRef(cfg, el, "dataSource", "datasource", ctx);
 

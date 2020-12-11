@@ -42,16 +42,16 @@ public class JdbcSeedNodeProviderConfigTest extends HekateTestBase {
     }
 
     @Test
-    public void testClusterColumn() {
-        assertEquals(JdbcSeedNodeProviderConfig.DEFAULT_CLUSTER_COLUMN, cfg.getClusterColumn());
+    public void testNamespaceColumn() {
+        assertEquals(JdbcSeedNodeProviderConfig.DEFAULT_NAMESPACE_COLUMN, cfg.getNamespaceColumn());
 
-        cfg.setClusterColumn("custom_cluster");
+        cfg.setNamespaceColumn("custom_cluster");
 
-        assertEquals("custom_cluster", cfg.getClusterColumn());
+        assertEquals("custom_cluster", cfg.getNamespaceColumn());
 
-        assertSame(cfg, cfg.withClusterColumn("custom_cluster2"));
+        assertSame(cfg, cfg.withNamespaceColumn("custom_cluster2"));
 
-        assertEquals("custom_cluster2", cfg.getClusterColumn());
+        assertEquals("custom_cluster2", cfg.getNamespaceColumn());
     }
 
     @Test

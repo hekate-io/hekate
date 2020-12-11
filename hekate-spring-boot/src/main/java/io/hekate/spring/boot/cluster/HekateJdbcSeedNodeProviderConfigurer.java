@@ -50,7 +50,7 @@ import org.springframework.context.annotation.Primary;
  * <li>{@link JdbcSeedNodeProviderConfig#setQueryTimeout(int) 'hekate.cluster.seed.jdbc.query-timeout'}</li>
  * <li>{@link JdbcSeedNodeProviderConfig#setCleanupInterval(long) 'hekate.cluster.seed.jdbc.cleanup-interval'}</li>
  * <li>{@link JdbcSeedNodeProviderConfig#setTable(String) 'hekate.cluster.seed.jdbc.table'}</li>
- * <li>{@link JdbcSeedNodeProviderConfig#setClusterColumn(String) 'hekate.cluster.seed.jdbc.cluster-column'}</li>
+ * <li>{@link JdbcSeedNodeProviderConfig#setNamespaceColumn(String) 'hekate.cluster.seed.jdbc.cluster-column'}</li>
  * <li>{@link JdbcSeedNodeProviderConfig#setHostColumn(String) 'hekate.cluster.seed.jdbc.host-column'}</li>
  * <li>{@link JdbcSeedNodeProviderConfig#setPortColumn(String) 'hekate.cluster.seed.jdbc.port-column'}</li>
  * </ul>

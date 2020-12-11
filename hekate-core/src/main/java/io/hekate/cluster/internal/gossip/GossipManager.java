@@ -57,7 +57,7 @@ public class GossipManager {
 
     private static final boolean TRACE = log.isTraceEnabled();
 
-    private final String cluster;
+    private final String namespace;
 
     private final ClusterNode localNode;
 
@@ -88,13 +88,13 @@ public class GossipManager {
     private boolean leaveScheduled;
 
     public GossipManager(
-        String cluster,
+        String namespace,
         ClusterNode localNode,
         int speedUpSize,
         FailureDetector failureDetector,
         GossipListener gossipListener
     ) {
-        this.cluster = cluster;
+        this.namespace = namespace;
         this.localNode = localNode;
         this.address = localNode.address();
         this.failureDetector = failureDetector;
@@ -227,9 +227,9 @@ public class GossipManager {
     }
 
     public JoinReject acceptJoinRequest(JoinRequest msg) {
-        if (!cluster.equals(msg.cluster())) {
+        if (!namespace.equals(msg.namespace())) {
             if (DEBUG) {
-                log.debug("Permanently rejected join request since this node belongs to another cluster [request={}]", msg);
+                log.debug("Permanently rejected join request since this node belongs to another namespace [request={}]", msg);
             }
 
             return JoinReject.permanent(address, msg.from(), msg.toAddress());
@@ -742,7 +742,7 @@ public class GossipManager {
             JoinRequest request = null;
 
             if (target != null) {
-                request = new JoinRequest(localNode, cluster, target);
+                request = new JoinRequest(localNode, namespace, target);
 
                 if (DEBUG) {
                     log.debug("Created join request [request={}", request);

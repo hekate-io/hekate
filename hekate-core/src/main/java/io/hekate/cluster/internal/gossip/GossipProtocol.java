@@ -220,12 +220,12 @@ public abstract class GossipProtocol {
 
         private final InetSocketAddress to;
 
-        private final String cluster;
+        private final String namespace;
 
-        public JoinRequest(ClusterNode from, String cluster, InetSocketAddress to) {
+        public JoinRequest(ClusterNode from, String namespace, InetSocketAddress to) {
             super(from.address());
 
-            this.cluster = cluster;
+            this.namespace = namespace;
             this.fromNode = from;
             this.to = to;
         }
@@ -234,8 +234,8 @@ public abstract class GossipProtocol {
             return fromNode;
         }
 
-        public String cluster() {
-            return cluster;
+        public String namespace() {
+            return namespace;
         }
 
         @Override

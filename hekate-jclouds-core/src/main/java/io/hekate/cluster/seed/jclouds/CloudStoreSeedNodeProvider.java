@@ -20,7 +20,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.Module;
 import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.cluster.seed.SeedNodeProvider;
-import io.hekate.core.HekateBootstrap;
 import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.AddressUtils;
 import io.hekate.core.internal.util.ArgAssert;
@@ -56,11 +55,13 @@ import static java.util.Collections.emptyList;
  * Cloud store-based implementation of {@link SeedNodeProvider} interface.
  *
  * <p>
- * This provider uses a cloud storage (f.e. Amazon S3) to keep track of active seed nodes. When provider starts discovering other nodes it
- * uses {@link BlobStore} to creates a new empty blob whose name contains local node's host address and port. Such blob is stored in a
- * {@link CloudStoreSeedNodeProviderConfig#setContainer(String) configurable} container (aka bucket) under
- * /{@link HekateBootstrap#setClusterName(String) [cluster_name]}/ folder. In order to find other seed nodes it reads the list of all blobs
- * in that folder and parses addresses from their names.
+ * This provider uses a cloud storage (f.e. Amazon S3) to keep track of active seed nodes.
+ * </p>
+ * <p>
+ * When provider starts discovering other nodes it uses {@link BlobStore} to creates a new empty blob whose name contains local node's host
+ * address and port. Such blob is stored in a {@link CloudStoreSeedNodeProviderConfig#setContainer(String) configurable}
+ * container (aka bucket) under /{@link ClusterServiceFactory#setNamespace(String) [namepsace]}/ folder.
+ * In order to find other seed nodes it reads the list of all blobs in that folder and parses addresses from their names.
  * </p>
  *
  * <p>
@@ -162,20 +163,20 @@ public class CloudStoreSeedNodeProvider implements SeedNodeProvider, ConfigRepor
     }
 
     @Override
-    public void startDiscovery(String cluster, InetSocketAddress node) throws HekateException {
-        registerAddress(cluster, node);
+    public void startDiscovery(String namespace, InetSocketAddress node) throws HekateException {
+        registerAddress(namespace, node);
     }
 
     @Override
-    public void stopDiscovery(String cluster, InetSocketAddress node) throws HekateException {
-        unregisterAddress(cluster, node);
+    public void stopDiscovery(String namespace, InetSocketAddress node) throws HekateException {
+        unregisterAddress(namespace, node);
     }
 
     @Override
-    public List<InetSocketAddress> findSeedNodes(String cluster) throws HekateException {
+    public List<InetSocketAddress> findSeedNodes(String namespace) throws HekateException {
         try {
             if (log.isDebugEnabled()) {
-                log.debug("Loading seed node addresses [container={}, cluster={}]", container, cluster);
+                log.debug("Loading seed node addresses [container={}, namespace={}]", container, namespace);
             }
 
             try (BlobStoreContext ctx = createContext()) {
@@ -186,7 +187,7 @@ public class CloudStoreSeedNodeProvider implements SeedNodeProvider, ConfigRepor
                 String marker = null;
 
                 do {
-                    ListContainerOptions opts = ListContainerOptions.Builder.prefix(cluster + "/");
+                    ListContainerOptions opts = ListContainerOptions.Builder.prefix(namespace + "/");
 
                     if (marker != null) {
                         opts.afterMarker(marker);
@@ -203,9 +204,9 @@ public class CloudStoreSeedNodeProvider implements SeedNodeProvider, ConfigRepor
                             String name = metaData.getName();
 
                             // Remove cluster prefix from the blob name.
-                            if ((name.startsWith(cluster + '/') || name.startsWith(cluster + '\\'))
-                                && name.length() > cluster.length() + 1) {
-                                name = name.substring(cluster.length() + 1);
+                            if ((name.startsWith(namespace + '/') || name.startsWith(namespace + '\\'))
+                                && name.length() > namespace.length() + 1) {
+                                name = name.substring(namespace.length() + 1);
                             }
 
                             // Remove trailing '/' from the blob name.
@@ -236,7 +237,7 @@ public class CloudStoreSeedNodeProvider implements SeedNodeProvider, ConfigRepor
             }
         } catch (ContainerNotFoundException e) {
             if (log.isWarnEnabled()) {
-                log.warn("Failed to load seed nodes list [container={}, cluster={}, cause={}]", container, cluster, e.toString());
+                log.warn("Failed to load seed nodes list [container={}, namespace={}, cause={}]", container, namespace, e.toString());
             }
 
             return emptyList();
@@ -250,13 +251,13 @@ public class CloudStoreSeedNodeProvider implements SeedNodeProvider, ConfigRepor
     }
 
     @Override
-    public void registerRemote(String cluster, InetSocketAddress node) throws HekateException {
-        registerAddress(cluster, node);
+    public void registerRemote(String namespace, InetSocketAddress node) throws HekateException {
+        registerAddress(namespace, node);
     }
 
     @Override
-    public void unregisterRemote(String cluster, InetSocketAddress node) throws HekateException {
-        unregisterAddress(cluster, node);
+    public void unregisterRemote(String namespace, InetSocketAddress node) throws HekateException {
+        unregisterAddress(namespace, node);
     }
 
     @Override

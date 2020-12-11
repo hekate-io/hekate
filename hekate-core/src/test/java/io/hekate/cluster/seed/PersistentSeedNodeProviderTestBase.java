@@ -99,7 +99,7 @@ public abstract class PersistentSeedNodeProviderTestBase<T extends SeedNodeProvi
         assertTrue(nodes.contains(address3));
         assertTrue(nodes.contains(address4));
 
-        // Unregister with wrong cluster names.
+        // Unregister with wrong namespace.
         provider.unregisterRemote(CLUSTER_2, address1);
         provider.unregisterRemote(CLUSTER_2, address2);
         provider.unregisterRemote(CLUSTER_1, address3);
@@ -180,11 +180,11 @@ public abstract class PersistentSeedNodeProviderTestBase<T extends SeedNodeProvi
             SeedNodeProvider provider = createProvider();
 
             HekateTestNode node = createNode(b -> {
-                b.setClusterName(CLUSTER_1);
 
-                b.withService(ClusterServiceFactory.class, cluster ->
-                    cluster.setSeedNodeProvider(provider)
-                );
+                b.withService(ClusterServiceFactory.class, cluster -> {
+                    cluster.setNamespace(CLUSTER_1);
+                    cluster.setSeedNodeProvider(provider);
+                });
 
                 b.withService(NetworkServiceFactory.class, net -> {
                     // Increase timeout since ping failure by timeout doesn't trigger seed address removal.

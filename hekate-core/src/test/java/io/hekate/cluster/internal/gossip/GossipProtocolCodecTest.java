@@ -79,7 +79,7 @@ public class GossipProtocolCodecTest extends HekateTestBase {
             assertEquals(fromNode, after.fromNode());
             assertEquals(fromNode.address(), after.from());
             assertEquals(to.socket(), after.toAddress());
-            assertEquals(before.cluster(), after.cluster());
+            assertEquals(before.namespace(), after.namespace());
         });
     }
 

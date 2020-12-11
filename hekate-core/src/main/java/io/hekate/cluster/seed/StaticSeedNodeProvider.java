@@ -74,12 +74,12 @@ public class StaticSeedNodeProvider implements SeedNodeProvider, ConfigReportSup
     }
 
     @Override
-    public List<InetSocketAddress> findSeedNodes(String cluster) throws HekateException {
+    public List<InetSocketAddress> findSeedNodes(String namespace) throws HekateException {
         return addresses;
     }
 
     @Override
-    public void startDiscovery(String cluster, InetSocketAddress node) throws HekateException {
+    public void startDiscovery(String namespace, InetSocketAddress node) throws HekateException {
         // No-op.
     }
 
@@ -89,7 +89,7 @@ public class StaticSeedNodeProvider implements SeedNodeProvider, ConfigReportSup
     }
 
     @Override
-    public void stopDiscovery(String cluster, InetSocketAddress node) throws HekateException {
+    public void stopDiscovery(String namespace, InetSocketAddress node) throws HekateException {
         // No-op.
     }
 
@@ -99,12 +99,12 @@ public class StaticSeedNodeProvider implements SeedNodeProvider, ConfigReportSup
     }
 
     @Override
-    public void registerRemote(String cluster, InetSocketAddress node) throws HekateException {
+    public void registerRemote(String namespace, InetSocketAddress node) throws HekateException {
         // No-op.
     }
 
     @Override
-    public void unregisterRemote(String cluster, InetSocketAddress node) throws HekateException {
+    public void unregisterRemote(String namespace, InetSocketAddress node) throws HekateException {
         // No-op.
     }
 

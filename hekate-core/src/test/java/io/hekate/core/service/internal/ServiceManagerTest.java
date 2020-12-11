@@ -743,7 +743,6 @@ public class ServiceManagerTest extends HekateTestBase {
 
         ServiceManager manager = new ServiceManager(
             "test-node",
-            "test-cluster",
             mock(Hekate.class),
             mock(MeterRegistry.class),
             services,

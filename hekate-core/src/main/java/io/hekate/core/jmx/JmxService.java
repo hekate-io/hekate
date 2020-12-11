@@ -80,8 +80,7 @@ import javax.management.ObjectName;
  *
  * <h2>JMX Object Names</h2>
  * <p>
- * {@link ObjectName}s of all registered beans are constructed based on the {@link HekateBootstrap#setClusterName(String) cluster name},
- * {@link HekateBootstrap#setNodeName(String) node name} and bean's class name as follows:
+ * {@link ObjectName}s of all registered beans are constructed as follows:
  * </p>
  *
  * <p>

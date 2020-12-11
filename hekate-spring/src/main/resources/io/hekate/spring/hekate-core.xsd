@@ -52,13 +52,6 @@
                             </xsd:documentation>
                         </xsd:annotation>
                     </xsd:attribute>
-                    <xsd:attribute name="cluster" type="xsd:string">
-                        <xsd:annotation>
-                            <xsd:documentation>
-                                See javadoc of 'io.hekate.core.HekateBootstrap#setCluserCluster(String)'.
-                            </xsd:documentation>
-                        </xsd:annotation>
-                    </xsd:attribute>
                     <xsd:attribute name="config-report" type="xsd:string">
                         <xsd:annotation>
                             <xsd:documentation>
@@ -437,6 +430,13 @@
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
+        <xsd:attribute name="namespace" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.ClusterServiceFactory#setNamespace(String)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
         <xsd:attribute name="gossip-interval-ms" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation>
@@ -664,10 +664,10 @@
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
-        <xsd:attribute name="cluster-column" type="xsd:string">
+        <xsd:attribute name="namespace-column" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation>
-                    See javadoc of 'io.hekate.cluster.seed.jdbc.JdbcSeedNodeProviderConfig#setClusterColumn(java.lang.String)'.
+                    See javadoc of 'io.hekate.cluster.seed.jdbc.JdbcSeedNodeProviderConfig#setNamespaceColumn(java.lang.String)'.
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>

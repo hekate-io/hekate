@@ -92,11 +92,6 @@ class ServiceDependencyContext implements DependencyContext {
     }
 
     @Override
-    public String clusterName() {
-        return manager.clusterName();
-    }
-
-    @Override
     public Hekate hekate() {
         return manager.container();
     }

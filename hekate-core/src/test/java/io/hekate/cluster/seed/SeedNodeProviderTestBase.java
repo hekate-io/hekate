@@ -72,6 +72,8 @@ public abstract class SeedNodeProviderTestBase<T extends SeedNodeProvider> exten
                 int nodes = i + 1;
 
                 for (int j = 0; j < nodes; j++) {
+                    say("Node " + j);
+
                     SeedNodeProvider provider = createProvider();
 
                     InetSocketAddress address = newSocketAddress(10000 + j);
@@ -80,6 +82,8 @@ public abstract class SeedNodeProviderTestBase<T extends SeedNodeProvider> exten
 
                     provider.startDiscovery(CLUSTER_1, address);
                 }
+
+                say("Check");
 
                 for (Map.Entry<InetSocketAddress, SeedNodeProvider> e : providers.entrySet()) {
                     SeedNodeProvider provider = e.getValue();

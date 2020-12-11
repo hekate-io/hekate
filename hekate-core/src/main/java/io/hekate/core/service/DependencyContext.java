@@ -36,15 +36,6 @@ public interface DependencyContext {
     String nodeName();
 
     /**
-     * Returns the cluster name.
-     *
-     * @return Name of the local node's cluster.
-     *
-     * @see HekateBootstrap#setClusterName(String)
-     */
-    String clusterName();
-
-    /**
      * Returns the {@link Hekate} instance that manages this service.
      * <p>
      * <b>Notice:</b> the returned instance may be not fully initialized. The main purpose of this method is to provide a reference

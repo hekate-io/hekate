@@ -89,7 +89,7 @@ Quickstart for **Standalone** Java Application
 public class MyApplication{
     public static void main(String[] args) throws Exception {
         Hekate hekate = new HekateBootstrap()
-            .withClusterName("my-cluster")
+            .withNamespace("my-cluster")
             .withNodeName("my-node")
             .join();
         

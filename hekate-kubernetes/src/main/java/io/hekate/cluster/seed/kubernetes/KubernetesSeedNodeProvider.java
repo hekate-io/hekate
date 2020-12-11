@@ -190,7 +190,7 @@ public class KubernetesSeedNodeProvider implements SeedNodeProvider, ConfigRepor
     }
 
     @Override
-    public List<InetSocketAddress> findSeedNodes(String cluster) throws HekateException {
+    public List<InetSocketAddress> findSeedNodes(String namespace) throws HekateException {
         if (log.isDebugEnabled()) {
             log.debug("Searching for seed node addresses [namespace={}, container-port-name={}]", config.getNamespace(), containerPortName);
         }
@@ -226,7 +226,7 @@ public class KubernetesSeedNodeProvider implements SeedNodeProvider, ConfigRepor
     }
 
     @Override
-    public void startDiscovery(String cluster, InetSocketAddress node) throws HekateException {
+    public void startDiscovery(String namespace, InetSocketAddress node) throws HekateException {
         if (log.isInfoEnabled()) {
             log.info("Started seed node discovery [namespace={}, container-port-name={}]", config.getNamespace(), containerPortName);
         }
@@ -238,7 +238,7 @@ public class KubernetesSeedNodeProvider implements SeedNodeProvider, ConfigRepor
     }
 
     @Override
-    public void stopDiscovery(String cluster, InetSocketAddress node) throws HekateException {
+    public void stopDiscovery(String namespace, InetSocketAddress node) throws HekateException {
         // No-op.
     }
 
@@ -248,12 +248,12 @@ public class KubernetesSeedNodeProvider implements SeedNodeProvider, ConfigRepor
     }
 
     @Override
-    public void registerRemote(String cluster, InetSocketAddress node) throws HekateException {
+    public void registerRemote(String namespace, InetSocketAddress node) throws HekateException {
         // No-op.
     }
 
     @Override
-    public void unregisterRemote(String cluster, InetSocketAddress node) throws HekateException {
+    public void unregisterRemote(String namespace, InetSocketAddress node) throws HekateException {
         // No-op.
     }
 

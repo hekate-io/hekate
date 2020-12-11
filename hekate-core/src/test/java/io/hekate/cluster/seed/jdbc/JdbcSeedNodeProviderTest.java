@@ -65,7 +65,7 @@ public class JdbcSeedNodeProviderTest extends PersistentSeedNodeProviderTestBase
             String sql = "CREATE TABLE IF NOT EXISTS " + cfg.getTable() + " ("
                 + cfg.getHostColumn() + " VARCHAR(255),"
                 + cfg.getPortColumn() + " INT, "
-                + cfg.getClusterColumn() + " VARCHAR(255) "
+                + cfg.getNamespaceColumn() + " VARCHAR(255) "
                 + ")";
 
             st.execute(sql);

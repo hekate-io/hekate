@@ -99,7 +99,6 @@ import java.util.Set;
  * Key configuration options of {@link HekateBootstrap} are:
  * </p>
  * <ul>
- * <li>{@link HekateBootstrap#setClusterName(String) Cluster name}</li>
  * <li>{@link HekateBootstrap#setNodeName(String) Node name}</li>
  * <li>{@link HekateBootstrap#setProperties(Map) Node properties}</li>
  * <li>{@link HekateBootstrap#setRoles(List) Node roles}</li>

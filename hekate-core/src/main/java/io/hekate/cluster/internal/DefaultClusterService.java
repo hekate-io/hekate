@@ -116,6 +116,8 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
     private static final String PROTOCOL_ID = "hekate.cluster";
 
+    private final String namespace;
+
     private final long gossipInterval;
 
     private final int speedUpGossipSize;
@@ -162,8 +164,6 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
     private ScheduledFuture<?> joinTask;
 
-    private String clusterName;
-
     private volatile InitializationContext ctx;
 
     private volatile GossipCommManager commMgr;
@@ -176,10 +176,13 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
         ConfigCheck check = ConfigCheck.get(ClusterServiceFactory.class);
 
         check.notNull(factory, "configuration");
+        check.notEmpty(factory.getNamespace(), "cluster name");
+        check.validSysName(factory.getNamespace(), "cluster name");
         check.positive(factory.getGossipInterval(), "gossip interval");
         check.notNull(factory.getFailureDetector(), "failure detector");
 
         // Basic properties.
+        this.namespace = factory.getNamespace();
         this.gossipInterval = factory.getGossipInterval();
         this.speedUpGossipSize = factory.getSpeedUpGossipSize();
         this.failureDetector = factory.getFailureDetector();
@@ -225,8 +228,6 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
     @Override
     public void resolve(DependencyContext ctx) {
-        clusterName = ctx.clusterName();
-
         net = ctx.require(NetworkService.class);
 
         jmx = ctx.optional(JmxService.class);
@@ -306,7 +307,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             );
 
             // Prepare seed node manager.
-            seedNodeMgr = new SeedNodeManager(ctx.clusterName(), seedNodeProvider);
+            seedNodeMgr = new SeedNodeManager(namespace, seedNodeProvider);
 
             // Prepare workers.
             gossipThread = Executors.newSingleThreadScheduledExecutor(new HekateThreadFactory("ClusterGossip"));
@@ -319,7 +320,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             GossipListener gossipListener = createGossipListener();
 
             // Prepare gossip manager.
-            gossipMgr = new GossipManager(ctx.clusterName(), localNode, speedUpGossipSize, failureDetector, gossipListener);
+            gossipMgr = new GossipManager(namespace, localNode, speedUpGossipSize, failureDetector, gossipListener);
 
             // Prepare gossip communication manager.
             NetworkConnector<GossipProtocol> connector = net.connector(PROTOCOL_ID);
@@ -377,6 +378,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
     @Override
     public void report(ConfigReporter report) {
         report.section("cluster", cs -> {
+            cs.value("namespace", namespace);
             cs.value("gossip-interval", gossipInterval);
             cs.value("speed-up-gossip-size", speedUpGossipSize);
             cs.value("failure-detector", failureDetector);
@@ -391,7 +393,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             runOnServiceThread(() -> {
                 if (guard.isInitialized()) {
                     if (log.isInfoEnabled()) {
-                        log.info("Joining cluster [cluster={}, local-node={}]", ctx.clusterName(), ctx.localNode());
+                        log.info("Joining cluster [namespace={}, local-node={}]", namespace, ctx.localNode());
                     }
 
                     // Prepare a repeatable join task to re-run in case of a recoverable failure during the join process.
@@ -680,8 +682,8 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
     }
 
     @Override
-    public String clusterName() {
-        return clusterName;
+    public String namespace() {
+        return namespace;
     }
 
     @Override

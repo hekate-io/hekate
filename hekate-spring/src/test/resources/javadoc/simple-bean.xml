@@ -24,7 +24,6 @@
     <!-- Node with all configuration options set to their default values. -->
     <bean id="hekate" class="io.hekate.spring.bean.HekateSpringBootstrap">
         <property name="nodeName" value="my-node"/>
-        <property name="clusterName" value="my-cluster"/>
     </bean>
 
 </beans>

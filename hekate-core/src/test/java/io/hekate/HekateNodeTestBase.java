@@ -100,7 +100,6 @@ public abstract class HekateNodeTestBase extends HekateTestBase {
 
         HekateTestNode.Bootstrap boot = new HekateTestNode.Bootstrap();
 
-        boot.setClusterName("test");
         boot.setNodeName("node-" + address.getPort() + '-' + allNodes.size());
         boot.setConfigReport(true);
         boot.setDefaultCodec(defaultCodec());
@@ -115,6 +114,7 @@ public abstract class HekateNodeTestBase extends HekateTestBase {
             fdCfg.setHeartbeatInterval(ctx.hbInterval());
             fdCfg.setHeartbeatLossThreshold(ctx.hbLossThreshold());
 
+            cluster.setNamespace("test");
             cluster.setGossipInterval(ctx.hbInterval());
             cluster.setSpeedUpGossipSize(10);
             cluster.setSeedNodeProvider(seedNodes);

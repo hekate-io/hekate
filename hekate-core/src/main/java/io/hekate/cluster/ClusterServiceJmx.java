@@ -26,9 +26,18 @@ import javax.management.MXBean;
 @JmxTypeName("ClusterService")
 public interface ClusterServiceJmx {
     /**
+     * Returns the namespace.
+     *
+     * @return Namespace.
+     *
+     * @see ClusterService#namespace()
+     */
+    String getNamespace();
+
+    /**
      * Returns the local node.
      *
-     * @return Local node
+     * @return Local node.
      *
      * @see ClusterService#localNode()
      */

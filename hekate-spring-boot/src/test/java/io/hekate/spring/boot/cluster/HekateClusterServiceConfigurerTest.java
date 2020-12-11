@@ -137,6 +137,18 @@ public class HekateClusterServiceConfigurerTest extends HekateAutoConfigurerTest
     }
 
     @Test
+    public void testNamespace() {
+        registerAndRefresh(
+            new String[]{
+                "hekate.cluster.namespace=test-cluster",
+            },
+            DefaultTestConfig.class
+        );
+
+        assertEquals("test-cluster", getNode().cluster().namespace());
+    }
+
+    @Test
     public void testClusterListener() {
         registerAndRefresh(ClusterListenerTestConfig.class);
 

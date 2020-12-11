@@ -28,6 +28,11 @@ class DefaultClusterServiceJmx implements ClusterServiceJmx {
     }
 
     @Override
+    public String getNamespace() {
+        return service.namespace();
+    }
+
+    @Override
     public ClusterNodeJmx getLocalNode() {
         return ClusterNodeJmx.of(service.localNode());
     }

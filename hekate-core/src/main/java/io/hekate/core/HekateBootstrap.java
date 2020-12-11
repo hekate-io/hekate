@@ -55,7 +55,6 @@ import static io.hekate.core.internal.util.StreamUtils.nullSafe;
  * Configuration options are:
  * </p>
  * <ul>
- * <li>{@link #setClusterName(String) Cluster name}</li>
  * <li>{@link #setNodeName(String) Node name}</li>
  * <li>{@link #setProperties(Map) Node properties}</li>
  * <li>{@link #setRoles(List) Node roles}</li>
@@ -73,14 +72,8 @@ import static io.hekate.core.internal.util.StreamUtils.nullSafe;
  * </p>
  */
 public class HekateBootstrap {
-    /** Default value (={@value}) for {@link #setClusterName(String)}. */
-    public static final String DEFAULT_CLUSTER_NAME = "default";
-
     /** See {@link #setNodeName(String)}. */
     private String nodeName;
-
-    /** See {@link #setClusterName(String)}. */
-    private String clusterName = DEFAULT_CLUSTER_NAME;
 
     /** See {@link #setRoles(List)}. */
     private List<String> roles;
@@ -182,51 +175,6 @@ public class HekateBootstrap {
      */
     public HekateBootstrap withNodeName(String nodeName) {
         setNodeName(nodeName);
-
-        return this;
-    }
-
-    /**
-     * Returns the cluster name (see {@link #setClusterName(String)}).
-     *
-     * @return Cluster name.
-     */
-    public String getClusterName() {
-        return clusterName;
-    }
-
-    /**
-     * Sets the cluster name. Can contain only alpha-numeric characters and non-repeatable dots/hyphens.
-     *
-     * <p>
-     * Only those instances that are configured with the same cluster name can form a cluster. Instances with different cluster names will
-     * form completely independent clusters.
-     * </p>
-     *
-     * <p>
-     * Default value of this property is {@value #DEFAULT_CLUSTER_NAME}.
-     * </p>
-     *
-     * <p>
-     * <b>Hint:</b> For breaking nodes into logical sub-groups within the same cluster consider using {@link #setRoles(List) node roles}
-     * together with {@link ClusterView#filter(ClusterNodeFilter) nodes filtering} by role.
-     * </p>
-     *
-     * @param clusterName Cluster name (can contain only alpha-numeric characters and non-repeatable dots/hyphens).
-     */
-    public void setClusterName(String clusterName) {
-        this.clusterName = clusterName;
-    }
-
-    /**
-     * Fluent-style version of {@link #setClusterName(String)}.
-     *
-     * @param clusterName Cluster name.
-     *
-     * @return This instance.
-     */
-    public HekateBootstrap withClusterName(String clusterName) {
-        setClusterName(clusterName);
 
         return this;
     }

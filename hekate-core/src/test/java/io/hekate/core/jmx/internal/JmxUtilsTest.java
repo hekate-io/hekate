@@ -32,7 +32,7 @@ public class JmxUtilsTest extends HekateTestBase {
     }
 
     @Test
-    public void testClusterNameOnly() throws Exception {
+    public void testNamespaceOnly() throws Exception {
         ObjectName name = new ObjectName("foo.bar", "type", getClass().getSimpleName());
 
         assertEquals(name, JmxUtils.jmxName("foo.bar", getClass()));

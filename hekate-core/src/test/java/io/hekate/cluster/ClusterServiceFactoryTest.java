@@ -36,6 +36,17 @@ public class ClusterServiceFactoryTest extends HekateTestBase {
     private final ClusterServiceFactory factory = new ClusterServiceFactory();
 
     @Test
+    public void testCluster() {
+        assertEquals(ClusterServiceFactory.DEFAULT_NAMESPACE, factory.getNamespace());
+
+        factory.setNamespace("test");
+
+        assertEquals("test", factory.getNamespace());
+
+        assertEquals("test2", factory.withNamespace("test2").getNamespace());
+    }
+
+    @Test
     public void testSplitBrainDetector() {
         SplitBrainDetector d1 = localNode -> true;
         SplitBrainDetector d2 = localNode -> true;

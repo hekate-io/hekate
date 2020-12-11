@@ -56,11 +56,6 @@ public class HekateNodeJmx implements HekateJmx {
     }
 
     @Override
-    public String getClusterName() {
-        return hekate.cluster().clusterName();
-    }
-
-    @Override
     public String getHost() {
         return hekate.localNode().address().socket().getAddress().getHostAddress();
     }

@@ -291,13 +291,13 @@ import java.util.List;
 @DefaultServiceFactory(ClusterServiceFactory.class)
 public interface ClusterService extends Service, ClusterView {
     /**
-     * Returns the cluster name.
+     * Returns the namespace of this cluster.
      *
-     * @return Cluster name.
+     * @return Namespace of this cluster.
      *
-     * @see HekateBootstrap#setClusterName(String)
+     * @see ClusterServiceFactory#setNamespace(String)
      */
-    String clusterName();
+    String namespace();
 
     /**
      * Returns the local cluster node.

@@ -75,12 +75,6 @@
   ],
   "properties": [
     {
-      "name": "hekate.cluster-name",
-      "type": "java.lang.String",
-      "description": "Cluster name (alpha-numeric characters and non-repeating dots/hyphens).\n Only those instances that are configured with the same cluster name can form a cluster.\n Instances with different cluster names will form completely independent clusters.",
-      "defaultValue": "default"
-    },
-    {
       "name": "hekate.node-name",
       "type": "java.lang.String",
       "description": "Node name (alpha-numeric characters and non-repeating dots/hyphens).",
@@ -294,6 +288,12 @@
     },
 
     {
+      "name": "hekate.cluster.namespace",
+      "type": "java.lang.String",
+      "description": "Cluster namespace (alpha-numeric characters and non-repeating dots/hyphens).\n Only those nodes that are configured with the same cluster namespace can form a cluster.\n Nodes that have different namespaces will form completely independent clusters.",
+      "defaultValue": "default"
+    },
+    {
       "name": "hekate.cluster.gossip-interval",
       "type": "java.lang.Long",
       "description": "Time interval in milliseconds between gossip rounds.",
@@ -438,8 +438,8 @@
     {
       "name": "hekate.cluster.seed.jdbc.cluster-column",
       "type": "java.lang.String",
-      "description": "Column to store the cluster name.",
-      "defaultValue": "cluster_name"
+      "description": "Column to store the cluster namespace.",
+      "defaultValue": "cluster_namespace"
     },
     {
       "name": "hekate.cluster.seed.jdbc.host-column",

@@ -27,7 +27,7 @@ public class JdbcSeedNodeProviderCustomTableTest extends JdbcSeedNodeProviderTes
     protected JdbcSeedNodeProviderConfig createConfig() {
         return new JdbcSeedNodeProviderConfig()
             .withTable("custom_cluster")
-            .withClusterColumn("custom_cluster")
+            .withNamespaceColumn("custom_namespace")
             .withHostColumn("custom_host")
             .withPortColumn("custom_port");
     }

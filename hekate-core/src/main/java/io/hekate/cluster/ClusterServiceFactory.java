@@ -47,11 +47,17 @@ import java.util.List;
  * </p>
  */
 public class ClusterServiceFactory implements ServiceFactory<ClusterService> {
+    /** Default value (={@value}) for {@link #setNamespace(String)}. */
+    public static final String DEFAULT_NAMESPACE = "default";
+
     /** Default value (={@value}) in milliseconds for {@link #setGossipInterval(long)}. */
     public static final long DEFAULT_GOSSIP_INTERVAL = 1000;
 
     /** Default value (={@value}) for {@link #setSpeedUpGossipSize(int)}. */
     public static final int DEFAULT_SPEED_UP_SIZE = 100;
+
+    /** See {@link #setNamespace(String)}. */
+    private String namespace = DEFAULT_NAMESPACE;
 
     /** See {@link #setSplitBrainDetector(SplitBrainDetector)}. */
     private SplitBrainDetector splitBrainDetector;
@@ -82,6 +88,51 @@ public class ClusterServiceFactory implements ServiceFactory<ClusterService> {
 
     /** See {@link #setGossipSpy(GossipListener)}. */
     private GossipListener gossipSpy;
+
+    /**
+     * Returns the cluster namespace (see {@link #setNamespace(String)}).
+     *
+     * @return Cluster namespace.
+     */
+    public String getNamespace() {
+        return namespace;
+    }
+
+    /**
+     * Sets the cluster namespace. Can contain only alpha-numeric characters and non-repeatable dots/hyphens.
+     *
+     * <p>
+     * Only those nodes that are configured with the same cluster namespace can form a cluster. Nodes that have different namespaces will
+     * form completely independent clusters.
+     * </p>
+     *
+     * <p>
+     * Default value of this property is {@value #DEFAULT_NAMESPACE}.
+     * </p>
+     *
+     * <p>
+     * <b>Hint:</b> For breaking nodes into logical sub-groups within the same cluster consider using
+     * {@link HekateBootstrap#setRoles(List) node roles} with {@link ClusterView#filter(ClusterNodeFilter) nodes filtering}.
+     * </p>
+     *
+     * @param namespace Cluster namespace (can contain only alpha-numeric characters and non-repeatable dots/hyphens).
+     */
+    public void setNamespace(String namespace) {
+        this.namespace = namespace;
+    }
+
+    /**
+     * Fluent-style version of {@link #setNamespace(String)}.
+     *
+     * @param namespace Cluster namespace.
+     *
+     * @return This instance.
+     */
+    public ClusterServiceFactory withNamespace(String namespace) {
+        setNamespace(namespace);
+
+        return this;
+    }
 
     /**
      * Returns seed node provider (see {@link #setSeedNodeProvider(SeedNodeProvider)}).

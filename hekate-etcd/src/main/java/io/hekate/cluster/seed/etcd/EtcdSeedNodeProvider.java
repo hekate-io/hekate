@@ -24,7 +24,6 @@ import io.etcd.jetcd.kv.GetResponse;
 import io.etcd.jetcd.options.GetOption;
 import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.cluster.seed.SeedNodeProvider;
-import io.hekate.core.HekateBootstrap;
 import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.AddressUtils;
 import io.hekate.core.internal.util.ArgAssert;
@@ -59,14 +58,14 @@ import static java.util.stream.Collectors.toList;
  * <p>
  * When this provider start it registers the local node's address using the following key structure:<br>
  * {@link EtcdSeedNodeProviderConfig#setBasePath(String) [base_path]}/
- * {@link HekateBootstrap#setClusterName(String) [cluster_name]}/
+ * {@link ClusterServiceFactory#setNamespace(String) [namespace]}/
  * [node_address]
  * </p>
  *
  * <p>
  * In order to find existing seed nodes this provider scans for keys that has the following prefix:<br>
  * {@link EtcdSeedNodeProviderConfig#setBasePath(String) [base_path]}/
- * {@link HekateBootstrap#setClusterName(String) [cluster_name]}/
+ * {@link ClusterServiceFactory#setNamespace(String) [namespace]}/
  * </p>
  *
  * <p>
@@ -167,8 +166,8 @@ public class EtcdSeedNodeProvider implements SeedNodeProvider, ConfigReportSuppo
     }
 
     @Override
-    public List<InetSocketAddress> findSeedNodes(String cluster) throws HekateException {
-        String prefix = keyPrefix(cluster);
+    public List<InetSocketAddress> findSeedNodes(String namespace) throws HekateException {
+        String prefix = keyPrefix(namespace);
 
         if (DEBUG) {
             log.debug("Searching for seed nodes [key-prefix={}]", prefix);
@@ -199,20 +198,20 @@ public class EtcdSeedNodeProvider implements SeedNodeProvider, ConfigReportSuppo
     }
 
     @Override
-    public void startDiscovery(String cluster, InetSocketAddress node) throws HekateException {
+    public void startDiscovery(String namespace, InetSocketAddress node) throws HekateException {
         if (log.isInfoEnabled()) {
-            log.info("Starting discovery [cluster={}, {}]", cluster, ToString.formatProperties(this));
+            log.info("Starting discovery [namespace={}, {}]", namespace, ToString.formatProperties(this));
         }
 
         withEtcd(client ->
-            doRegister(client, cluster, node, true)
+            doRegister(client, namespace, node, true)
         );
     }
 
     @Override
-    public void stopDiscovery(String cluster, InetSocketAddress node) throws HekateException {
+    public void stopDiscovery(String namespace, InetSocketAddress node) throws HekateException {
         withEtcd(client ->
-            doUnregister(client, cluster, node, true)
+            doUnregister(client, namespace, node, true)
         );
     }
 
@@ -222,16 +221,16 @@ public class EtcdSeedNodeProvider implements SeedNodeProvider, ConfigReportSuppo
     }
 
     @Override
-    public void registerRemote(String cluster, InetSocketAddress node) throws HekateException {
+    public void registerRemote(String namespace, InetSocketAddress node) throws HekateException {
         withEtcd(client ->
-            doRegister(client, cluster, node, false)
+            doRegister(client, namespace, node, false)
         );
     }
 
     @Override
-    public void unregisterRemote(String cluster, InetSocketAddress node) throws HekateException {
+    public void unregisterRemote(String namespace, InetSocketAddress node) throws HekateException {
         withEtcd(client ->
-            doUnregister(client, cluster, node, false)
+            doUnregister(client, namespace, node, false)
         );
     }
 
@@ -240,10 +239,10 @@ public class EtcdSeedNodeProvider implements SeedNodeProvider, ConfigReportSuppo
         // No-op.
     }
 
-    private void doRegister(KV client, String cluster, InetSocketAddress node, boolean local) throws HekateException {
+    private void doRegister(KV client, String namespace, InetSocketAddress node, boolean local) throws HekateException {
         try {
             String addressStr = AddressUtils.toFileName(node);
-            String key = keyPrefix(cluster) + addressStr;
+            String key = keyPrefix(namespace) + addressStr;
 
             if (log.isInfoEnabled()) {
                 log.info("Registering {} seed node [key={}]", local ? "local" : "remote", key);
@@ -251,12 +250,12 @@ public class EtcdSeedNodeProvider implements SeedNodeProvider, ConfigReportSuppo
 
             client.put(bytes(key), bytes(addressStr)).get();
         } catch (ExecutionException | InterruptedException e) {
-            throw new HekateException("Failed to register seed node [cluster=" + cluster + ", node=" + node + ']', e);
+            throw new HekateException("Failed to register seed node [namespace=" + namespace + ", node=" + node + ']', e);
         }
     }
 
-    private void doUnregister(KV client, String cluster, InetSocketAddress node, boolean local) throws HekateException {
-        String key = keyPrefix(cluster) + AddressUtils.toFileName(node);
+    private void doUnregister(KV client, String namespace, InetSocketAddress node, boolean local) throws HekateException {
+        String key = keyPrefix(namespace) + AddressUtils.toFileName(node);
 
         try {
             if (log.isInfoEnabled()) {
@@ -265,7 +264,7 @@ public class EtcdSeedNodeProvider implements SeedNodeProvider, ConfigReportSuppo
 
             client.delete(bytes(key)).get();
         } catch (ExecutionException | InterruptedException e) {
-            throw new HekateException("Failed to unregister seed node [cluster=" + cluster + ", node=" + node + ']', e);
+            throw new HekateException("Failed to unregister seed node [namespace=" + namespace + ", node=" + node + ']', e);
         }
     }
 
@@ -289,8 +288,8 @@ public class EtcdSeedNodeProvider implements SeedNodeProvider, ConfigReportSuppo
         return builder.build();
     }
 
-    private String keyPrefix(String cluster) {
-        return basePath + '/' + cluster + '/';
+    private String keyPrefix(String namespace) {
+        return basePath + '/' + namespace + '/';
     }
 
     private static ByteSequence bytes(String str) {
