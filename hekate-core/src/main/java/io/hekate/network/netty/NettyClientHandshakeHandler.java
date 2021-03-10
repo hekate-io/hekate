@@ -42,6 +42,9 @@ class NettyClientHandshakeHandler<T> extends SimpleChannelInboundHandler {
 
     private final boolean ssl;
 
+    // TODO: Workaround for https://github.com/netty/netty/pull/10860 (remove after upgrading to Netty 4.1.56.Final or above).
+    private boolean handshakeSent;
+
     public NettyClientHandshakeHandler(
         String id,
         String protocol,
@@ -123,12 +126,17 @@ class NettyClientHandshakeHandler<T> extends SimpleChannelInboundHandler {
     }
 
     private void handshake(ChannelHandlerContext ctx) {
-        HandshakeRequest request = new HandshakeRequest(protocol, login, affinity);
+        if (!handshakeSent) {
+            handshakeSent = true;
 
-        if (trace) {
-            log.trace("Connected ...sending handshake request [to={}, from={}, request={}]", id, ctx.channel().localAddress(), request);
+            HandshakeRequest request = new HandshakeRequest(protocol, login, affinity);
+
+            if (trace) {
+                log.trace("Connected ...sending handshake request [qqq={}, to={}, from={}, request={}]", System.identityHashCode(this), id,
+                    ctx.channel().localAddress(), request);
+            }
+
+            ctx.writeAndFlush(request);
         }
-
-        ctx.writeAndFlush(request);
     }
 }
