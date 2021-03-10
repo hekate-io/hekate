@@ -82,7 +82,6 @@ import static io.hekate.core.internal.util.Utils.NL;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -799,7 +798,6 @@ public abstract class HekateTestBase {
 
         Constructor<?> ctor = type.getDeclaredConstructor();
 
-        assertFalse(ctor.isAccessible());
         assertTrue(Modifier.isPrivate(ctor.getModifiers()));
 
         ctor.setAccessible(true);
