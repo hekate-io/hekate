@@ -515,6 +515,7 @@
                         -XX:+CrashOnOutOfMemoryError
                     </argLine>
                     <trimStackTrace>false</trimStackTrace>
+                    <skipAfterFailureCount>1</skipAfterFailureCount>
                 </configuration>
             </plugin>
 
