@@ -326,7 +326,7 @@ public class ClusterServiceSingleNodeTest extends HekateNodeParamTestBase {
 
         try {
             // Register fake address.
-            seedNodes.setDelegate(new StaticSeedNodeProvider(new StaticSeedNodeProviderConfig()
+            seedNodes().setDelegate(new StaticSeedNodeProvider(new StaticSeedNodeProviderConfig()
                 .withAddress(host + ':' + port))
             );
 
@@ -356,7 +356,7 @@ public class ClusterServiceSingleNodeTest extends HekateNodeParamTestBase {
             AtomicReference<InetSocketAddress> unregistered = new AtomicReference<>();
             AtomicReference<Throwable> error = new AtomicReference<>();
 
-            seedNodes.setDelegate(new SeedNodeProviderAdaptor() {
+            seedNodes().setDelegate(new SeedNodeProviderAdaptor() {
                 @Override
                 public List<InetSocketAddress> findSeedNodes(String namespace) {
                     UnsupportedOperationException err = new UnsupportedOperationException();
@@ -408,7 +408,7 @@ public class ClusterServiceSingleNodeTest extends HekateNodeParamTestBase {
             AtomicReference<InetSocketAddress> unregistered = new AtomicReference<>();
             AtomicReference<Throwable> error = new AtomicReference<>();
 
-            seedNodes.setDelegate(new SeedNodeProviderAdaptor() {
+            seedNodes().setDelegate(new SeedNodeProviderAdaptor() {
                 @Override
                 public List<InetSocketAddress> findSeedNodes(String namespace) {
                     UnsupportedOperationException err = new UnsupportedOperationException();
@@ -456,7 +456,7 @@ public class ClusterServiceSingleNodeTest extends HekateNodeParamTestBase {
             AtomicReference<InetSocketAddress> unregistered = new AtomicReference<>();
             AtomicReference<Throwable> error = new AtomicReference<>();
 
-            seedNodes.setDelegate(new SeedNodeProviderAdaptor() {
+            seedNodes().setDelegate(new SeedNodeProviderAdaptor() {
                 @Override
                 public List<InetSocketAddress> findSeedNodes(String namespace) {
                     UnsupportedOperationException err = new UnsupportedOperationException();
@@ -496,7 +496,7 @@ public class ClusterServiceSingleNodeTest extends HekateNodeParamTestBase {
         repeat(5, i -> {
             AtomicInteger errorsCounter = new AtomicInteger(4);
 
-            seedNodes.setDelegate(new SeedNodeProviderAdaptor() {
+            seedNodes().setDelegate(new SeedNodeProviderAdaptor() {
                 @Override
                 public List<InetSocketAddress> findSeedNodes(String namespace) {
                     return emptyList();
@@ -523,7 +523,7 @@ public class ClusterServiceSingleNodeTest extends HekateNodeParamTestBase {
         repeat(5, i -> {
             AtomicInteger errorsCounter = new AtomicInteger(4);
 
-            seedNodes.setDelegate(new SeedNodeProviderAdaptor() {
+            seedNodes().setDelegate(new SeedNodeProviderAdaptor() {
                 @Override
                 public List<InetSocketAddress> findSeedNodes(String namespace) throws HekateException {
                     if (errorsCounter.getAndDecrement() > 1) {

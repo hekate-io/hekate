@@ -41,7 +41,7 @@ public abstract class HekateNodeTestBase extends HekateTestBase {
 
     private final List<HekateTestNode> allNodes = new CopyOnWriteArrayList<>();
 
-    protected SeedNodeProviderMock seedNodes;
+    private SeedNodeProviderMock seedNodes;
 
     private boolean ignoreNodeFailures;
 
@@ -77,6 +77,10 @@ public abstract class HekateNodeTestBase extends HekateTestBase {
                 allNodes.clear();
             }
         }
+    }
+
+    protected SeedNodeProviderMock seedNodes() {
+        return seedNodes;
     }
 
     protected HekateTestContext context() {
