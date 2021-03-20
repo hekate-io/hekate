@@ -190,6 +190,8 @@ Please see the **[hekate-io/hekate-examples](https://github.com/hekate-io/hekate
   
 ## Release History
 
+ - v.4.0.0 (20-Mar-2021) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.4.0.0)]
+
  - v.3.11.0 (24-Oct-2020) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.3.11.0)]
  
  - v.3.10.0 (4-Jul-2020) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.3.10.0)]
