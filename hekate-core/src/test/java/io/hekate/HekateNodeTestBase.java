@@ -16,13 +16,11 @@
 
 package io.hekate;
 
-import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.cluster.health.DefaultFailureDetector;
 import io.hekate.cluster.health.DefaultFailureDetectorConfig;
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.JdkCodecFactory;
 import io.hekate.core.internal.HekateTestNode;
-import io.hekate.network.netty.NetworkServiceFactoryForTest;
 import io.hekate.test.SeedNodeProviderMock;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -41,9 +39,9 @@ public abstract class HekateNodeTestBase extends HekateTestBase {
         void configure(HekateTestNode.Bootstrap b);
     }
 
-    protected SeedNodeProviderMock seedNodes;
-
     private final List<HekateTestNode> allNodes = new CopyOnWriteArrayList<>();
+
+    protected SeedNodeProviderMock seedNodes;
 
     private boolean ignoreNodeFailures;
 
@@ -108,7 +106,7 @@ public abstract class HekateNodeTestBase extends HekateTestBase {
             boot.withService(ctx::resources);
         }
 
-        boot.withService(ClusterServiceFactory.class, cluster -> {
+        boot.withCluster(cluster -> {
             DefaultFailureDetectorConfig fdCfg = new DefaultFailureDetectorConfig();
 
             fdCfg.setHeartbeatInterval(ctx.hbInterval());
@@ -121,7 +119,7 @@ public abstract class HekateNodeTestBase extends HekateTestBase {
             cluster.setFailureDetector(new DefaultFailureDetector(fdCfg));
         });
 
-        boot.withService(NetworkServiceFactoryForTest.class, net -> {
+        boot.withNetwork(net -> {
             net.setHost(address.getAddress().getHostAddress());
             net.setPort(address.getPort());
             net.setConnectTimeout(ctx.connectTimeout());

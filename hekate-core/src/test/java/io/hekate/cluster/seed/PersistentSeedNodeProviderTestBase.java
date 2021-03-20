@@ -16,9 +16,7 @@
 
 package io.hekate.cluster.seed;
 
-import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.core.internal.HekateTestNode;
-import io.hekate.network.NetworkServiceFactory;
 import java.net.InetSocketAddress;
 import java.util.List;
 import org.junit.Test;
@@ -181,12 +179,12 @@ public abstract class PersistentSeedNodeProviderTestBase<T extends SeedNodeProvi
 
             HekateTestNode node = createNode(b -> {
 
-                b.withService(ClusterServiceFactory.class, cluster -> {
+                b.withCluster(cluster -> {
                     cluster.setNamespace(CLUSTER_1);
                     cluster.setSeedNodeProvider(provider);
                 });
 
-                b.withService(NetworkServiceFactory.class, net -> {
+                b.withNetwork(net -> {
                     // Increase timeout since ping failure by timeout doesn't trigger seed address removal.
                     net.setConnectTimeout(3000);
                 });

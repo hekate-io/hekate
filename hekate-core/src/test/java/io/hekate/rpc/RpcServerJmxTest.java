@@ -60,7 +60,7 @@ public class RpcServerJmxTest extends HekateNodeTestBase {
     public void test() throws Exception {
         HekateTestNode node = createNode(boot -> {
             boot.withService(JmxServiceFactory.class);
-            boot.withService(RpcServiceFactory.class, rpc -> {
+            boot.withRpc(rpc -> {
                 rpc.withServer(new RpcServerConfig()
                     .withHandler(mock(TestRpc1.class))
                 );

@@ -32,7 +32,7 @@ public class NetworkConnectorJmxTest extends HekateNodeTestBase {
     public void test() throws Exception {
         HekateTestNode node = createNode(boot -> {
                 boot.withService(JmxServiceFactory.class);
-                boot.withService(NetworkServiceFactory.class, net ->
+                boot.withNetwork(net ->
                     net.withConnector(new NetworkConnectorConfig<>()
                         .withProtocol("test.jmx")
                         .withIdleSocketTimeout(100500)

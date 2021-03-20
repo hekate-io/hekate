@@ -30,7 +30,6 @@ import io.hekate.messaging.MessagingChannelClosedException;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingException;
 import io.hekate.messaging.MessagingRemoteException;
-import io.hekate.messaging.MessagingServiceFactory;
 import io.hekate.messaging.loadbalance.EmptyTopologyException;
 import io.hekate.messaging.loadbalance.LoadBalancerException;
 import io.hekate.messaging.loadbalance.UnknownRouteException;
@@ -982,15 +981,15 @@ public class MessagingChannelRequestTest extends MessagingServiceTestBase {
     }
 
     private HekateTestNode prepareObjectSenderAndReceiver(MessageReceiver<Object> receiver) throws Exception {
-        createNode(boot -> boot.withService(MessagingServiceFactory.class, f ->
-            f.withChannel(MessagingChannelConfig.of(Object.class)
+        createNode(boot -> boot.withMessaging(messaging ->
+            messaging.withChannel(MessagingChannelConfig.of(Object.class)
                 .withName("test")
                 .withReceiver(receiver)
             )
         )).join();
 
-        return createNode(boot -> boot.withService(MessagingServiceFactory.class, f ->
-            f.withChannel(MessagingChannelConfig.of(Object.class)
+        return createNode(boot -> boot.withMessaging(messaging ->
+            messaging.withChannel(MessagingChannelConfig.of(Object.class)
                 .withName("test")
             )
         )).join();

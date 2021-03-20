@@ -39,7 +39,6 @@ import io.hekate.core.LeaveFuture;
 import io.hekate.core.TerminateFuture;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.core.service.Service;
-import io.hekate.network.NetworkServiceFactory;
 import io.hekate.test.HekateTestError;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -987,7 +986,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
     @Test
     public void testJoinRejectLoopback() throws Exception {
         HekateTestNode existing = createNode(c ->
-            c.withService(NetworkServiceFactory.class, net ->
+            c.withNetwork(net ->
                 net.withHost("any-ip4")
             )
         );
@@ -995,7 +994,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
         existing.join();
 
         HekateTestNode joining = createNode(c ->
-            c.withService(NetworkServiceFactory.class, net ->
+            c.withNetwork(net ->
                 net.withHost("127.0.0.1")
             )
         );
@@ -1020,7 +1019,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
     @Test
     public void testJoinRejectNonLoopback() throws Exception {
         HekateTestNode existing = createNode(c ->
-            c.withService(NetworkServiceFactory.class, net ->
+            c.withNetwork(net ->
                 net.withHost("127.0.0.1")
             )
         );
@@ -1028,7 +1027,7 @@ public class ClusterServiceMultipleNodesTest extends ClusterServiceMultipleNodes
         existing.join();
 
         HekateTestNode joining = createNode(c ->
-            c.withService(NetworkServiceFactory.class, net ->
+            c.withNetwork(net ->
                 net.withHost("any-ip4")
             )
         );

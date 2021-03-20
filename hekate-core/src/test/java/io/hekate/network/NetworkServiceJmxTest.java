@@ -37,7 +37,7 @@ public class NetworkServiceJmxTest extends HekateNodeParamTestBase {
     public void test() throws Exception {
         HekateTestNode node = createNode(boot -> {
             boot.withService(JmxServiceFactory.class);
-            boot.withService(NetworkServiceFactory.class, net -> {
+            boot.withNetwork(net -> {
                 net.withConnectTimeout(100500);
                 net.withHeartbeatInterval(100501);
                 net.withHeartbeatLossThreshold(100502);

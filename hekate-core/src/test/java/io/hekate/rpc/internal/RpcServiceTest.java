@@ -70,7 +70,7 @@ public class RpcServiceTest extends RpcServiceTestBase {
         TestRpcB rpcB = mock(TestRpcB.class);
 
         HekateTestNode node = createNode(boot ->
-            boot.withService(RpcServiceFactory.class, rpc -> {
+            boot.withRpc(rpc -> {
                     rpc.withServer(new RpcServerConfig()
                         .withHandler(rpcA)
                     );
@@ -114,7 +114,7 @@ public class RpcServiceTest extends RpcServiceTestBase {
         Object notAnRpc = new Object();
 
         HekateConfigurationException err = expect(HekateConfigurationException.class, () -> createNode(boot ->
-            boot.withService(RpcServiceFactory.class, rpc -> {
+            boot.withRpc(rpc -> {
                     rpc.withServer(new RpcServerConfig()
                         .withHandler(notAnRpc)
                     );
@@ -132,7 +132,7 @@ public class RpcServiceTest extends RpcServiceTestBase {
     @Test
     public void failIfRpcServerHasInvalidTag() throws Exception {
         HekateConfigurationException err = expect(HekateConfigurationException.class, () -> createNode(boot ->
-            boot.withService(RpcServiceFactory.class, rpc -> {
+            boot.withRpc(rpc -> {
                     rpc.withServer(new RpcServerConfig()
                         .withTag("invalid tag")
                         .withHandler(mock(TestRpcA.class))
@@ -151,7 +151,7 @@ public class RpcServiceTest extends RpcServiceTestBase {
     @Test
     public void failIfRpcClientHasInvalidTag() throws Exception {
         HekateConfigurationException err = expect(HekateConfigurationException.class, () -> createNode(boot ->
-            boot.withService(RpcServiceFactory.class, rpc -> {
+            boot.withRpc(rpc -> {
                     rpc.withClient(new RpcClientConfig()
                         .withTag("invalid tag")
                         .withRpcInterface(TestRpcA.class)
@@ -299,7 +299,7 @@ public class RpcServiceTest extends RpcServiceTestBase {
         when(lb.route(any(RpcRequest.class), any(LoadBalancerContext.class))).thenReturn(server.cluster().localNode().id());
 
         HekateTestNode client = createNode(boot ->
-            boot.withService(RpcServiceFactory.class, rpc ->
+            boot.withRpc(rpc ->
                 rpc.withClient(new RpcClientConfig()
                     .withTag("test-tag")
                     .withRpcInterface(TestRpcA.class)
@@ -329,12 +329,12 @@ public class RpcServiceTest extends RpcServiceTestBase {
     public void testCanRegisterSameServerWithTag() throws Exception {
         // Check same type.
         createNode(c ->
-            c.withService(RpcServiceFactory.class, f -> {
-                f.withServer(new RpcServerConfig()
+            c.withRpc(rpc -> {
+                rpc.withServer(new RpcServerConfig()
                     .withHandler(mock(TestRpcA.class))
                     .withTag("test-1")
                 );
-                f.withServer(new RpcServerConfig()
+                rpc.withServer(new RpcServerConfig()
                     .withHandler(mock(TestRpcA.class))
                     .withTag("test-2")
                 );
@@ -343,12 +343,12 @@ public class RpcServiceTest extends RpcServiceTestBase {
 
         // Check interfaces inheritance.
         createNode(c ->
-            c.withService(RpcServiceFactory.class, f -> {
-                f.withServer(new RpcServerConfig()
+            c.withRpc(rpc -> {
+                rpc.withServer(new RpcServerConfig()
                     .withHandler(mock(TestRpcA.class))
                     .withTag("test-1")
                 );
-                f.withServer(new RpcServerConfig()
+                rpc.withServer(new RpcServerConfig()
                     .withHandler(mock(TestRpcB.class))
                     .withTag("test-2")
                 );
@@ -362,12 +362,12 @@ public class RpcServiceTest extends RpcServiceTestBase {
         TestRpcA rpc2 = mock(TestRpcA.class);
 
         createNode(c ->
-            c.withService(RpcServiceFactory.class, f -> {
-                f.withServer(new RpcServerConfig()
+            c.withRpc(rpc -> {
+                rpc.withServer(new RpcServerConfig()
                     .withHandler(rpc1)
                     .withTag("test-1")
                 );
-                f.withServer(new RpcServerConfig()
+                rpc.withServer(new RpcServerConfig()
                     .withHandler(rpc2)
                     .withTag("test-2")
                 );
@@ -396,11 +396,11 @@ public class RpcServiceTest extends RpcServiceTestBase {
             RpcServerConfig.class.getSimpleName() + ": Can't register the same RPC interface multiple times "
                 + "[key=RpcTypeKey[type=" + TestRpcA.class.getName() + "]]",
             () -> createNode(c ->
-                c.withService(RpcServiceFactory.class, f -> {
-                    f.withServer(new RpcServerConfig()
+                c.withRpc(rpc -> {
+                    rpc.withServer(new RpcServerConfig()
                         .withHandler(mock(TestRpcA.class))
                     );
-                    f.withServer(new RpcServerConfig()
+                    rpc.withServer(new RpcServerConfig()
                         .withHandler(mock(TestRpcA.class))
                     );
                 })
@@ -413,12 +413,12 @@ public class RpcServiceTest extends RpcServiceTestBase {
             RpcServerConfig.class.getSimpleName() + ": Can't register the same RPC interface multiple times "
                 + "[key=RpcTypeKey[type=" + TestRpcA.class.getName() + ", tag=test]]",
             () -> createNode(c ->
-                c.withService(RpcServiceFactory.class, f -> {
-                    f.withServer(new RpcServerConfig()
+                c.withRpc(rpc -> {
+                    rpc.withServer(new RpcServerConfig()
                         .withHandler(mock(TestRpcA.class))
                         .withTag("test")
                     );
-                    f.withServer(new RpcServerConfig()
+                    rpc.withServer(new RpcServerConfig()
                         .withHandler(mock(TestRpcA.class))
                         .withTag("test")
                     );
@@ -432,11 +432,11 @@ public class RpcServiceTest extends RpcServiceTestBase {
             RpcServerConfig.class.getSimpleName() + ": Can't register the same RPC interface multiple times "
                 + "[key=RpcTypeKey[type=" + TestRpcA.class.getName() + "]]",
             () -> createNode(c ->
-                c.withService(RpcServiceFactory.class, f -> {
-                    f.withServer(new RpcServerConfig()
+                c.withRpc(rpc -> {
+                    rpc.withServer(new RpcServerConfig()
                         .withHandler(mock(TestRpcA.class))
                     );
-                    f.withServer(new RpcServerConfig()
+                    rpc.withServer(new RpcServerConfig()
                         .withHandler(mock(TestRpcB.class))
                     );
                 })
@@ -449,12 +449,12 @@ public class RpcServiceTest extends RpcServiceTestBase {
             RpcServerConfig.class.getSimpleName() + ": Can't register the same RPC interface multiple times "
                 + "[key=RpcTypeKey[type=" + TestRpcA.class.getName() + ", tag=test]]",
             () -> createNode(c ->
-                c.withService(RpcServiceFactory.class, f -> {
-                    f.withServer(new RpcServerConfig()
+                c.withRpc(rpc -> {
+                    rpc.withServer(new RpcServerConfig()
                         .withHandler(mock(TestRpcA.class))
                         .withTag("test")
                     );
-                    f.withServer(new RpcServerConfig()
+                    rpc.withServer(new RpcServerConfig()
                         .withHandler(mock(TestRpcB.class))
                         .withTag("test")
                     );

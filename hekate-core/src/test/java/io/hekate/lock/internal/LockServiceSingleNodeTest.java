@@ -72,7 +72,7 @@ public class LockServiceSingleNodeTest extends HekateNodeTestBase {
     @Test
     public void testLockRegionAfterRejoin() throws Exception {
         HekateTestNode node = createNode(boot ->
-            boot.withService(LockServiceFactory.class, locks ->
+            boot.withLocks(locks ->
                 locks.withRegion(new LockRegionConfig("test"))
             )
         ).join();

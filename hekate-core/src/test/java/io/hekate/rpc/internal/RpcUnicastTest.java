@@ -32,7 +32,6 @@ import io.hekate.rpc.RpcClientConfig;
 import io.hekate.rpc.RpcException;
 import io.hekate.rpc.RpcRetry;
 import io.hekate.rpc.RpcServerConfig;
-import io.hekate.rpc.RpcServiceFactory;
 import io.hekate.test.HekateTestError;
 import io.hekate.test.NonSerializable;
 import io.hekate.test.NonSerializableTestException;
@@ -235,21 +234,21 @@ public class RpcUnicastTest extends RpcServiceTestBase {
         TestAffinityRpc rpc2 = mock(TestAffinityRpc.class);
 
         HekateTestNode server1 = createNode(c ->
-            c.withService(RpcServiceFactory.class, f -> {
-                f.withServer(new RpcServerConfig()
+            c.withRpc(rpc ->
+                rpc.withServer(new RpcServerConfig()
                     .withTag("test1")
                     .withHandler(rpc1)
-                );
-            })
+                )
+            )
         ).join();
 
         HekateTestNode server2 = createNode(c ->
-            c.withService(RpcServiceFactory.class, f -> {
-                f.withServer(new RpcServerConfig()
+            c.withRpc(rpc ->
+                rpc.withServer(new RpcServerConfig()
                     .withTag("test2")
                     .withHandler(rpc2)
-                );
-            })
+                )
+            )
         ).join();
 
         HekateTestNode client = createNode().join();
@@ -400,15 +399,15 @@ public class RpcUnicastTest extends RpcServiceTestBase {
 
         HekateTestNode client = createNode(boot -> boot
             .withNodeName("rpc-client")
-            .withService(RpcServiceFactory.class, rpc -> {
+            .withRpc(rpc ->
                 rpc.withClient(new RpcClientConfig()
                     .withRpcInterface(TestRpcRetry.class)
                     .withRetryPolicy(retry -> retry
                         .maxAttempts(1)
                         .withFixedDelay(10)
                     )
-                );
-            })
+                )
+            )
         ).join();
 
         awaitForTopology(client, server);

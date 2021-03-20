@@ -18,17 +18,33 @@ package io.hekate.core;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeFilter;
+import io.hekate.cluster.ClusterService;
+import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.cluster.ClusterView;
 import io.hekate.codec.AutoSelectCodecFactory;
 import io.hekate.codec.Codec;
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.CodecService;
+import io.hekate.coordinate.CoordinationService;
+import io.hekate.coordinate.CoordinationServiceFactory;
 import io.hekate.core.internal.HekateNodeFactory;
 import io.hekate.core.internal.util.ConfigCheck;
+import io.hekate.core.jmx.JmxService;
+import io.hekate.core.jmx.JmxServiceFactory;
 import io.hekate.core.plugin.Plugin;
 import io.hekate.core.service.Service;
 import io.hekate.core.service.ServiceFactory;
+import io.hekate.election.ElectionService;
+import io.hekate.election.ElectionServiceFactory;
+import io.hekate.lock.LockService;
+import io.hekate.lock.LockServiceFactory;
+import io.hekate.messaging.MessagingService;
+import io.hekate.messaging.MessagingServiceFactory;
+import io.hekate.network.NetworkService;
+import io.hekate.network.NetworkServiceFactory;
+import io.hekate.rpc.RpcService;
+import io.hekate.rpc.RpcServiceFactory;
 import io.hekate.util.format.ToString;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -59,8 +75,20 @@ import static io.hekate.core.internal.util.StreamUtils.nullSafe;
  * <li>{@link #setProperties(Map) Node properties}</li>
  * <li>{@link #setRoles(List) Node roles}</li>
  * <li>{@link #setDefaultCodec(CodecFactory) Data serialization codec}</li>
- * <li>{@link #setServices(List) Services} to be provided by the node</li>
  * <li>{@link #setPlugins(List) Plugins} that should run within the node</li>
+ * <li>
+ *     {@link #setServices(List) Services} to be provided by the node:
+ *     <ul>
+ *         <li>{@link #withNetwork(Consumer) Network Service}</li>
+ *         <li>{@link #withCluster(Consumer) Cluster Service}</li>
+ *         <li>{@link #withMessaging(Consumer) Messaging Service}</li>
+ *         <li>{@link #withRpc(Consumer) RPC Service}</li>
+ *         <li>{@link #withLocks(Consumer) Lock Service}</li>
+ *         <li>{@link #withElection(Consumer) Election Service}</li>
+ *         <li>{@link #withCoordination(Consumer) Coordination Service}</li>
+ *         <li>{@link #withJmx(Consumer) JMX Service}</li>
+ *     </ul>
+ * </li>
  * </ul>
  *
  * <p>
@@ -349,8 +377,8 @@ public class HekateBootstrap {
     }
 
     /**
-     * Applies the specified {@code configurer} to a service factory of the specified type. If factory is not registered yet then it will
-     * be automatically registered via {@link #withService(Class)}.
+     * Applies the specified {@code configurer} to a service factory of the specified type. If factory is not registered yet then it will be
+     * automatically registered via {@link #withService(Class)}.
      *
      * @param factoryType Service factory type.
      * @param configurer Service factory configurer.
@@ -399,6 +427,110 @@ public class HekateBootstrap {
     }
 
     /**
+     * Configures {@link JmxService}.
+     *
+     * @param configurer Configuration function.
+     *
+     * @return This instance.
+     *
+     * @see JmxServiceFactory
+     */
+    public HekateBootstrap withJmx(Consumer<JmxServiceFactory> configurer) {
+        return withService(JmxServiceFactory.class, configurer);
+    }
+
+    /**
+     * Configures {@link NetworkService}.
+     *
+     * @param configurer Configuration function.
+     *
+     * @return This instance.
+     *
+     * @see NetworkServiceFactory
+     */
+    public HekateBootstrap withNetwork(Consumer<NetworkServiceFactory> configurer) {
+        return withService(NetworkServiceFactory.class, configurer);
+    }
+
+    /**
+     * Configures {@link ClusterService}.
+     *
+     * @param configurer Configuration function.
+     *
+     * @return This instance.
+     *
+     * @see ClusterServiceFactory
+     */
+    public HekateBootstrap withCluster(Consumer<ClusterServiceFactory> configurer) {
+        return withService(ClusterServiceFactory.class, configurer);
+    }
+
+    /**
+     * Configures {@link MessagingService}.
+     *
+     * @param configurer Configuration function.
+     *
+     * @return This instance.
+     *
+     * @see MessagingServiceFactory
+     */
+    public HekateBootstrap withMessaging(Consumer<MessagingServiceFactory> configurer) {
+        return withService(MessagingServiceFactory.class, configurer);
+    }
+
+    /**
+     * Configures {@link RpcService}.
+     *
+     * @param configurer Configuration function.
+     *
+     * @return This instance.
+     *
+     * @see RpcServiceFactory
+     */
+    public HekateBootstrap withRpc(Consumer<RpcServiceFactory> configurer) {
+        return withService(RpcServiceFactory.class, configurer);
+    }
+
+    /**
+     * Configures {@link LockService}.
+     *
+     * @param configurer Configuration function.
+     *
+     * @return This instance.
+     *
+     * @see LockServiceFactory
+     */
+    public HekateBootstrap withLocks(Consumer<LockServiceFactory> configurer) {
+        return withService(LockServiceFactory.class, configurer);
+    }
+
+    /**
+     * Configures {@link ElectionService}.
+     *
+     * @param configurer Configuration function.
+     *
+     * @return This instance.
+     *
+     * @see ElectionServiceFactory
+     */
+    public HekateBootstrap withElection(Consumer<ElectionServiceFactory> configurer) {
+        return withService(ElectionServiceFactory.class, configurer);
+    }
+
+    /**
+     * Configures {@link CoordinationService}.
+     *
+     * @param configurer Configuration function.
+     *
+     * @return This instance.
+     *
+     * @see CoordinationServiceFactory
+     */
+    public HekateBootstrap withCoordination(Consumer<CoordinationServiceFactory> configurer) {
+        return withService(CoordinationServiceFactory.class, configurer);
+    }
+
+    /**
      * Finds a service factory of the specified type (see {@link #setServices(List)}).
      *
      * @param factoryType Service factory type.
@@ -426,8 +558,8 @@ public class HekateBootstrap {
      * Sets the list of plugins that should run within the local node.
      *
      * <p>
-     * Plugins are custom extensions that run within the context of a local node and whose lifecycle is controlled by the lifecycle of
-     * that node. For more info please see description of the {@link Plugin} interface.
+     * Plugins are custom extensions that run within the context of a local node and whose lifecycle is controlled by the lifecycle of that
+     * node. For more info please see description of the {@link Plugin} interface.
      * </p>
      *
      * @param plugins List of plugins.
@@ -468,8 +600,8 @@ public class HekateBootstrap {
      * Sets the codec factory that should be used by the {@link CodecService}.
      *
      * <p>
-     * This parameter is mandatory and can't be {@code null}.
-     * Also, the specified codec factory must be stateless (see {@link Codec#isStateful()}).
+     * This parameter is mandatory and can't be {@code null}. Also, the specified codec factory must be stateless (see {@link
+     * Codec#isStateful()}).
      * </p>
      *
      * <p>

@@ -403,7 +403,7 @@ public class HekateNodeTest extends HekateNodeTestBase {
             sock.bind(address);
 
             node = createNode(boot ->
-                boot.withService(NetworkServiceFactory.class, net -> {
+                boot.withNetwork(net -> {
                     net.setPort(address.getPort());
                     net.setPortRange(0);
                     net.setTcpReuseAddress(false);

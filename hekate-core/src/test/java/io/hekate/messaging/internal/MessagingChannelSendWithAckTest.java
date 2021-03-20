@@ -26,7 +26,6 @@ import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingException;
 import io.hekate.messaging.MessagingRemoteException;
-import io.hekate.messaging.MessagingServiceFactory;
 import io.hekate.messaging.loadbalance.EmptyTopologyException;
 import io.hekate.messaging.operation.SendFuture;
 import io.hekate.network.NetworkEndpointClosedException;
@@ -371,19 +370,20 @@ public class MessagingChannelSendWithAckTest extends MessagingServiceTestBase {
     }
 
     private HekateTestNode prepareObjectSenderAndReceiver() throws Exception {
-        createNode(boot -> boot.withService(MessagingServiceFactory.class, f -> {
-            f.withChannel(MessagingChannelConfig.of(Object.class)
-                .withName("test")
-                .withReceiver(msg -> {
-                    // No-op.
-                })
-            );
-        })).join();
+        createNode(boot -> boot.withMessaging(messaging ->
+            messaging.withChannel(
+                MessagingChannelConfig.of(Object.class)
+                    .withName("test")
+                    .withReceiver(msg -> {
+                        // No-op.
+                    })
+            )
+        )).join();
 
-        return createNode(boot -> boot.withService(MessagingServiceFactory.class, f -> {
-            f.withChannel(MessagingChannelConfig.of(Object.class)
-                .withName("test")
-            );
-        })).join();
+        return createNode(boot -> boot.withMessaging(messaging ->
+            messaging.withChannel(
+                MessagingChannelConfig.of(Object.class).withName("test")
+            )
+        )).join();
     }
 }

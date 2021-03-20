@@ -97,7 +97,7 @@ public class NetworkPingTest extends HekateNodeTestBase {
     @Test
     public void testConnectFailure() throws Exception {
         Hekate hekate = createNode(boot ->
-            boot.withService(NetworkServiceFactory.class, net ->
+            boot.withNetwork(net ->
                 net.setConnectTimeout(3000)
             )
         ).join();

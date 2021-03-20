@@ -91,7 +91,7 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
         // Start node.
         Hekate hekate = new HekateBootstrap()
             // Register channel to the messaging service.
-            .withService(MessagingServiceFactory.class, messaging ->
+            .withMessaging(messaging ->
                 messaging.withChannel(channelCfg)
             )
             .join();

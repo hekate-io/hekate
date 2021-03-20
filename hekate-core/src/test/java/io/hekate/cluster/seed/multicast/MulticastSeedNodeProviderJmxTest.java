@@ -18,7 +18,6 @@ package io.hekate.cluster.seed.multicast;
 
 import io.hekate.HekateNodeTestBase;
 import io.hekate.HekateTestProps;
-import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.core.jmx.JmxService;
 import io.hekate.core.jmx.JmxServiceFactory;
@@ -49,7 +48,7 @@ public class MulticastSeedNodeProviderJmxTest extends HekateNodeTestBase {
 
         HekateTestNode node = createNode(boot -> {
             boot.withService(JmxServiceFactory.class);
-            boot.withService(ClusterServiceFactory.class, cluster ->
+            boot.withCluster(cluster ->
                 cluster.withSeedNodeProvider(seedNodeProvider)
             );
         }).join();

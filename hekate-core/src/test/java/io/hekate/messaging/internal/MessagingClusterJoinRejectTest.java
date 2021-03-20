@@ -22,7 +22,6 @@ import io.hekate.core.HekateException;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingChannelConfig;
-import io.hekate.messaging.MessagingServiceFactory;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -44,7 +43,7 @@ public class MessagingClusterJoinRejectTest extends HekateNodeTestBase {
 
         // Emulate existing cluster.
         existing = createNode(boot ->
-            boot.withService(MessagingServiceFactory.class, messaging ->
+            boot.withMessaging(messaging ->
                 messaging.withChannel(MessagingChannelConfig.of(Object.class)
                     .withName("test")
                     .withPartitions(PARTITIONS)
@@ -75,7 +74,7 @@ public class MessagingClusterJoinRejectTest extends HekateNodeTestBase {
 
         try {
             createNode(boot ->
-                boot.withService(MessagingServiceFactory.class, messaging -> {
+                boot.withMessaging(messaging -> {
                         messaging.withChannel(MessagingChannelConfig.of(String.class)
                             .withName("test")
                             .withPartitions(PARTITIONS)

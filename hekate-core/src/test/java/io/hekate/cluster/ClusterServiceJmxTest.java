@@ -19,7 +19,6 @@ package io.hekate.cluster;
 import io.hekate.HekateNodeTestBase;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.core.jmx.JmxService;
-import io.hekate.core.jmx.JmxServiceFactory;
 import javax.management.ObjectName;
 import javax.management.openmbean.CompositeData;
 import org.junit.Test;
@@ -35,13 +34,17 @@ public class ClusterServiceJmxTest extends HekateNodeTestBase {
         HekateTestNode node1 = createNode(boot -> {
             boot.withRole("role1");
             boot.withProperty("prop1", "value1");
-            boot.withService(JmxServiceFactory.class, jmx -> jmx.withDomain("test-node-1"));
+            boot.withJmx(jmx ->
+                jmx.withDomain("test-node-1")
+            );
         }).join();
 
         HekateTestNode node2 = createNode(boot -> {
             boot.withRole("role2");
             boot.withProperty("prop2", "value2");
-            boot.withService(JmxServiceFactory.class, jmx -> jmx.withDomain("test-node-2"));
+            boot.withJmx(jmx ->
+                jmx.withDomain("test-node-2")
+            );
         }).join();
 
         awaitForTopology(node1, node2);

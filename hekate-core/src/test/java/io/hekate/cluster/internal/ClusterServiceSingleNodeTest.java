@@ -19,7 +19,6 @@ package io.hekate.cluster.internal;
 import io.hekate.HekateNodeParamTestBase;
 import io.hekate.HekateTestContext;
 import io.hekate.cluster.ClusterNode;
-import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.cluster.event.ClusterEvent;
 import io.hekate.cluster.event.ClusterEventListener;
 import io.hekate.cluster.event.ClusterEventType;
@@ -76,7 +75,7 @@ public class ClusterServiceSingleNodeTest extends HekateNodeParamTestBase {
     @Test
     public void testNamespace() throws Exception {
         HekateTestNode node = createNode(boot ->
-            boot.withService(ClusterServiceFactory.class, cluster ->
+            boot.withCluster(cluster ->
                 cluster.withNamespace("hekate.test-namespace")
             )
         ).join();

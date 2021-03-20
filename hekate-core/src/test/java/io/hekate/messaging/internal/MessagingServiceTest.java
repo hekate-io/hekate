@@ -17,7 +17,6 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.messaging.MessagingChannelClosedException;
-import io.hekate.messaging.MessagingServiceFactory;
 import io.hekate.messaging.intercept.ServerMessageInterceptor;
 import io.hekate.messaging.intercept.ServerReceiveContext;
 import io.hekate.messaging.loadbalance.EmptyTopologyException;
@@ -185,7 +184,7 @@ public class MessagingServiceTest extends MessagingServiceTestBase {
     public void testGlobalInterceptors() throws Exception {
         createChannel(
             c -> c.withReceiver(msg -> msg.reply(msg.payload() + "-OK")),
-            boot -> boot.withService(MessagingServiceFactory.class, msg ->
+            boot -> boot.withMessaging(msg ->
                 msg.withGlobalInterceptor(new ServerMessageInterceptor<Object>() {
                     @Override
                     public void interceptServerReceive(ServerReceiveContext<Object> ctx) {

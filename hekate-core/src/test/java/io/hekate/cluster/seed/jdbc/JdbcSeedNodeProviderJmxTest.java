@@ -17,7 +17,6 @@
 package io.hekate.cluster.seed.jdbc;
 
 import io.hekate.HekateNodeTestBase;
-import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.core.jmx.JmxService;
 import io.hekate.core.jmx.JmxServiceFactory;
@@ -73,7 +72,7 @@ public class JdbcSeedNodeProviderJmxTest extends HekateNodeTestBase {
 
         HekateTestNode node = createNode(boot -> {
             boot.withService(JmxServiceFactory.class);
-            boot.withService(ClusterServiceFactory.class, cluster ->
+            boot.withCluster(cluster ->
                 cluster.withSeedNodeProvider(seedNodeProvider)
             );
         }).join();

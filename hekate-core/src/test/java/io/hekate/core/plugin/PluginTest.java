@@ -252,7 +252,7 @@ public class PluginTest extends HekateNodeTestBase {
                 assertFalse(boot.service(MessagingServiceFactory.class).isPresent());
 
                 // Should register new service factory.
-                boot.withService(MessagingServiceFactory.class, Assert::assertNotNull);
+                boot.withMessaging(Assert::assertNotNull);
 
                 // Check that service factory is now available.
                 assertTrue(boot.service(MessagingServiceFactory.class).isPresent());
