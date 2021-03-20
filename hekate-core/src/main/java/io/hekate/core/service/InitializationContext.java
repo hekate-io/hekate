@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -24,13 +24,6 @@ import io.micrometer.core.instrument.MeterRegistry;
  * Context for {@link InitializingService}.
  */
 public interface InitializationContext {
-    /**
-     * Returns the cluster name.
-     *
-     * @return Cluster name.
-     */
-    String clusterName();
-
     /**
      * Returns the current state of {@link Hekate} instance that this service belongs to.
      *
@@ -60,7 +53,7 @@ public interface InitializationContext {
     Hekate hekate();
 
     /**
-     * Instructs local node to asynchronously leave and rejoin to the cluster.
+     * Instructs local node to asynchronously terminate and rejoin to the cluster.
      */
     void rejoin();
 

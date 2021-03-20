@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -39,7 +39,6 @@ public class HekateJmxTest extends HekateNodeTestBase {
         ObjectName name = node.get(JmxService.class).nameFor(HekateJmx.class);
 
         Assert.assertEquals(HekateVersion.fullVersion(), jmxAttribute(name, "Version", String.class, node));
-        assertEquals(node.cluster().clusterName(), jmxAttribute(name, "ClusterName", String.class, node));
         assertEquals(node.localNode().name(), jmxAttribute(name, "NodeName", String.class, node));
         assertEquals(node.localNode().id().toString(), jmxAttribute(name, "NodeId", String.class, node));
         assertEquals(node.localNode().address().host(), jmxAttribute(name, "Host", String.class, node));

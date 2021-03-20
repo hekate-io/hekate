@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -31,7 +31,6 @@ import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
@@ -88,28 +87,28 @@ public class DefaultCodecService implements CodecService, EncoderDecoder<Object>
     }
 
     @Override
-    public void encode(Object obj, OutputStream out) throws IOException {
+    public void encode(Object obj, OutputStream out) {
         codec.encode(obj, out);
     }
 
     @Override
-    public void encode(Object obj, DataWriter out) throws IOException {
+    public void encode(Object obj, DataWriter out) {
         codec.encode(obj, out);
     }
 
     @Override
-    public byte[] encode(Object obj) throws IOException {
+    public byte[] encode(Object obj) {
         return codec.encode(obj);
     }
 
     @Override
-    public <T> byte[] encode(T obj, EncodeFunction<T> encoder) throws IOException {
+    public <T> byte[] encode(T obj, EncodeFunction<T> encoder) {
         ArgAssert.notNull(encoder, "Encode function");
 
         ByteArrayOutputStream buf = buffers.acquire();
 
         try {
-            encoder.encode(obj, new StreamDataWriter(buf));
+            encoder.encodeUnchecked(obj, new StreamDataWriter(buf));
 
             return buf.toByteArray();
         } finally {
@@ -118,43 +117,43 @@ public class DefaultCodecService implements CodecService, EncoderDecoder<Object>
     }
 
     @Override
-    public Object decode(InputStream in) throws IOException {
+    public Object decode(InputStream in) {
         return codec.decode(in);
     }
 
     @Override
-    public Object decode(DataReader in) throws IOException {
+    public Object decode(DataReader in) {
         return codec.decode(in);
     }
 
     @Override
-    public Object decode(byte[] bytes) throws IOException {
+    public Object decode(byte[] bytes) {
         return codec.decode(bytes);
     }
 
     @Override
-    public Object decode(byte[] bytes, int offset, int size) throws IOException {
+    public Object decode(byte[] bytes, int offset, int size) {
         return codec.decode(bytes, offset, size);
     }
 
     @Override
-    public <T> T decode(byte[] bytes, DecodeFunction<T> decoder) throws IOException {
+    public <T> T decode(byte[] bytes, DecodeFunction<T> decoder) {
         ArgAssert.notNull(bytes, "Byte array");
         ArgAssert.notNull(decoder, "Decode function");
 
         ByteArrayInputStream buf = new ByteArrayInputStream(bytes);
 
-        return decoder.decode(new StreamDataReader(buf));
+        return decoder.decodeUnchecked(new StreamDataReader(buf));
     }
 
     @Override
-    public <T> T decode(byte[] bytes, int offset, int limit, DecodeFunction<T> decoder) throws IOException {
+    public <T> T decode(byte[] bytes, int offset, int limit, DecodeFunction<T> decoder) {
         ArgAssert.notNull(bytes, "Byte array");
         ArgAssert.notNull(decoder, "Decode function");
 
         ByteArrayInputStream buf = new ByteArrayInputStream(bytes, offset, limit);
 
-        return decoder.decode(new StreamDataReader(buf));
+        return decoder.decodeUnchecked(new StreamDataReader(buf));
     }
 
     @Override

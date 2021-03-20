@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -79,7 +79,7 @@ public class GossipProtocolCodecTest extends HekateTestBase {
             assertEquals(fromNode, after.fromNode());
             assertEquals(fromNode.address(), after.from());
             assertEquals(to.socket(), after.toAddress());
-            assertEquals(before.cluster(), after.cluster());
+            assertEquals(before.namespace(), after.namespace());
         });
     }
 

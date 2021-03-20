@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -16,12 +16,12 @@
 
 package io.hekate.messaging.internal;
 
+import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessageQueueTimeoutException;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelClosedException;
-import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.MessagingOverflowPolicy;
 import io.hekate.messaging.operation.RequestFuture;
 import java.util.ArrayList;
@@ -128,7 +128,7 @@ public class BackPressureRequestTest extends BackPressureParametrizedTestBase {
             sender.newRequest("timeout").withTimeout(10, MILLISECONDS).response();
 
             fail("Error was expected.");
-        } catch (MessagingFutureException e) {
+        } catch (HekateException e) {
             assertTrue(getStacktrace(e), e.isCausedBy(MessageQueueTimeoutException.class));
         }
 
@@ -214,7 +214,9 @@ public class BackPressureRequestTest extends BackPressureParametrizedTestBase {
         );
 
         // Give async thread some time to block.
-        expect(TimeoutException.class, () -> async.get(200, TimeUnit.MILLISECONDS));
+        expect(TimeoutException.class, () ->
+            async.get(200, TimeUnit.MILLISECONDS)
+        );
 
         say("Stopping");
 
@@ -226,12 +228,12 @@ public class BackPressureRequestTest extends BackPressureParametrizedTestBase {
         // Await for last send operation to be unblocked.
         RequestFuture<String> request = get(async);
 
-        // Check that last send operation failed.
+        // Check that the last sent operation failed.
         try {
             get(request);
 
             fail("Error was expected.");
-        } catch (MessagingFutureException e) {
+        } catch (HekateException e) {
             assertTrue(ErrorUtils.stackTrace(e), e.isCausedBy(MessagingChannelClosedException.class));
         }
     }
@@ -251,7 +253,8 @@ public class BackPressureRequestTest extends BackPressureParametrizedTestBase {
 
         TestChannel second = createChannel(c -> useBackPressure(c)
             .withReceiver(msg -> {
-                // Ignore all messages since we need to reach the back pressure limits on the 'first' node by not sending responses.
+                // Ignore all messages since we need to reach the back pressure limits
+                // on the 'first' node by not sending responses.
             })
         ).join();
 

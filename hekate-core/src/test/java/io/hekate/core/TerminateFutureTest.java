@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -22,7 +22,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
-public class TerminateFutureTest extends HekateFutureTestBase<Hekate, TerminateFuture, HekateFutureException> {
+public class TerminateFutureTest extends HekateFutureTestBase<Hekate, TerminateFuture> {
     @Test
     public void testCompleted() {
         assertTrue(TerminateFuture.completed(mock(Hekate.class)).isSuccess());
@@ -31,11 +31,6 @@ public class TerminateFutureTest extends HekateFutureTestBase<Hekate, TerminateF
     @Override
     protected TerminateFuture createFuture() {
         return new TerminateFuture();
-    }
-
-    @Override
-    protected Class<HekateFutureException> errorType() {
-        return HekateFutureException.class;
     }
 
     @Override

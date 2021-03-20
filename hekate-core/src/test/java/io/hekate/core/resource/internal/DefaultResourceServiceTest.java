@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -17,7 +17,7 @@
 package io.hekate.core.resource.internal;
 
 import io.hekate.HekateTestBase;
-import io.hekate.core.resource.ResourceLoadingException;
+import io.hekate.core.resource.ResourceLoadException;
 import java.io.File;
 import java.io.InputStream;
 import org.junit.Test;
@@ -70,12 +70,12 @@ public class DefaultResourceServiceTest extends HekateTestBase {
         service.load("");
     }
 
-    @Test(expected = ResourceLoadingException.class)
+    @Test(expected = ResourceLoadException.class)
     public void testInvalidUrl() throws Exception {
         service.load("invalid-url");
     }
 
-    @Test(expected = ResourceLoadingException.class)
+    @Test(expected = ResourceLoadException.class)
     public void testInvalidPath() throws Exception {
         service.load("file:///there-is-no-such-file.ever");
     }

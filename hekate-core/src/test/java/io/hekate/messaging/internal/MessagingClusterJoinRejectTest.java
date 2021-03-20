@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -17,12 +17,11 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.HekateNodeTestBase;
-import io.hekate.cluster.ClusterJoinRejectedException;
-import io.hekate.core.HekateFutureException;
+import io.hekate.cluster.ClusterRejectedJoinException;
+import io.hekate.core.HekateException;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingChannelConfig;
-import io.hekate.messaging.MessagingServiceFactory;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -44,7 +43,7 @@ public class MessagingClusterJoinRejectTest extends HekateNodeTestBase {
 
         // Emulate existing cluster.
         existing = createNode(boot ->
-            boot.withService(MessagingServiceFactory.class, messaging ->
+            boot.withMessaging(messaging ->
                 messaging.withChannel(MessagingChannelConfig.of(Object.class)
                     .withName("test")
                     .withPartitions(PARTITIONS)
@@ -75,7 +74,7 @@ public class MessagingClusterJoinRejectTest extends HekateNodeTestBase {
 
         try {
             createNode(boot ->
-                boot.withService(MessagingServiceFactory.class, messaging -> {
+                boot.withMessaging(messaging -> {
                         messaging.withChannel(MessagingChannelConfig.of(String.class)
                             .withName("test")
                             .withPartitions(PARTITIONS)
@@ -87,8 +86,8 @@ public class MessagingClusterJoinRejectTest extends HekateNodeTestBase {
             ).join();
 
             fail("Error not thrown.");
-        } catch (HekateFutureException e) {
-            assertTrue(getStacktrace(e), e.isCausedBy(ClusterJoinRejectedException.class));
+        } catch (HekateException e) {
+            assertTrue(getStacktrace(e), e.isCausedBy(ClusterRejectedJoinException.class));
             assertEquals(
                 "Invalid " + MessagingChannelConfig.class.getSimpleName() + " - "
                     + "'baseType' value mismatch between the joining node and the cluster "
@@ -97,7 +96,7 @@ public class MessagingClusterJoinRejectTest extends HekateNodeTestBase {
                     + ", cluster-type=java.lang.Object"
                     + ", rejected-by=" + existing.localNode().address()
                     + "]",
-                e.findCause(ClusterJoinRejectedException.class).rejectReason()
+                e.findCause(ClusterRejectedJoinException.class).rejectReason()
             );
         }
     }

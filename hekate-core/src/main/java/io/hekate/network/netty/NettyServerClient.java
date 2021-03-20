@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -18,11 +18,14 @@ package io.hekate.network.netty;
 
 import io.hekate.codec.Codec;
 import io.hekate.codec.CodecException;
+import io.hekate.core.HekateIoException;
 import io.hekate.core.internal.util.Utils;
 import io.hekate.network.NetworkEndpoint;
+import io.hekate.network.NetworkEndpointClosedException;
 import io.hekate.network.NetworkFuture;
 import io.hekate.network.NetworkSendCallback;
 import io.hekate.network.NetworkServerHandler;
+import io.hekate.network.NetworkTimeoutException;
 import io.hekate.network.internal.NettyChannelSupport;
 import io.hekate.network.netty.NetworkProtocol.HandshakeAccept;
 import io.hekate.network.netty.NetworkProtocol.HandshakeReject;
@@ -45,10 +48,7 @@ import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.internal.ThrowableUtil;
-import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.SocketTimeoutException;
-import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -60,8 +60,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkEndpoint<Object>, NettyChannelSupport {
-    private static final ClosedChannelException WRITE_CLOSED_CHANNEL_EXCEPTION = ThrowableUtil.unknownStackTrace(
-        new ClosedChannelException(), NettyServerClient.class, "doSend()"
+    private static final NetworkEndpointClosedException WRITE_CLOSED_CHANNEL_EXCEPTION = ThrowableUtil.unknownStackTrace(
+        new NetworkEndpointClosedException("Connection closed."), NettyServerClient.class, "send()"
     );
 
     private final Map<String, NettyServerHandler> handlers;
@@ -313,7 +313,7 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
 
         if (realError instanceof CodecException) {
             disconnect = false;
-        } else if (realError instanceof IOException) {
+        } else if (realError instanceof HekateIoException) {
             if (debug) {
                 log.debug("Closing inbound network connection due to I/O error "
                     + "[protocol={}, from={}, reason={}]", protocol, address(), realError.toString());
@@ -362,7 +362,7 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
                         // Decrement the counter of ignored timeouts.
                         ignoreReadTimeouts--;
                     } else {
-                        throw new SocketTimeoutException();
+                        throw new NetworkTimeoutException("Connection timed out [protocol=" + protocol() + ", address=" + address() + ']');
                     }
                 }
             }
@@ -461,8 +461,8 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
         if (callback != null) {
             try {
                 callback.accept(this);
-            } catch (RuntimeException | Error e) {
-                log.error("Got an unexpected runtime error while notifying callback on network inbound receive status change "
+            } catch (Throwable e) {
+                log.error("Got an unexpected error while notifying callback on network inbound receive status change "
                     + "[pause={}, from={}, protocol={}]", pause, address(), protocol, e);
             }
         }
@@ -686,7 +686,7 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
     private void notifyOnError(Object msg, NetworkSendCallback<Object> onSend, Throwable error) {
         try {
             onSend.onComplete(msg, error);
-        } catch (RuntimeException | Error e) {
+        } catch (Throwable e) {
             log.error("Failed to notify callback on network operation failure "
                 + "[protocol={}, from={}, message={}]", protocol, address(), msg, e);
         }

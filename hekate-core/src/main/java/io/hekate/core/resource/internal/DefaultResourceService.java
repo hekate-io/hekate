@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -17,7 +17,7 @@
 package io.hekate.core.resource.internal;
 
 import io.hekate.core.internal.util.ArgAssert;
-import io.hekate.core.resource.ResourceLoadingException;
+import io.hekate.core.resource.ResourceLoadException;
 import io.hekate.core.resource.ResourceService;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -30,7 +30,7 @@ import java.net.URL;
  */
 public class DefaultResourceService implements ResourceService {
     @Override
-    public InputStream load(String path) throws ResourceLoadingException {
+    public InputStream load(String path) throws ResourceLoadException {
         ArgAssert.notNull(path, "Resource path");
         ArgAssert.isFalse(path.isEmpty(), "Resource path is empty.");
 
@@ -49,7 +49,7 @@ public class DefaultResourceService implements ResourceService {
                 return new ByteArrayInputStream(out.toByteArray());
             }
         } catch (IOException e) {
-            throw new ResourceLoadingException("Failed to load resource [path=" + path + ']', e);
+            throw new ResourceLoadException("Failed to load resource [path=" + path + ']', e);
         }
     }
 

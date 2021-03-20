@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -296,9 +296,9 @@ class MessagingConnectionIn<T> extends MessagingConnection<T> {
                 if (msg.isVoid()) {
                     replyVoid(msg);
                 }
-            } catch (RuntimeException | Error e) {
+            } catch (Throwable e) {
                 if (log.isErrorEnabled()) {
-                    log.error("Got an unexpected runtime error during message processing [from={}, message={}]", msg.from(), msg, e);
+                    log.error("Got an unexpected error during message processing [from={}, message={}]", msg.from(), msg, e);
                 }
 
                 replyError(msg.requestId(), e);
@@ -322,9 +322,9 @@ class MessagingConnectionIn<T> extends MessagingConnection<T> {
                 } finally {
                     interceptors.serverReceiveComplete(msg);
                 }
-            } catch (RuntimeException | Error e) {
+            } catch (Throwable e) {
                 if (log.isErrorEnabled()) {
-                    log.error("Got an unexpected runtime error during message processing [from={}, message={}]", msg.from(), msg, e);
+                    log.error("Got an unexpected error during message processing [from={}, message={}]", msg.from(), msg, e);
                 }
             }
         }
@@ -367,7 +367,7 @@ class MessagingConnectionIn<T> extends MessagingConnection<T> {
     private void doNotifyOnResponseSendSuccess(T rsp, SendCallback callback) {
         try {
             callback.onComplete(null);
-        } catch (RuntimeException | Error e) {
+        } catch (Throwable e) {
             log.error("Failed to notify on successful send of a response message [to={}, message={}]", remoteAddress(), rsp, e);
         }
     }
@@ -393,7 +393,7 @@ class MessagingConnectionIn<T> extends MessagingConnection<T> {
 
         try {
             callback.onComplete(msgError);
-        } catch (RuntimeException | Error e) {
+        } catch (Throwable e) {
             if (log.isErrorEnabled()) {
                 log.error("Failed to notify on response sending failure [to={}, failure={}, message={}]",
                     remoteAddress(), err.toString(), rsp, e);

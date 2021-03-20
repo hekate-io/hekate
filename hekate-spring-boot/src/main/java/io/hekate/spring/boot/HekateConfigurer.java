@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -21,7 +21,7 @@ import io.hekate.codec.CodecService;
 import io.hekate.core.Hekate;
 import io.hekate.core.Hekate.LifecycleListener;
 import io.hekate.core.HekateBootstrap;
-import io.hekate.core.HekateFutureException;
+import io.hekate.core.HekateFatalErrorPolicy;
 import io.hekate.core.PropertyProvider;
 import io.hekate.core.plugin.Plugin;
 import io.hekate.core.service.ServiceFactory;
@@ -42,7 +42,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.ApplicationContextException;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -132,10 +131,10 @@ import org.springframework.stereotype.Component;
  * </p>
  * <ul>
  * <li>{@link HekateBootstrap#setNodeName(String) 'hekate.node-name'}</li>
- * <li>{@link HekateBootstrap#setClusterName(String) 'hekate.cluster-name'}</li>
  * <li>{@link HekateBootstrap#setRoles(List) 'hekate.roles'}</li>
  * <li>{@link HekateBootstrap#setProperties(Map) 'hekate.properties'}</li>
  * <li>{@link HekateBootstrap#setConfigReport(boolean)} 'hekate.config-report'}</li>
+ * <li>{@link HekateBootstrap#setFatalErrorPolicy(HekateFatalErrorPolicy) 'hekate.on-fatal-error'}</li>
  * </ul>
  *
  * <h2>Deferred Cluster Joining</h2>
@@ -161,6 +160,46 @@ import org.springframework.stereotype.Component;
 @ConditionalOnProperty(name = "hekate.enable", havingValue = "true", matchIfMissing = true)
 public class HekateConfigurer {
     /**
+     * Configurer of {@link HekateFatalErrorPolicy}.
+     */
+    @Configuration
+    @ConditionalOnProperty("hekate.on-fatal-error")
+    static class FatalErrorPolicyConfigurer {
+        /**
+         * Creates {@link HekateFatalErrorPolicy#terminate()} bean.
+         *
+         * @return {@link HekateFatalErrorPolicy#terminate()} bean.
+         */
+        @Bean
+        @ConditionalOnProperty(value = "hekate.on-fatal-error", havingValue = "terminate")
+        public HekateFatalErrorPolicy hekateFatalErrorPolicyTerminate() {
+            return HekateFatalErrorPolicy.terminate();
+        }
+
+        /**
+         * Creates {@link HekateFatalErrorPolicy#rejoin()} bean.
+         *
+         * @return {@link HekateFatalErrorPolicy#rejoin()} bean.
+         */
+        @Bean
+        @ConditionalOnProperty(value = "hekate.on-fatal-error", havingValue = "rejoin")
+        public HekateFatalErrorPolicy hekateFatalErrorPolicyRejoin() {
+            return HekateFatalErrorPolicy.rejoin();
+        }
+
+        /**
+         * Creates {@link HekateFatalErrorPolicy#exitJvm()} bean.
+         *
+         * @return {@link HekateFatalErrorPolicy#exitJvm()} bean.
+         */
+        @Bean
+        @ConditionalOnProperty(value = "hekate.on-fatal-error", havingValue = "exit-jvm")
+        public HekateFatalErrorPolicy hekateFatalErrorPolicyExitJvm() {
+            return HekateFatalErrorPolicy.exitJvm();
+        }
+    }
+
+    /**
      * Handler for {@link HekateSpringBootstrap#setDeferredJoin(boolean) deferred join}.
      *
      * <p>
@@ -183,20 +222,14 @@ public class HekateConfigurer {
 
         @Override
         public void onApplicationEvent(ApplicationReadyEvent event) {
-            try {
-                // Handle deferred join when application is ready.
-                if (hekate.state() == Hekate.State.INITIALIZED) {
-                    hekate.join();
-                }
-            } catch (InterruptedException e) {
-                throw new ApplicationContextException("Thread got interrupted while awaiting for cluster join.", e);
-            } catch (HekateFutureException e) {
-                throw new ApplicationContextException("Failed to join the cluster.", e);
+            // Handle deferred join when application is ready.
+            if (hekate.state() == Hekate.State.INITIALIZED) {
+                hekate.join();
             }
         }
     }
 
-    private final CodecFactory<Object> codec;
+    private final Optional<CodecFactory<Object>> codec;
 
     private final List<ServiceFactory<?>> services;
 
@@ -208,6 +241,8 @@ public class HekateConfigurer {
 
     private final MeterRegistry metrics;
 
+    private final Optional<HekateFatalErrorPolicy> fatalErrorPolicy;
+
     /**
      * Constructs new instance with autowired dependencies.
      *
@@ -217,6 +252,7 @@ public class HekateConfigurer {
      * @param listeners All {@link LifecycleListener}s found in the application context.
      * @param metrics Metrics registry.
      * @param codec Default codec factory.
+     * @param fatalErrorPolicy Fatal error handling policy.
      */
     public HekateConfigurer(
         Optional<List<PropertyProvider>> propertyProviders,
@@ -224,14 +260,16 @@ public class HekateConfigurer {
         Optional<List<Plugin>> plugins,
         Optional<List<LifecycleListener>> listeners,
         Optional<MeterRegistry> metrics,
+        Optional<HekateFatalErrorPolicy> fatalErrorPolicy,
         @Qualifier("default") Optional<CodecFactory<Object>> codec
     ) {
         this.services = services.orElse(null);
         this.plugins = plugins.orElse(null);
         this.propertyProviders = propertyProviders.orElse(null);
         this.listeners = listeners.orElse(null);
-        this.codec = codec.orElse(null);
+        this.codec = codec;
         this.metrics = metrics.orElse(null);
+        this.fatalErrorPolicy = fatalErrorPolicy;
     }
 
     /**
@@ -260,9 +298,8 @@ public class HekateConfigurer {
         boot.setLifecycleListeners(listeners);
         boot.setMetrics(metrics);
 
-        if (codec != null) {
-            boot.setDefaultCodec(codec);
-        }
+        codec.ifPresent(boot::setDefaultCodec);
+        fatalErrorPolicy.ifPresent(boot::setFatalErrorPolicy);
 
         return boot;
     }

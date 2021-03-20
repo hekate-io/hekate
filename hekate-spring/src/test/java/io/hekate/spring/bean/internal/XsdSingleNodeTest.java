@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -25,7 +25,6 @@ import io.hekate.cluster.health.DefaultFailureDetector;
 import io.hekate.cluster.internal.DefaultClusterService;
 import io.hekate.cluster.seed.jdbc.JdbcSeedNodeProvider;
 import io.hekate.cluster.split.HostReachabilityDetector;
-import io.hekate.cluster.split.SplitBrainAction;
 import io.hekate.cluster.split.SplitBrainDetectorGroup;
 import io.hekate.codec.CodecService;
 import io.hekate.codec.fst.FstCodecFactory;
@@ -167,7 +166,6 @@ public class XsdSingleNodeTest extends HekateTestBase {
     }
 
     private void verifyLocalNode() {
-        assertEquals("test-cluster", bootstrap.getClusterName());
         assertEquals("test-node", hekate.localNode().name());
 
         assertEquals(3, hekate.localNode().roles().size());
@@ -192,6 +190,8 @@ public class XsdSingleNodeTest extends HekateTestBase {
     private void verifyCluster() {
         DefaultClusterService cluster = hekate.get(DefaultClusterService.class);
 
+        assertEquals("test-cluster", cluster.namespace());
+
         JdbcSeedNodeProvider jdbc = (JdbcSeedNodeProvider)cluster.seedNodeProvider();
 
         assertEquals(60001, jdbc.cleanupInterval());
@@ -204,8 +204,6 @@ public class XsdSingleNodeTest extends HekateTestBase {
         assertEquals(501, detector.heartbeatInterval());
         assertEquals(5, detector.heartbeatLossThreshold());
         assertEquals(3, detector.failureQuorum());
-
-        assertSame(SplitBrainAction.TERMINATE, cluster.splitBrainAction());
 
         SplitBrainDetectorGroup splitBrain = (SplitBrainDetectorGroup)cluster.splitBrainDetector();
 

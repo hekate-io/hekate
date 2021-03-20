@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -17,12 +17,12 @@
 package io.hekate.messaging.operation;
 
 import io.hekate.core.Hekate;
+import io.hekate.core.HekateException;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessageTimeoutException;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
-import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.retry.GenericRetryConfigurer;
 import java.util.concurrent.TimeUnit;
 
@@ -212,11 +212,10 @@ public interface Broadcast<T> {
      *
      * @return Result.
      *
-     * @throws MessagingFutureException If operations fails.
-     * @throws InterruptedException If thread got interrupted while awaiting for this operation to complete.
+     * @throws HekateException If operations fails.
      */
-    default BroadcastResult<T> sync() throws MessagingFutureException, InterruptedException {
-        return submit().get();
+    default BroadcastResult<T> sync() throws HekateException {
+        return submit().sync();
     }
 
     /**

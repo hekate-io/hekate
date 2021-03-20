@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -16,7 +16,6 @@
 
 package io.hekate.cluster.event;
 
-import io.hekate.cluster.split.SplitBrainDetector;
 import io.hekate.core.Hekate;
 
 /**
@@ -31,6 +30,6 @@ public enum ClusterLeaveReason {
     /** Leaving because of the {@link Hekate#terminate()} method call. */
     TERMINATE,
 
-    /** Leaving because of the cluster split-brain had been detected by the {@link SplitBrainDetector}. */
-    SPLIT_BRAIN
+    /** Leaving because of an unrecoverable error. */
+    FATAL_ERROR
 }

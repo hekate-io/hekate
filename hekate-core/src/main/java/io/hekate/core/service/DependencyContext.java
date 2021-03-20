@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -34,15 +34,6 @@ public interface DependencyContext {
      * @see HekateBootstrap#setNodeName(String)
      */
     String nodeName();
-
-    /**
-     * Returns the cluster name.
-     *
-     * @return Name of the local node's cluster.
-     *
-     * @see HekateBootstrap#setClusterName(String)
-     */
-    String clusterName();
 
     /**
      * Returns the {@link Hekate} instance that manages this service.

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -20,11 +20,11 @@ import io.hekate.core.Hekate;
 import io.hekate.core.HekateException;
 
 /**
- * Signals that node joining was rejected by {@link ClusterAcceptor}.
+ * Signals that the joining node has been rejected by {@link ClusterAcceptor}.
  *
  * @see ClusterAcceptor
  */
-public class ClusterJoinRejectedException extends HekateException {
+public class ClusterRejectedJoinException extends ClusterException {
     private static final long serialVersionUID = 1;
 
     private final String rejectReason;
@@ -37,11 +37,18 @@ public class ClusterJoinRejectedException extends HekateException {
      * @param rejectReason Reject reason as it was returned by {@link ClusterAcceptor#acceptJoin(ClusterNode, Hekate)}.
      * @param rejectedBy Address of the node that rejected this node joining.
      */
-    public ClusterJoinRejectedException(String rejectReason, ClusterAddress rejectedBy) {
+    public ClusterRejectedJoinException(String rejectReason, ClusterAddress rejectedBy) {
         super(rejectReason);
 
         this.rejectReason = rejectReason;
         this.rejectedBy = rejectedBy;
+    }
+
+    private ClusterRejectedJoinException(ClusterRejectedJoinException cause) {
+        super(cause.getMessage(), cause);
+
+        this.rejectReason = cause.rejectReason();
+        this.rejectedBy = cause.rejectedBy();
     }
 
     /**
@@ -60,5 +67,10 @@ public class ClusterJoinRejectedException extends HekateException {
      */
     public ClusterAddress rejectedBy() {
         return rejectedBy;
+    }
+
+    @Override
+    public HekateException forkFromAsync() {
+        return new ClusterRejectedJoinException(this);
     }
 }

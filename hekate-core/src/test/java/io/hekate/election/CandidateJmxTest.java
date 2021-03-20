@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -20,7 +20,6 @@ import io.hekate.HekateNodeTestBase;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.core.jmx.JmxService;
-import io.hekate.core.jmx.JmxServiceFactory;
 import io.hekate.core.jmx.JmxTestUtils;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,8 +40,8 @@ public class CandidateJmxTest extends HekateNodeTestBase {
             String jmxDomain = "test-node-" + i;
 
             createNode(boot -> {
-                boot.withService(JmxServiceFactory.class, jmx -> jmx.withDomain(jmxDomain));
-                boot.withService(ElectionServiceFactory.class, election -> {
+                boot.withJmx(jmx -> jmx.withDomain(jmxDomain));
+                boot.withElection(election -> {
                     election.withCandidate(new CandidateConfig()
                         .withGroup("test-group-1")
                         .withCandidate(mock(Candidate.class))

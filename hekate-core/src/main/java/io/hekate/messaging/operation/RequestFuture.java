@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -16,9 +16,9 @@
 
 package io.hekate.messaging.operation;
 
+import io.hekate.core.HekateException;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingFuture;
-import io.hekate.messaging.MessagingFutureException;
 
 /**
  * Asynchronous result of {@link Request} operation.
@@ -33,11 +33,10 @@ public class RequestFuture<T> extends MessagingFuture<Response<T>> {
      *
      * @return Response.
      *
-     * @throws MessagingFutureException Signals that request operation failed.
-     * @throws InterruptedException Signals that thread was interrupted while awaiting for operation completion.
+     * @throws HekateException If operation fails.
      */
-    public T result() throws MessagingFutureException, InterruptedException {
-        return get().payload();
+    public T result() throws HekateException {
+        return sync().payload();
     }
 
     /**
@@ -48,10 +47,9 @@ public class RequestFuture<T> extends MessagingFuture<Response<T>> {
      *
      * @return Response.
      *
-     * @throws MessagingFutureException Signals that request operation failed.
-     * @throws InterruptedException Signals that thread was interrupted while awaiting for this operation to complete.
+     * @throws HekateException If operation fails.
      */
-    public <V extends T> V result(Class<V> type) throws MessagingFutureException, InterruptedException {
-        return type.cast(get().payload());
+    public <V extends T> V result(Class<V> type) throws HekateException {
+        return type.cast(sync().payload());
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -19,15 +19,12 @@ package io.hekate.messaging.internal;
 import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.event.ClusterEventType;
-import io.hekate.core.HekateFutureException;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.operation.Response;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 
 import static java.util.Collections.singletonList;
 import static java.util.Collections.synchronizedList;
@@ -55,7 +52,7 @@ public class TestChannel {
             if (receiverDelegate != null) {
                 try {
                     receiverDelegate.receive(msg);
-                } catch (RuntimeException | Error e) {
+                } catch (Throwable e) {
                     receiverError = e;
 
                     throw e;
@@ -96,13 +93,13 @@ public class TestChannel {
         return channel.context();
     }
 
-    public TestChannel join() throws HekateFutureException, InterruptedException {
+    public TestChannel join() {
         node.join();
 
         return this;
     }
 
-    public TestChannel leave() throws InterruptedException, ExecutionException, TimeoutException {
+    public TestChannel leave() {
         HekateTestBase.get(node.leaveAsync());
 
         return this;

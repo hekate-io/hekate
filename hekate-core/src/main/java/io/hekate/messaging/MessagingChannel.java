@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -18,6 +18,7 @@ package io.hekate.messaging;
 
 import io.hekate.cluster.ClusterFilterSupport;
 import io.hekate.cluster.ClusterView;
+import io.hekate.core.HekateException;
 import io.hekate.messaging.loadbalance.DefaultLoadBalancer;
 import io.hekate.messaging.loadbalance.LoadBalancer;
 import io.hekate.messaging.operation.AckMode;
@@ -312,10 +313,9 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * @param msg Message.
      *
-     * @throws MessagingFutureException If message operation failed.
-     * @throws InterruptedException If current thread got interrupted.
+     * @throws HekateException If operation failed.
      */
-    default void send(T msg) throws MessagingFutureException, InterruptedException {
+    default void send(T msg) throws HekateException {
         newSend(msg)
             .withAckMode(AckMode.REQUIRED)
             .sync();
@@ -327,10 +327,9 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      * @param msg Message.
      * @param ackMode Acknowledgement mode.
      *
-     * @throws MessagingFutureException If message operation failed.
-     * @throws InterruptedException If current thread got interrupted.
+     * @throws HekateException If operation failed.
      */
-    default void send(T msg, AckMode ackMode) throws MessagingFutureException, InterruptedException {
+    default void send(T msg, AckMode ackMode) throws HekateException {
         newSend(msg)
             .withAckMode(ackMode)
             .sync();
@@ -342,10 +341,9 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      * @param affinityKey Affinity key (see {@link Send#withAffinity(Object)}).
      * @param msg Message.
      *
-     * @throws MessagingFutureException If message operation failed.
-     * @throws InterruptedException If current thread got interrupted.
+     * @throws HekateException If operation failed.
      */
-    default void send(Object affinityKey, T msg) throws MessagingFutureException, InterruptedException {
+    default void send(Object affinityKey, T msg) throws HekateException {
         newSend(msg)
             .withAckMode(AckMode.REQUIRED)
             .withAffinity(affinityKey)
@@ -359,10 +357,9 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      * @param msg Message.
      * @param ackMode Acknowledgement mode.
      *
-     * @throws MessagingFutureException If message operation failed.
-     * @throws InterruptedException If current thread got interrupted.
+     * @throws HekateException If operation failed.
      */
-    default void send(Object affinityKey, T msg, AckMode ackMode) throws MessagingFutureException, InterruptedException {
+    default void send(Object affinityKey, T msg, AckMode ackMode) throws HekateException {
         newSend(msg)
             .withAckMode(ackMode)
             .withAffinity(affinityKey)
@@ -401,10 +398,9 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * @return Response.
      *
-     * @throws MessagingFutureException If message operation failed.
-     * @throws InterruptedException If current thread got interrupted.
+     * @throws HekateException If operation failed.
      */
-    default T request(T msg) throws MessagingFutureException, InterruptedException {
+    default T request(T msg) throws HekateException {
         return newRequest(msg).response();
     }
 
@@ -416,10 +412,9 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * @return Response.
      *
-     * @throws MessagingFutureException If message operation failed.
-     * @throws InterruptedException If current thread got interrupted.
+     * @throws HekateException If operation failed.
      */
-    default T request(Object affinityKey, T msg) throws MessagingFutureException, InterruptedException {
+    default T request(Object affinityKey, T msg) throws HekateException {
         return newRequest(msg)
             .withAffinity(affinityKey)
             .response();
@@ -464,10 +459,9 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * @return All response parts that were received.
      *
-     * @throws MessagingFutureException If message operation failed.
-     * @throws InterruptedException If current thread got interrupted.
+     * @throws HekateException If operation failed.
      */
-    default List<T> subscribe(T msg) throws MessagingFutureException, InterruptedException {
+    default List<T> subscribe(T msg) throws HekateException {
         return newSubscribe(msg).responses();
     }
 
@@ -484,10 +478,9 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * @return All response parts that were received.
      *
-     * @throws MessagingFutureException If message operation failed.
-     * @throws InterruptedException If current thread got interrupted.
+     * @throws HekateException If operation failed.
      */
-    default List<T> subscribe(Object affinityKey, T msg) throws MessagingFutureException, InterruptedException {
+    default List<T> subscribe(Object affinityKey, T msg) throws HekateException {
         return newSubscribe(msg)
             .withAffinity(affinityKey)
             .responses();
@@ -558,10 +551,9 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * @return Broadcast result.
      *
-     * @throws MessagingFutureException If message operation failed.
-     * @throws InterruptedException If current thread got interrupted.
+     * @throws HekateException If operation failed.
      */
-    default BroadcastResult<T> broadcast(T msg) throws MessagingFutureException, InterruptedException {
+    default BroadcastResult<T> broadcast(T msg) throws HekateException {
         return newBroadcast(msg)
             .withAckMode(AckMode.REQUIRED)
             .sync();
@@ -575,10 +567,9 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * @return Broadcast result.
      *
-     * @throws MessagingFutureException If message operation failed.
-     * @throws InterruptedException If current thread got interrupted.
+     * @throws HekateException If operation failed.
      */
-    default BroadcastResult<T> broadcast(T msg, AckMode ackMode) throws MessagingFutureException, InterruptedException {
+    default BroadcastResult<T> broadcast(T msg, AckMode ackMode) throws HekateException {
         return newBroadcast(msg)
             .withAckMode(ackMode)
             .sync();
@@ -592,10 +583,9 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * @return Broadcast result.
      *
-     * @throws MessagingFutureException If message operation failed.
-     * @throws InterruptedException If current thread got interrupted.
+     * @throws HekateException If operation failed.
      */
-    default BroadcastResult<T> broadcast(Object affinityKey, T msg) throws MessagingFutureException, InterruptedException {
+    default BroadcastResult<T> broadcast(Object affinityKey, T msg) throws HekateException {
         return newBroadcast(msg)
             .withAckMode(AckMode.REQUIRED)
             .withAffinity(affinityKey).sync();
@@ -610,10 +600,9 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * @return Broadcast result.
      *
-     * @throws MessagingFutureException If message operation failed.
-     * @throws InterruptedException If current thread got interrupted.
+     * @throws HekateException If operation failed.
      */
-    default BroadcastResult<T> broadcast(Object affinityKey, T msg, AckMode ackMode) throws MessagingFutureException, InterruptedException {
+    default BroadcastResult<T> broadcast(Object affinityKey, T msg, AckMode ackMode) throws HekateException {
         return newBroadcast(msg)
             .withAckMode(ackMode)
             .withAffinity(affinityKey)
@@ -650,10 +639,9 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * @return Aggregation result.
      *
-     * @throws MessagingFutureException If message operation failed.
-     * @throws InterruptedException If current thread got interrupted.
+     * @throws HekateException If operation failed.
      */
-    default AggregateResult<T> aggregate(T msg) throws MessagingFutureException, InterruptedException {
+    default AggregateResult<T> aggregate(T msg) throws HekateException {
         return newAggregate(msg).get();
     }
 
@@ -665,10 +653,9 @@ public interface MessagingChannel<T> extends ClusterFilterSupport<MessagingChann
      *
      * @return Aggregation result.
      *
-     * @throws MessagingFutureException If message operation failed.
-     * @throws InterruptedException If current thread got interrupted.
+     * @throws HekateException If operation failed.
      */
-    default AggregateResult<T> aggregate(Object affinityKey, T msg) throws MessagingFutureException, InterruptedException {
+    default AggregateResult<T> aggregate(Object affinityKey, T msg) throws HekateException {
         return newAggregate(msg).withAffinity(affinityKey).get();
     }
 }

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2020 The Hekate Project
+  ~ Copyright 2021 The Hekate Project
   ~
   ~ The Hekate Project licenses this file to you under the Apache License,
   ~ version 2.0 (the "License"); you may not use this file except in compliance
@@ -25,7 +25,7 @@
         http://www.hekate.io/spring/hekate-core.xsd">
 
     <!-- Node with all configuration options set to their default values. -->
-    <h:node id="hekate" name="my-node" cluster="my-cluster"/>
+    <h:node id="hekate" name="my-node"/>
 
 </beans>
     <!--End:example-->

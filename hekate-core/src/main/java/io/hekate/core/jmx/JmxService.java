@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -80,8 +80,7 @@ import javax.management.ObjectName;
  *
  * <h2>JMX Object Names</h2>
  * <p>
- * {@link ObjectName}s of all registered beans are constructed based on the {@link HekateBootstrap#setClusterName(String) cluster name},
- * {@link HekateBootstrap#setNodeName(String) node name} and bean's class name as follows:
+ * {@link ObjectName}s of all registered beans are constructed as follows:
  * </p>
  *
  * <p>

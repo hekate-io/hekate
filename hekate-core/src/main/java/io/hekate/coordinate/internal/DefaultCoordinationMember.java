@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -211,8 +211,8 @@ class DefaultCoordinationMember implements CoordinationMember {
 
                     callback.onCancel();
                 }
-            } catch (RuntimeException | Error e) {
-                log.error("Got an unexpected runtime error while notifying coordination request callback.", e);
+            } catch (Throwable e) {
+                log.error("Got an unexpected error while notifying coordination request callback.", e);
             }
         }, async);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -16,13 +16,22 @@
 
 package io.hekate.network;
 
-import java.io.IOException;
+import io.hekate.core.HekateException;
 
 /**
  * Signals a network operation timed out.
  */
-public class NetworkTimeoutException extends IOException {
+public class NetworkTimeoutException extends NetworkException {
     private static final long serialVersionUID = 1L;
+
+    /**
+     * Constructs a new instance.
+     *
+     * @param message Error message.
+     */
+    public NetworkTimeoutException(String message) {
+        super(message);
+    }
 
     /**
      * Constructs a new instance.
@@ -32,5 +41,10 @@ public class NetworkTimeoutException extends IOException {
      */
     public NetworkTimeoutException(String message, Throwable cause) {
         super(message, cause);
+    }
+
+    @Override
+    public HekateException forkFromAsync() {
+        return new NetworkTimeoutException(getMessage(), this);
     }
 }

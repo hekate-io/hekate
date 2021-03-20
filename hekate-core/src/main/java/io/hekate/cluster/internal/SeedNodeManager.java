@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -49,7 +49,7 @@ class SeedNodeManager {
 
     private final SeedNodeProvider provider;
 
-    private final String cluster;
+    private final String namespace;
 
     private final Object cleanupMux = new Object();
 
@@ -63,8 +63,8 @@ class SeedNodeManager {
 
     private AliveAddressProvider aliveAddressProvider;
 
-    public SeedNodeManager(String cluster, SeedNodeProvider provider) {
-        this.cluster = cluster;
+    public SeedNodeManager(String namespace, SeedNodeProvider provider) {
+        this.namespace = namespace;
         this.provider = provider;
         this.cleanupInterval = provider.cleanupInterval();
     }
@@ -74,7 +74,7 @@ class SeedNodeManager {
             log.debug("Getting seed nodes to join....");
         }
 
-        List<InetSocketAddress> nodes = provider.findSeedNodes(cluster);
+        List<InetSocketAddress> nodes = provider.findSeedNodes(namespace);
 
         nodes = nodes != null ? nodes : emptyList();
 
@@ -87,31 +87,31 @@ class SeedNodeManager {
 
     public void startDiscovery(InetSocketAddress address) throws HekateException {
         if (DEBUG) {
-            log.debug("Starting seed nodes discovery [cluster={}, address={}]", cluster, address);
+            log.debug("Starting discovery of seed nodes [namespace={}, address={}]", namespace, address);
         }
 
         started.set(true);
 
-        provider.startDiscovery(cluster, address);
+        provider.startDiscovery(namespace, address);
 
         if (DEBUG) {
-            log.debug("Started seed nodes discovery [cluster={}, address={}]", cluster, address);
+            log.debug("Started discovery of seed nodes [namespace={}, address={}]", namespace, address);
         }
     }
 
     public void suspendDiscovery() {
         if (DEBUG) {
-            log.debug("Suspending seed nodes discovery...");
+            log.debug("Suspending discovery of seed nodes...");
         }
 
         try {
             provider.suspendDiscovery();
 
             if (DEBUG) {
-                log.debug("Suspended seed nodes discovery.");
+                log.debug("Suspended discovery of seed nodes.");
             }
         } catch (Throwable t) {
-            log.error("Failed to suspend seed nodes discovery.", t);
+            log.error("Failed to suspend discovery of seed nodes.", t);
         }
     }
 
@@ -119,16 +119,16 @@ class SeedNodeManager {
         if (started.compareAndSet(true, false)) {
             try {
                 if (DEBUG) {
-                    log.debug("Stopping seed nodes discovery [cluster={}, address={}]", cluster, address);
+                    log.debug("Stopping discovery of seed nodes [namespace={}, address={}]", namespace, address);
                 }
 
-                provider.stopDiscovery(cluster, address);
+                provider.stopDiscovery(namespace, address);
 
                 if (DEBUG) {
-                    log.debug("Done stopping seed nodes discovery [cluster={}, address={}]", cluster, address);
+                    log.debug("Done stopping discovery of seed nodes [namespace={}, address={}]", namespace, address);
                 }
             } catch (Throwable t) {
-                log.error("Failed to stop seed nodes discovery [cluster={}, address={}]", cluster, address, t);
+                log.error("Failed to stop discovery of seed nodes [namespace={}, address={}]", namespace, address, t);
             }
         }
     }
@@ -137,7 +137,7 @@ class SeedNodeManager {
         synchronized (cleanupMux) {
             if (cleaner == null && cleanupInterval > 0) {
                 if (DEBUG) {
-                    log.debug("Scheduling seed nodes cleanup task [cluster={}, interval={}]", cluster, cleanupInterval);
+                    log.debug("Scheduling seed nodes cleanup task [namespace={}, interval={}]", namespace, cleanupInterval);
                 }
 
                 this.net = net;
@@ -160,7 +160,7 @@ class SeedNodeManager {
 
             if (cleaner != null) {
                 if (DEBUG) {
-                    log.debug("Canceling seed nodes cleanup task [cluster={}]", cluster);
+                    log.debug("Canceling seed nodes cleanup task [namespace={}]", namespace);
                 }
 
                 this.cleaner = null;
@@ -188,10 +188,10 @@ class SeedNodeManager {
             }
 
             if (DEBUG) {
-                log.debug("Running seed nodes cleanup task [cluster={}]", cluster);
+                log.debug("Running seed nodes cleanup task [namespace={}]", namespace);
             }
 
-            List<InetSocketAddress> provided = provider.findSeedNodes(cluster);
+            List<InetSocketAddress> provided = provider.findSeedNodes(namespace);
 
             Set<InetSocketAddress> seeds;
 
@@ -207,10 +207,10 @@ class SeedNodeManager {
             for (InetSocketAddress addr : alive) {
                 if (!seeds.contains(addr)) {
                     if (DEBUG) {
-                        log.debug("Re-registering the missing seed node address [cluster={}, address={}]", cluster, addr);
+                        log.debug("Re-registering the missing seed node address [namespace={}, address={}]", namespace, addr);
                     }
 
-                    provider.registerRemote(cluster, addr);
+                    provider.registerRemote(namespace, addr);
                 }
             }
 
@@ -259,18 +259,16 @@ class SeedNodeManager {
                                             }
 
                                             if (DEBUG) {
-                                                log.debug("Unregistering failed seed node address [cluster={}, address={}]", cluster, addr);
+                                                log.debug("Unregistering failed seed node address "
+                                                    + "[namespace={}, address={}]", namespace, addr);
                                             }
 
-                                            provider.unregisterRemote(cluster, addr);
-                                        } catch (HekateException e) {
-                                            if (log.isWarnEnabled()) {
-                                                log.warn("Failed to unregister failed seed node address "
-                                                    + "[cluster={}, address={}]", cluster, addr, e);
+                                            provider.unregisterRemote(namespace, addr);
+                                        } catch (Throwable e) {
+                                            if (log.isErrorEnabled()) {
+                                                log.error("Failed to unregister seed node address "
+                                                    + "[namespace={}, address={}]", namespace, addr, e);
                                             }
-                                        } catch (RuntimeException | Error e) {
-                                            log.error("Got an unexpected runtime error while unregistering failed seed node address "
-                                                + "[address={}]", addr, e);
                                         }
                                     });
                                 }
@@ -283,7 +281,7 @@ class SeedNodeManager {
                             break;
                         }
                         case TIMEOUT: {
-                            // We can't decide whether node is alive or not. Do nothing.
+                            // We can't decide whether the node is alive or not. Do nothing.
                             break;
                         }
                         default: {
@@ -294,12 +292,10 @@ class SeedNodeManager {
             }
 
             if (DEBUG) {
-                log.debug("Done running seed nodes cleanup task [cluster={}]", cluster);
+                log.debug("Done running seed nodes cleanup task [namespace={}]", namespace);
             }
-        } catch (HekateException e) {
-            log.warn("Failed to cleanup stale seed nodes.", e);
-        } catch (RuntimeException | Error e) {
-            log.error("Got an unexpected runtime error while cleaning stale stale seed nodes.", e);
+        } catch (Throwable e) {
+            log.error("Got an error while cleaning stale seed nodes.", e);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -16,9 +16,9 @@
 
 package io.hekate.messaging.operation;
 
+import io.hekate.core.HekateException;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingFuture;
-import io.hekate.messaging.MessagingFutureException;
 import java.util.Collection;
 
 /**
@@ -35,11 +35,10 @@ public class AggregateFuture<T> extends MessagingFuture<AggregateResult<T>> {
      *
      * @return Aggregation result.
      *
-     * @throws MessagingFutureException Signals that aggregation failed.
-     * @throws InterruptedException Signals that the thread was interrupted while waiting for aggregation to complete.
+     * @throws HekateException If operation fails.
      */
-    public Collection<T> results() throws InterruptedException, MessagingFutureException {
-        return get().results();
+    public Collection<T> results() throws HekateException {
+        return sync().results();
     }
 
     /**
@@ -50,10 +49,9 @@ public class AggregateFuture<T> extends MessagingFuture<AggregateResult<T>> {
      *
      * @return Aggregation result.
      *
-     * @throws MessagingFutureException Signals that aggregation failed.
-     * @throws InterruptedException Signals that the thread was interrupted while waiting for aggregation to complete.
+     * @throws HekateException If operation fails.
      */
-    public <V extends T> Collection<V> results(Class<V> type) throws InterruptedException, MessagingFutureException {
+    public <V extends T> Collection<V> results(Class<V> type) throws HekateException {
         return cast(type, results());
     }
 

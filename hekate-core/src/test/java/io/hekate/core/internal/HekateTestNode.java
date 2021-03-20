@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -27,7 +27,6 @@ import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.cluster.internal.gossip.GossipListener;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
-import io.hekate.core.HekateFutureException;
 import io.hekate.util.StateGuard;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -154,7 +153,7 @@ public class HekateTestNode extends HekateNode {
     }
 
     @Override
-    public HekateTestNode join() throws HekateFutureException, InterruptedException {
+    public HekateTestNode join() {
         super.join();
 
         return this;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -26,9 +26,18 @@ import javax.management.MXBean;
 @JmxTypeName("ClusterService")
 public interface ClusterServiceJmx {
     /**
+     * Returns the namespace.
+     *
+     * @return Namespace.
+     *
+     * @see ClusterService#namespace()
+     */
+    String getNamespace();
+
+    /**
      * Returns the local node.
      *
-     * @return Local node
+     * @return Local node.
      *
      * @see ClusterService#localNode()
      */

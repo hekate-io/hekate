@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -15,6 +15,8 @@
  */
 
 package io.hekate.messaging;
+
+import io.hekate.core.HekateException;
 
 import static io.hekate.core.internal.util.Utils.NL;
 
@@ -40,6 +42,12 @@ public class MessagingRemoteException extends MessagingException {
         this.remoteStackTrace = remoteStackTrace;
     }
 
+    private MessagingRemoteException(MessagingRemoteException cause) {
+        super("Messaging operation failed on remote node (see cause for details).", cause);
+
+        this.remoteStackTrace = cause.remoteStackTrace();
+    }
+
     /**
      * Returns the stack trace of a remote failure.
      *
@@ -47,6 +55,11 @@ public class MessagingRemoteException extends MessagingException {
      */
     public String remoteStackTrace() {
         return remoteStackTrace;
+    }
+
+    @Override
+    public HekateException forkFromAsync() {
+        return new MessagingRemoteException(this);
     }
 
     private static String format(String message, String remoteStackTrace) {

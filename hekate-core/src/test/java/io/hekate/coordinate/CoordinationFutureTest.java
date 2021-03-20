@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -20,15 +20,10 @@ import io.hekate.util.HekateFutureTestBase;
 
 import static org.mockito.Mockito.mock;
 
-public class CoordinationFutureTest extends HekateFutureTestBase<CoordinationProcess, CoordinationFuture, CoordinationException> {
+public class CoordinationFutureTest extends HekateFutureTestBase<CoordinationProcess, CoordinationFuture> {
     @Override
     protected CoordinationFuture createFuture() {
         return new CoordinationFuture();
-    }
-
-    @Override
-    protected Class<CoordinationException> errorType() {
-        return CoordinationException.class;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -60,7 +60,7 @@ public class HekateCloudSeedNodeProviderConfigurerTest extends HekateAutoConfigu
         String testEndpoint = "https://ec2." + testRegion + ".amazonaws.com";
 
         registerAndRefresh(new String[]{
-            "hekate.cluster=" + UUID.randomUUID().toString(),
+            "hekate.cluster.namespace=" + UUID.randomUUID().toString(),
             "hekate.cluster.seed.cloud.enable=true",
             "hekate.cluster.seed.cloud.provider=aws-ec2",
             "hekate.cluster.seed.cloud.endpoint=" + testEndpoint,

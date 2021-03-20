@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2020 The Hekate Project
+  ~ Copyright 2021 The Hekate Project
   ~
   ~ The Hekate Project licenses this file to you under the Apache License,
   ~ version 2.0 (the "License"); you may not use this file except in compliance
@@ -23,7 +23,7 @@
         http://www.hekate.io/spring/hekate-core
         http://www.hekate.io/spring/hekate-core.xsd">
 
-    <bean id="testClusterName" class="java.lang.String">
+    <bean id="testNamespace" class="java.lang.String">
         <constructor-arg value="#{T(java.util.UUID).randomUUID().toString()}"/>
     </bean>
 
@@ -31,8 +31,8 @@
         <constructor-arg value="#{T(io.hekate.HekateTestProps).get('ETCD_URL')}"/>
     </bean>
 
-    <h:node id="node1" cluster="#{testClusterName}">
-        <h:cluster>
+    <h:node id="node1">
+        <h:cluster namespace="#{testNamespace}">
             <h:seed-node-provider>
                 <h:etcd base-path="/hekate-test"
                     username=""
@@ -45,8 +45,8 @@
         </h:cluster>
     </h:node>
 
-    <h:node id="node2" cluster="#{testClusterName}">
-        <h:cluster>
+    <h:node id="node2">
+        <h:cluster namespace="#{testNamespace}">
             <h:seed-node-provider>
                 <h:etcd base-path="/hekate-test"
                     username=""

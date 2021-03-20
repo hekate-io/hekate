@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -18,7 +18,6 @@ package io.hekate.rpc.internal;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.messaging.MessagingChannel;
-import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.operation.AggregateFuture;
 import io.hekate.messaging.operation.AggregateResult;
 import io.hekate.messaging.retry.GenericRetryConfigurer;
@@ -36,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import org.slf4j.Logger;
@@ -156,7 +154,7 @@ class RpcAggregateMethodClient<T> extends RpcMethodClientBase<T> {
     }
 
     @Override
-    protected Object doInvoke(Object affinity, Object[] args) throws MessagingFutureException, InterruptedException, TimeoutException {
+    protected Object doInvoke(Object affinity, Object[] args) {
         RpcCall<T> call = new RpcCall<>(methodIdxKey(), rpc(), tag(), method(), args);
 
         AggregateFuture<RpcProtocol> future = channel().newAggregate(call)
@@ -172,7 +170,7 @@ class RpcAggregateMethodClient<T> extends RpcMethodClientBase<T> {
         if (method().isAsync()) {
             return future.thenApply(converter);
         } else {
-            return converter.apply(future.get());
+            return converter.apply(future.sync());
         }
     }
 }

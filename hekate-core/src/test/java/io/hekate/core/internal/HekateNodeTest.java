@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -24,7 +24,8 @@ import io.hekate.cluster.event.ClusterEventListener;
 import io.hekate.cluster.event.ClusterEventType;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateException;
-import io.hekate.core.HekateFutureException;
+import io.hekate.core.HekateFatalErrorContext;
+import io.hekate.core.HekateFatalErrorPolicy;
 import io.hekate.core.InitializationFuture;
 import io.hekate.core.JoinFuture;
 import io.hekate.core.LeaveFuture;
@@ -56,8 +57,11 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 public class HekateNodeTest extends HekateNodeTestBase {
     private interface TestService extends Service, InitializingService, TerminatingService {
@@ -68,14 +72,26 @@ public class HekateNodeTest extends HekateNodeTestBase {
 
     private TestService serviceMock;
 
+    private HekateFatalErrorPolicy fatalErrorPolicyMock;
+
     @Override
     public void setUp() throws Exception {
         super.setUp();
 
         serviceMock = mock(TestService.class);
+        fatalErrorPolicyMock = mock(HekateFatalErrorPolicy.class);
 
-        node = createNode(boot ->
-            boot.withService(() -> serviceMock)
+        doAnswer(invocation -> {
+            HekateFatalErrorContext ctx = invocation.getArgument(1);
+
+            ctx.terminate();
+
+            return null;
+        }).when(fatalErrorPolicyMock).handleFatalError(any(), any());
+
+        node = createNode(boot -> boot
+            .withService(() -> serviceMock)
+            .withFatalErrorPolicy(fatalErrorPolicyMock)
         );
     }
 
@@ -387,7 +403,7 @@ public class HekateNodeTest extends HekateNodeTestBase {
             sock.bind(address);
 
             node = createNode(boot ->
-                boot.withService(NetworkServiceFactory.class, net -> {
+                boot.withNetwork(net -> {
                     net.setPort(address.getPort());
                     net.setPortRange(0);
                     net.setTcpReuseAddress(false);
@@ -399,11 +415,10 @@ public class HekateNodeTest extends HekateNodeTestBase {
                     node.join();
 
                     fail();
-                } catch (HekateFutureException e) {
-                    HekateException cause = e.findCause(HekateException.class);
+                } catch (HekateException e) {
+                    IOException cause = e.findCause(IOException.class);
 
-                    assertNotNull(cause.toString(), cause.getCause());
-                    assertTrue(cause.getCause().toString(), cause.getCause() instanceof IOException);
+                    assertNotNull(cause.toString(), cause);
                     assertTrue(cause.getMessage().contains("Address already in use"));
 
                     say(cause);
@@ -561,5 +576,18 @@ public class HekateNodeTest extends HekateNodeTestBase {
         syncFuture.complete(null);
 
         get(join);
+    }
+
+    @Test
+    public void testFatalErrorPolicy() throws Exception {
+        repeat(5, i -> {
+            node.join();
+
+            node.fatalError(TEST_ERROR);
+
+            node.awaitForStatus(DOWN);
+
+            verify(fatalErrorPolicyMock, times(i + 1)).handleFatalError(same(TEST_ERROR), any(HekateFatalErrorContext.class));
+        });
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -27,7 +27,6 @@ import io.hekate.util.format.ToString;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketAddress;
-import java.net.SocketTimeoutException;
 import java.net.StandardSocketOptions;
 import java.nio.channels.ServerSocketChannel;
 import java.util.ArrayList;
@@ -462,7 +461,7 @@ public class NetworkServiceFactory implements ServiceFactory<NetworkService> {
      * <p>
      * This setting works in conjunction with {@link #setHeartbeatInterval(int)} to calculate the total amount of time for a TCP connection
      * to stay inactive (i.e. do not send any heartbeats or application data). When this timeout elapses then connection is considered to
-     * be failed and will be closed with a {@link SocketTimeoutException}.
+     * be failed and will be closed with a {@link NetworkTimeoutException}.
      * </p>
      *
      * <p>

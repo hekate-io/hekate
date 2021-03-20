@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -18,6 +18,8 @@ package io.hekate.cluster.split;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterServiceFactory;
+import io.hekate.cluster.ClusterSplitBrainException;
+import io.hekate.core.HekateFatalErrorPolicy;
 
 /**
  * Cluster split-brain detector.
@@ -42,8 +44,8 @@ import io.hekate.cluster.ClusterServiceFactory;
  * </ul>
  *
  * <p>
- * If this component detects that local node can't reach other nodes then the cluster service will take actions according to the {@link
- * SplitBrainAction} defined in its {@link ClusterServiceFactory#setSplitBrainDetector(SplitBrainDetector) configuration}.
+ * If this component detects that local node can't reach other nodes then {@link HekateFatalErrorPolicy} will be applied
+ * with {@link ClusterSplitBrainException} as a cause.
  * </p>
  *
  * <p>
@@ -57,8 +59,8 @@ public interface SplitBrainDetector {
      * Performs a split-brain check and returns {@code true} if local node can reach other members of the cluster.
      *
      * <p>
-     * If this method returns {@code false} then the cluster service will take actions according to the {@link
-     * SplitBrainAction} defined in its {@link ClusterServiceFactory#setSplitBrainDetector(SplitBrainDetector) configuration}.
+     * If this method returns {@code false} then {@link HekateFatalErrorPolicy} will be applied with {@link ClusterSplitBrainException}
+     * as a cause.
      * </p>
      *
      * @param localNode Local node (where the check is performed).

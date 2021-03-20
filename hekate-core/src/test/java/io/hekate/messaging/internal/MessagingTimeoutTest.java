@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -16,9 +16,9 @@
 
 package io.hekate.messaging.internal;
 
+import io.hekate.core.HekateException;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessageTimeoutException;
-import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.intercept.ClientMessageInterceptor;
 import io.hekate.messaging.intercept.ClientSendContext;
 import io.hekate.messaging.operation.RequestFuture;
@@ -57,7 +57,7 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
             hangLatchRef.set(new CountDownLatch(1));
 
             try {
-                MessagingFutureException e = expect(MessagingFutureException.class, () ->
+                MessageTimeoutException e = expect(MessageTimeoutException.class, () ->
                     get(sender.channel()
                         .forRemotes()
                         .newRequest("must-fail-" + i)
@@ -122,7 +122,7 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
                 // Check results (all requests should time out).
                 try {
                     for (RequestFuture<String> future : futures) {
-                        MessagingFutureException e = expect(MessagingFutureException.class, () -> get(future));
+                        MessageTimeoutException e = expect(MessageTimeoutException.class, () -> get(future));
 
                         assertTrue(getStacktrace(e), e.isCausedBy(MessageTimeoutException.class));
                         assertTrue(e.findCause(MessageTimeoutException.class).getMessage().startsWith("Messaging operation timed out"));
@@ -173,7 +173,7 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
             hangLatchRef.set(new CountDownLatch(1));
 
             try {
-                MessagingFutureException e = expect(MessagingFutureException.class, () ->
+                MessageTimeoutException e = expect(MessageTimeoutException.class, () ->
                     get(sender.channel().forRemotes().newSubscribe("must-fail-" + i).submit((err, rsp) -> { /* Ignore. */ }))
                 );
 
@@ -244,7 +244,7 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
                 get(sender.channel().forRemotes().newSend("must-fail-" + i).submit());
 
                 fail("Error was expected.");
-            } catch (MessagingFutureException e) {
+            } catch (HekateException e) {
                 assertTrue(getStacktrace(e), e.isCausedBy(MessageTimeoutException.class));
                 assertEquals("Messaging operation timed out [timeout=10, message=must-fail-" + i + ']',
                     e.findCause(MessageTimeoutException.class).getMessage());

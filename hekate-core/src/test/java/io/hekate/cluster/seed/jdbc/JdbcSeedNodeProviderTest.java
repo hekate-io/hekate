@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -65,7 +65,7 @@ public class JdbcSeedNodeProviderTest extends PersistentSeedNodeProviderTestBase
             String sql = "CREATE TABLE IF NOT EXISTS " + cfg.getTable() + " ("
                 + cfg.getHostColumn() + " VARCHAR(255),"
                 + cfg.getPortColumn() + " INT, "
-                + cfg.getClusterColumn() + " VARCHAR(255) "
+                + cfg.getNamespaceColumn() + " VARCHAR(255) "
                 + ")";
 
             st.execute(sql);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -35,4 +35,21 @@ public interface DecodeFunction<T> {
      * @throws IOException If object couldn't be decoded.
      */
     T decode(DataReader in) throws IOException;
+
+    /**
+     * Same as {@link #decode(DataReader)}  but throws an unchecked exception.
+     *
+     * @param in Data reader.
+     *
+     * @return Decoded object.
+     *
+     * @throws CodecException If object couldn't be decoded.
+     */
+    default T decodeUnchecked(DataReader in) throws CodecException {
+        try {
+            return decode(in);
+        } catch (IOException e) {
+            throw new CodecException("Failed to decode data.", e);
+        }
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -16,6 +16,7 @@
 
 package io.hekate.messaging.loadbalance;
 
+import io.hekate.core.HekateException;
 import io.hekate.messaging.MessagingException;
 
 /**
@@ -33,5 +34,20 @@ public class LoadBalancerException extends MessagingException {
      */
     public LoadBalancerException(String message) {
         super(message);
+    }
+
+    /**
+     * Constructs new instance.
+     *
+     * @param message Error message.
+     * @param cause Error cause.
+     */
+    public LoadBalancerException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    @Override
+    public HekateException forkFromAsync() {
+        return new LoadBalancerException(getMessage(), this);
     }
 }

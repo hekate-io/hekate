@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -16,12 +16,13 @@
 
 package io.hekate.codec;
 
-import java.io.IOException;
+import io.hekate.core.HekateException;
+import io.hekate.core.HekateIoException;
 
 /**
  * Generic data encoding/decoding error.
  */
-public class CodecException extends IOException {
+public class CodecException extends HekateIoException {
     private static final long serialVersionUID = 1;
 
     /**
@@ -41,5 +42,10 @@ public class CodecException extends IOException {
      */
     public CodecException(String message, Throwable cause) {
         super(message, cause);
+    }
+
+    @Override
+    public HekateException forkFromAsync() {
+        return new CodecException(getMessage(), this);
     }
 }

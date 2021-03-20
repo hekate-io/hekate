@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -14,34 +14,37 @@
  * under the License.
  */
 
-package io.hekate.core.resource;
+package io.hekate.core;
 
-import io.hekate.core.HekateException;
+import java.util.concurrent.TimeoutException;
 
 /**
- * Signals a resource loading error.
- *
- * @see ResourceService#load(String)
+ * Unchecked version of {@link TimeoutException}.
  */
-public class ResourceLoadingException extends HekateException {
-    private static final long serialVersionUID = 1;
+public class HekateTimeoutException extends HekateException {
+    private static final long serialVersionUID = 1L;
 
     /**
-     * Constructs new instance with the specified error message.
+     * Constructs a new instance.
      *
      * @param message Error message.
      */
-    public ResourceLoadingException(String message) {
+    public HekateTimeoutException(String message) {
         super(message);
     }
 
     /**
-     * Constructs new instance with the specified error message and cause.
+     * Constructs a new instance.
      *
      * @param message Error message.
      * @param cause Cause.
      */
-    public ResourceLoadingException(String message, Throwable cause) {
+    public HekateTimeoutException(String message, Throwable cause) {
         super(message, cause);
+    }
+
+    @Override
+    public HekateException forkFromAsync() {
+        return new HekateInterruptedException(getMessage(), this);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -207,17 +207,17 @@ public class CloudSeedNodeProvider implements SeedNodeProvider, ConfigReportSupp
     }
 
     @Override
-    public void startDiscovery(String cluster, InetSocketAddress node) throws HekateException {
+    public void startDiscovery(String namespace, InetSocketAddress node) throws HekateException {
         port = node.getPort();
     }
 
     @Override
-    public void stopDiscovery(String cluster, InetSocketAddress node) throws HekateException {
+    public void stopDiscovery(String namespace, InetSocketAddress node) throws HekateException {
         // No-op.
     }
 
     @Override
-    public List<InetSocketAddress> findSeedNodes(String cluster) throws HekateException {
+    public List<InetSocketAddress> findSeedNodes(String namespace) throws HekateException {
         return withCompute(ctx -> {
             try {
                 ComputeService compute = ctx.getComputeService();
@@ -291,12 +291,12 @@ public class CloudSeedNodeProvider implements SeedNodeProvider, ConfigReportSupp
     }
 
     @Override
-    public void registerRemote(String cluster, InetSocketAddress node) throws HekateException {
+    public void registerRemote(String namespace, InetSocketAddress node) throws HekateException {
         // No-op.
     }
 
     @Override
-    public void unregisterRemote(String cluster, InetSocketAddress node) throws HekateException {
+    public void unregisterRemote(String namespace, InetSocketAddress node) throws HekateException {
         // No-op.
     }
 

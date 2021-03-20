@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -19,6 +19,7 @@ package io.hekate.lock.internal;
 import io.hekate.lock.AsyncLockCallback;
 import io.hekate.lock.LockOwnerInfo;
 import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,11 +45,11 @@ class AsyncLockCallbackAdaptor {
                     lock.registerLock(client.lockId());
 
                     callback.onLockAcquire(lock);
-                } catch (RuntimeException | Error e) {
+                } catch (Throwable e) {
                     log.error("Failed to notify callback on lock acquisition.", e);
                 }
             });
-        } catch (RuntimeException | Error e) {
+        } catch (RejectedExecutionException e) {
             log.error("Failed to schedule asynchronous notification of lock acquisition callback.", e);
         }
     }
@@ -58,11 +59,11 @@ class AsyncLockCallbackAdaptor {
             executor.execute(() -> {
                 try {
                     callback.onLockBusy(owner);
-                } catch (RuntimeException | Error e) {
+                } catch (Throwable e) {
                     log.error("Failed to notify callback on lock busy.", e);
                 }
             });
-        } catch (RuntimeException | Error e) {
+        } catch (RejectedExecutionException e) {
             log.error("Failed to schedule asynchronous notification of busy lock callback.", e);
         }
     }
@@ -72,11 +73,11 @@ class AsyncLockCallbackAdaptor {
             executor.execute(() -> {
                 try {
                     callback.onLockOwnerChange(owner);
-                } catch (RuntimeException | Error e) {
+                } catch (Throwable e) {
                     log.error("Failed to notify callback on lock owner change.", e);
                 }
             });
-        } catch (RuntimeException | Error e) {
+        } catch (RejectedExecutionException e) {
             log.error("Failed to schedule asynchronous notification of lock owner change callback.", e);
         }
     }
@@ -88,11 +89,11 @@ class AsyncLockCallbackAdaptor {
                     lock.clearLock();
 
                     callback.onLockRelease(lock);
-                } catch (RuntimeException | Error e) {
+                } catch (Throwable e) {
                     log.error("Failed to notify callback on lock release.", e);
                 }
             });
-        } catch (RuntimeException | Error e) {
+        } catch (RejectedExecutionException e) {
             log.error("Failed to schedule asynchronous notification of lock release callback.", e);
         }
     }

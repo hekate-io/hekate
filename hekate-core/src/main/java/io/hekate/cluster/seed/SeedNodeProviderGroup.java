@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -163,36 +163,35 @@ public class SeedNodeProviderGroup implements SeedNodeProvider, JmxSupport<Colle
     }
 
     @Override
-    public List<InetSocketAddress> findSeedNodes(String cluster) throws HekateException {
+    public List<InetSocketAddress> findSeedNodes(String namespace) throws HekateException {
         List<InetSocketAddress> seedNodes = new ArrayList<>();
 
         withPolicy("find seed nodes", liveProviders, provider ->
-            seedNodes.addAll(provider.findSeedNodes(cluster))
+            seedNodes.addAll(provider.findSeedNodes(namespace))
         );
 
         return seedNodes;
     }
 
     @Override
-    public void startDiscovery(String cluster, InetSocketAddress node) throws HekateException {
+    public void startDiscovery(String namespace, InetSocketAddress node) throws HekateException {
         try {
             withPolicy("start discovery", allProviders, provider -> {
-                    try {
-                        provider.startDiscovery(cluster, node);
+                try {
+                    provider.startDiscovery(namespace, node);
 
-                        // Add to live provider only if started successfully.
-                        liveProviders.add(provider);
-                    } catch (HekateException | RuntimeException | Error e) {
-                        // Cleanup this provider if it failed to start.
-                        failSafeStop(provider, cluster, node);
+                    // Add to live provider only if started successfully.
+                    liveProviders.add(provider);
+                } catch (Throwable e) {
+                    // Cleanup this provider if it failed to start.
+                    failSafeStop(provider, namespace, node);
 
-                        throw e;
-                    }
+                    throw e;
                 }
-            );
-        } catch (RuntimeException | Error | HekateException e) {
+            });
+        } catch (Throwable e) {
             // Cleanup partially started providers.
-            stopDiscovery(cluster, node);
+            stopDiscovery(namespace, node);
 
             throw e;
         }
@@ -212,10 +211,10 @@ public class SeedNodeProviderGroup implements SeedNodeProvider, JmxSupport<Colle
     }
 
     @Override
-    public void stopDiscovery(String cluster, InetSocketAddress node) throws HekateException {
+    public void stopDiscovery(String namespace, InetSocketAddress node) throws HekateException {
         try {
             for (SeedNodeProvider provider : liveProviders) {
-                failSafeStop(provider, cluster, node);
+                failSafeStop(provider, namespace, node);
             }
         } finally {
             // Cleanup live providers.
@@ -224,16 +223,16 @@ public class SeedNodeProviderGroup implements SeedNodeProvider, JmxSupport<Colle
     }
 
     @Override
-    public void registerRemote(String cluster, InetSocketAddress node) throws HekateException {
+    public void registerRemote(String namespace, InetSocketAddress node) throws HekateException {
         withPolicy("register a remote seed node", liveProviders, provider ->
-            provider.registerRemote(cluster, node)
+            provider.registerRemote(namespace, node)
         );
     }
 
     @Override
-    public void unregisterRemote(String cluster, InetSocketAddress node) throws HekateException {
+    public void unregisterRemote(String namespace, InetSocketAddress node) throws HekateException {
         withPolicy("unregister a remote seed node", liveProviders, provider ->
-            provider.unregisterRemote(cluster, node)
+            provider.unregisterRemote(namespace, node)
         );
     }
 
@@ -251,7 +250,7 @@ public class SeedNodeProviderGroup implements SeedNodeProvider, JmxSupport<Colle
                     task.execute(provider);
 
                     success++;
-                } catch (HekateException | RuntimeException e) {
+                } catch (Exception e) {
                     if (policy == SeedNodeProviderGroupPolicy.FAIL_ON_FIRST_ERROR) {
                         throw e;
                     } else {

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2020 The Hekate Project
+  ~ Copyright 2021 The Hekate Project
   ~
   ~ The Hekate Project licenses this file to you under the Apache License,
   ~ version 2.0 (the "License"); you may not use this file except in compliance
@@ -24,7 +24,6 @@
     <!-- Node with all configuration options set to their default values. -->
     <bean id="hekate" class="io.hekate.spring.bean.HekateSpringBootstrap">
         <property name="nodeName" value="my-node"/>
-        <property name="clusterName" value="my-cluster"/>
     </bean>
 
 </beans>

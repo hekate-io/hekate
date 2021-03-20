@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -30,7 +30,7 @@ import javax.sql.DataSource;
  * </p>
  * <pre>{@code
  * CREATE TABLE cluster_nodes (
- *      cluster_name VARCHAR,
+ *      namespace VARCHAR,
  *      host VARCHAR,
  *      port NUMBER
  * )
@@ -41,9 +41,9 @@ import javax.sql.DataSource;
  * </p>
  * <ul>
  * <li>{@link #setTable(String)} - table name (default is {@value #DEFAULT_TABLE})</li>
- * <li>{@link #setClusterColumn(String)} - name of a column to store cluster name (default is {@value #DEFAULT_CLUSTER_COLUMN})</li>
- * <li>{@link #setHostColumn(String)} - name of a column to store host address (default is {@value #DEFAULT_HOST_COLUMN})</li>
- * <li>{@link #setPortColumn(String)} - name of a column to store port value (default is {@value #DEFAULT_PORT_COLUMN})</li>
+ * <li>{@link #setNamespaceColumn(String)} - column to store cluster namespace (default is {@value #DEFAULT_NAMESPACE_COLUMN})</li>
+ * <li>{@link #setHostColumn(String)} - column to store host address (default is {@value #DEFAULT_HOST_COLUMN})</li>
+ * <li>{@link #setPortColumn(String)} - column to store port value (default is {@value #DEFAULT_PORT_COLUMN})</li>
  * </ul>
  *
  * <h2>Database connectivity</h2>
@@ -59,7 +59,7 @@ import javax.sql.DataSource;
  */
 public class JdbcSeedNodeProviderConfig {
     /** Default value (={@value}) for {@link #setCleanupInterval(long)}. */
-    public static final long DEFAULT_CLEANUP_INTERVAL = 60_0000;
+    public static final long DEFAULT_CLEANUP_INTERVAL = 60_000;
 
     /** Default value (={@value}) for {@link #setTable(String)}. */
     public static final String DEFAULT_TABLE = "cluster_nodes";
@@ -70,8 +70,8 @@ public class JdbcSeedNodeProviderConfig {
     /** Default value (={@value}) for {@link #setPortColumn(String)}. */
     public static final String DEFAULT_PORT_COLUMN = "port";
 
-    /** Default value (={@value}) for {@link #setClusterColumn(String)}. */
-    public static final String DEFAULT_CLUSTER_COLUMN = "cluster_name";
+    /** Default value (={@value}) for {@link #setNamespaceColumn(String)}. */
+    public static final String DEFAULT_NAMESPACE_COLUMN = "cluster_namespace";
 
     /** See {@link #setDataSource(DataSource)}. */
     private DataSource dataSource;
@@ -91,8 +91,8 @@ public class JdbcSeedNodeProviderConfig {
     /** See {@link #setPortColumn(String)}. */
     private String portColumn = DEFAULT_PORT_COLUMN;
 
-    /** See {@link #setClusterColumn(String)}. */
-    private String clusterColumn = DEFAULT_CLUSTER_COLUMN;
+    /** See {@link #setNamespaceColumn(String)}. */
+    private String namespaceColumn = DEFAULT_NAMESPACE_COLUMN;
 
     /**
      * Returns the data source (see {@link #setDataSource(DataSource)}).
@@ -231,36 +231,36 @@ public class JdbcSeedNodeProviderConfig {
     }
 
     /**
-     * Returns the cluster column name (see {@link #setClusterColumn(String)}).
+     * Returns the cluster column name (see {@link #setNamespaceColumn(String)}).
      *
      * @return Cluster column name.
      */
-    public String getClusterColumn() {
-        return clusterColumn;
+    public String getNamespaceColumn() {
+        return namespaceColumn;
     }
 
     /**
      * Sets the cluster column name.
      *
      * <p>
-     * Default value of this parameter is {@value #DEFAULT_CLUSTER_COLUMN}.
+     * Default value of this parameter is {@value #DEFAULT_NAMESPACE_COLUMN}.
      * </p>
      *
-     * @param clusterColumn Cluster column name.
+     * @param namespaceColumn Cluster column name.
      */
-    public void setClusterColumn(String clusterColumn) {
-        this.clusterColumn = clusterColumn;
+    public void setNamespaceColumn(String namespaceColumn) {
+        this.namespaceColumn = namespaceColumn;
     }
 
     /**
-     * Fluent-style version of {@link #setClusterColumn(String)}.
+     * Fluent-style version of {@link #setNamespaceColumn(String)}.
      *
-     * @param clusterColumn Cluster column name.
+     * @param namespaceColumn Namespace column name.
      *
      * @return This instance.
      */
-    public JdbcSeedNodeProviderConfig withClusterColumn(String clusterColumn) {
-        setClusterColumn(clusterColumn);
+    public JdbcSeedNodeProviderConfig withNamespaceColumn(String namespaceColumn) {
+        setNamespaceColumn(namespaceColumn);
 
         return this;
     }

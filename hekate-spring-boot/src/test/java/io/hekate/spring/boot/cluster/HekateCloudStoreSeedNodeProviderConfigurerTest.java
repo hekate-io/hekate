@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -60,7 +60,7 @@ public class HekateCloudStoreSeedNodeProviderConfigurerTest extends HekateAutoCo
         String testRegion = HekateTestProps.get("AWS_TEST_REGION");
 
         registerAndRefresh(new String[]{
-            "hekate.cluster=" + UUID.randomUUID().toString(),
+            "hekate.cluster.namespace=" + UUID.randomUUID().toString(),
             "hekate.cluster.seed.cloudstore.enable=true",
             "hekate.cluster.seed.cloudstore.provider=aws-s3",
             "hekate.cluster.seed.cloudstore.container=" + testContainer,

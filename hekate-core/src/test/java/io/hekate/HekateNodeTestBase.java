@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -16,10 +16,8 @@
 
 package io.hekate;
 
-import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.cluster.health.DefaultFailureDetector;
 import io.hekate.cluster.health.DefaultFailureDetectorConfig;
-import io.hekate.cluster.split.SplitBrainAction;
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.JdkCodecFactory;
 import io.hekate.core.internal.HekateTestNode;
@@ -42,9 +40,9 @@ public abstract class HekateNodeTestBase extends HekateTestBase {
         void configure(HekateTestNode.Bootstrap b);
     }
 
-    protected SeedNodeProviderMock seedNodes;
-
     private final List<HekateTestNode> allNodes = new CopyOnWriteArrayList<>();
+
+    private SeedNodeProviderMock seedNodes;
 
     private boolean ignoreNodeFailures;
 
@@ -82,6 +80,10 @@ public abstract class HekateNodeTestBase extends HekateTestBase {
         }
     }
 
+    protected SeedNodeProviderMock seedNodes() {
+        return seedNodes;
+    }
+
     protected HekateTestContext context() {
         return HekateTestContext.defaultContext();
     }
@@ -101,7 +103,6 @@ public abstract class HekateNodeTestBase extends HekateTestBase {
 
         HekateTestNode.Bootstrap boot = new HekateTestNode.Bootstrap();
 
-        boot.setClusterName("test");
         boot.setNodeName("node-" + address.getPort() + '-' + allNodes.size());
         boot.setConfigReport(true);
         boot.setDefaultCodec(defaultCodec());
@@ -110,16 +111,16 @@ public abstract class HekateNodeTestBase extends HekateTestBase {
             boot.withService(ctx::resources);
         }
 
-        boot.withService(ClusterServiceFactory.class, cluster -> {
+        boot.withCluster(cluster -> {
             DefaultFailureDetectorConfig fdCfg = new DefaultFailureDetectorConfig();
 
             fdCfg.setHeartbeatInterval(ctx.hbInterval());
             fdCfg.setHeartbeatLossThreshold(ctx.hbLossThreshold());
 
+            cluster.setNamespace("test");
             cluster.setGossipInterval(ctx.hbInterval());
             cluster.setSpeedUpGossipSize(10);
             cluster.setSeedNodeProvider(seedNodes);
-            cluster.setSplitBrainAction(SplitBrainAction.REJOIN);
             cluster.setFailureDetector(new DefaultFailureDetector(fdCfg));
         });
 

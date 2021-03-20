@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -16,9 +16,7 @@
 
 package io.hekate.cluster.seed;
 
-import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.core.internal.HekateTestNode;
-import io.hekate.network.NetworkServiceFactory;
 import java.net.InetSocketAddress;
 import java.util.List;
 import org.junit.Test;
@@ -99,7 +97,7 @@ public abstract class PersistentSeedNodeProviderTestBase<T extends SeedNodeProvi
         assertTrue(nodes.contains(address3));
         assertTrue(nodes.contains(address4));
 
-        // Unregister with wrong cluster names.
+        // Unregister with wrong namespace.
         provider.unregisterRemote(CLUSTER_2, address1);
         provider.unregisterRemote(CLUSTER_2, address2);
         provider.unregisterRemote(CLUSTER_1, address3);
@@ -180,13 +178,13 @@ public abstract class PersistentSeedNodeProviderTestBase<T extends SeedNodeProvi
             SeedNodeProvider provider = createProvider();
 
             HekateTestNode node = createNode(b -> {
-                b.setClusterName(CLUSTER_1);
 
-                b.withService(ClusterServiceFactory.class, cluster ->
-                    cluster.setSeedNodeProvider(provider)
-                );
+                b.withCluster(cluster -> {
+                    cluster.setNamespace(CLUSTER_1);
+                    cluster.setSeedNodeProvider(provider);
+                });
 
-                b.withService(NetworkServiceFactory.class, net -> {
+                b.withNetwork(net -> {
                     // Increase timeout since ping failure by timeout doesn't trigger seed address removal.
                     net.setConnectTimeout(3000);
                 });

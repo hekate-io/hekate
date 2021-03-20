@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -17,13 +17,22 @@
 package io.hekate.core;
 
 import io.hekate.HekateTestBase;
+import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.JdkCodecFactory;
+import io.hekate.coordinate.CoordinationServiceFactory;
+import io.hekate.core.jmx.JmxServiceFactory;
 import io.hekate.core.plugin.Plugin;
 import io.hekate.core.service.Service;
 import io.hekate.core.service.ServiceFactory;
+import io.hekate.election.ElectionServiceFactory;
+import io.hekate.lock.LockServiceFactory;
+import io.hekate.messaging.MessagingServiceFactory;
+import io.hekate.network.NetworkServiceFactory;
+import io.hekate.rpc.RpcServiceFactory;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.junit.Test;
@@ -55,17 +64,6 @@ public class HekateBootstrapTest extends HekateTestBase {
         assertEquals("test", bootstrap.getNodeName());
 
         assertEquals("test2", bootstrap.withNodeName("test2").getNodeName());
-    }
-
-    @Test
-    public void testCluster() {
-        assertEquals(HekateBootstrap.DEFAULT_CLUSTER_NAME, bootstrap.getClusterName());
-
-        bootstrap.setClusterName("test");
-
-        assertEquals("test", bootstrap.getClusterName());
-
-        assertEquals("test2", bootstrap.withClusterName("test2").getClusterName());
     }
 
     @Test
@@ -233,6 +231,23 @@ public class HekateBootstrapTest extends HekateTestBase {
     }
 
     @Test
+    public void testFatalErrorPolicy() {
+        assertEquals(HekateFatalErrorPolicy.terminate(), bootstrap.getFatalErrorPolicy());
+
+        bootstrap.setFatalErrorPolicy(HekateFatalErrorPolicy.rejoin());
+
+        assertEquals(HekateFatalErrorPolicy.rejoin(), bootstrap.getFatalErrorPolicy());
+
+        assertEquals(bootstrap, bootstrap.withFatalErrorPolicy(HekateFatalErrorPolicy.terminate()));
+
+        assertEquals(HekateFatalErrorPolicy.terminate(), bootstrap.getFatalErrorPolicy());
+
+        bootstrap.setFatalErrorPolicy(null);
+
+        assertNull(bootstrap.getFatalErrorPolicy());
+    }
+
+    @Test
     public void testJoinWithDefaults() throws Exception {
         List<Hekate> nodes = new ArrayList<>();
 
@@ -254,7 +269,7 @@ public class HekateBootstrapTest extends HekateTestBase {
             for (Hekate node : nodes) {
                 try {
                     node.leave();
-                } catch (InterruptedException e) {
+                } catch (HekateInterruptedException e) {
                     // Ignore.
                 }
             }
@@ -281,7 +296,7 @@ public class HekateBootstrapTest extends HekateTestBase {
             for (LeaveFuture future : leave) {
                 try {
                     get(future);
-                } catch (InterruptedException e) {
+                } catch (HekateInterruptedException e) {
                     // Ignore.
                 }
             }
@@ -289,7 +304,87 @@ public class HekateBootstrapTest extends HekateTestBase {
     }
 
     @Test
+    public void testWithJmx() {
+        verifyServiceBuilderMethod(JmxServiceFactory.class, boot ->
+            boot.withJmx(service -> {
+                /* No-op.*/
+            })
+        );
+    }
+
+    @Test
+    public void testWithNetwork() {
+        verifyServiceBuilderMethod(NetworkServiceFactory.class, boot ->
+            boot.withNetwork(service -> {
+                /* No-op.*/
+            })
+        );
+    }
+
+    @Test
+    public void testWithCluster() {
+        verifyServiceBuilderMethod(ClusterServiceFactory.class, boot ->
+            boot.withCluster(service -> {
+                /* No-op.*/
+            })
+        );
+    }
+
+    @Test
+    public void testWithMessaging() {
+        verifyServiceBuilderMethod(MessagingServiceFactory.class, boot ->
+            boot.withMessaging(service -> {
+                /* No-op.*/
+            })
+        );
+    }
+
+    @Test
+    public void testWithRpc() {
+        verifyServiceBuilderMethod(RpcServiceFactory.class, boot ->
+            boot.withRpc(service -> {
+                /* No-op.*/
+            })
+        );
+    }
+
+    @Test
+    public void testWithLocks() {
+        verifyServiceBuilderMethod(LockServiceFactory.class, boot ->
+            boot.withLocks(service -> {
+                /* No-op.*/
+            })
+        );
+    }
+
+    @Test
+    public void testWithElection() {
+        verifyServiceBuilderMethod(ElectionServiceFactory.class, boot ->
+            boot.withElection(service -> {
+                /* No-op.*/
+            })
+        );
+    }
+
+    @Test
+    public void testWithCoordination() {
+        verifyServiceBuilderMethod(CoordinationServiceFactory.class, boot ->
+            boot.withCoordination(service -> {
+                /* No-op.*/
+            })
+        );
+    }
+
+    @Test
     public void testToString() {
         assertTrue(bootstrap.toString(), bootstrap.toString().startsWith(HekateBootstrap.class.getSimpleName()));
+    }
+
+    private <T extends ServiceFactory<?>> void verifyServiceBuilderMethod(Class<T> type, Consumer<HekateBootstrap> methodCaller) {
+        assertFalse(bootstrap.service(type).isPresent());
+
+        methodCaller.accept(bootstrap);
+
+        assertTrue(bootstrap.service(type).isPresent());
     }
 }

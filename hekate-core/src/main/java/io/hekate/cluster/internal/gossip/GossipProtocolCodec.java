@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -45,6 +45,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static io.hekate.codec.CodecUtils.readAddress;
+import static io.hekate.codec.CodecUtils.readClusterAddress;
+import static io.hekate.codec.CodecUtils.writeAddress;
+import static io.hekate.codec.CodecUtils.writeClusterAddress;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
@@ -92,16 +96,16 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
                 case LONG_TERM_CONNECT: {
                     LongTermConnect connect = (LongTermConnect)msg;
 
-                    CodecUtils.writeClusterAddress(connect.to(), out);
-                    CodecUtils.writeClusterAddress(connect.from(), out);
+                    writeClusterAddress(connect.to(), out);
+                    writeClusterAddress(connect.from(), out);
 
                     break;
                 }
                 case GOSSIP_UPDATE: {
                     Update update = (Update)msg;
 
-                    CodecUtils.writeClusterAddress(update.to(), out);
-                    CodecUtils.writeClusterAddress(update.from(), out);
+                    writeClusterAddress(update.to(), out);
+                    writeClusterAddress(update.from(), out);
 
                     encodeGossip(update.gossip(), out);
 
@@ -110,8 +114,8 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
                 case GOSSIP_UPDATE_DIGEST: {
                     UpdateDigest digest = (UpdateDigest)msg;
 
-                    CodecUtils.writeClusterAddress(digest.to(), out);
-                    CodecUtils.writeClusterAddress(digest.from(), out);
+                    writeClusterAddress(digest.to(), out);
+                    writeClusterAddress(digest.from(), out);
 
                     encodeGossipDigest(digest.digest(), out);
 
@@ -120,21 +124,19 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
                 case JOIN_REQUEST: {
                     JoinRequest request = (JoinRequest)msg;
 
-                    CodecUtils.writeAddress(request.toAddress(), out);
+                    writeAddress(request.toAddress(), out);
 
-                    ClusterNode node = request.fromNode();
+                    encodeNode(request.fromNode(), out);
 
-                    encodeNode(node, out);
-
-                    out.writeUTF(request.cluster());
+                    out.writeUTF(request.namespace());
 
                     break;
                 }
                 case JOIN_ACCEPT: {
                     JoinAccept accept = (JoinAccept)msg;
 
-                    CodecUtils.writeClusterAddress(accept.to(), out);
-                    CodecUtils.writeClusterAddress(accept.from(), out);
+                    writeClusterAddress(accept.to(), out);
+                    writeClusterAddress(accept.from(), out);
 
                     encodeGossip(accept.gossip(), out);
 
@@ -143,9 +145,9 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
                 case JOIN_REJECT: {
                     JoinReject reject = (JoinReject)msg;
 
-                    CodecUtils.writeClusterAddress(reject.to(), out);
-                    CodecUtils.writeClusterAddress(reject.from(), out);
-                    CodecUtils.writeAddress(reject.rejectedAddress(), out);
+                    writeClusterAddress(reject.to(), out);
+                    writeClusterAddress(reject.from(), out);
+                    writeAddress(reject.rejectedAddress(), out);
 
                     JoinReject.RejectType rejectType = reject.rejectType();
 
@@ -160,16 +162,16 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
                 case HEARTBEAT_REQUEST: {
                     HeartbeatRequest request = (HeartbeatRequest)msg;
 
-                    CodecUtils.writeClusterAddress(request.to(), out);
-                    CodecUtils.writeClusterAddress(request.from(), out);
+                    writeClusterAddress(request.to(), out);
+                    writeClusterAddress(request.from(), out);
 
                     break;
                 }
                 case HEARTBEAT_REPLY: {
                     HeartbeatReply reply = (HeartbeatReply)msg;
 
-                    CodecUtils.writeClusterAddress(reply.to(), out);
-                    CodecUtils.writeClusterAddress(reply.from(), out);
+                    writeClusterAddress(reply.to(), out);
+                    writeClusterAddress(reply.from(), out);
 
                     break;
                 }
@@ -191,16 +193,16 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
 
             switch (msgType) {
                 case LONG_TERM_CONNECT: {
-                    ClusterAddress to = CodecUtils.readClusterAddress(in);
-                    ClusterAddress from = CodecUtils.readClusterAddress(in);
+                    ClusterAddress to = readClusterAddress(in);
+                    ClusterAddress from = readClusterAddress(in);
 
                     result = new LongTermConnect(from, to);
 
                     break;
                 }
                 case GOSSIP_UPDATE: {
-                    ClusterAddress to = CodecUtils.readClusterAddress(in);
-                    ClusterAddress from = CodecUtils.readClusterAddress(in);
+                    ClusterAddress to = readClusterAddress(in);
+                    ClusterAddress from = readClusterAddress(in);
 
                     Gossip gossip = decodeGossip(in);
 
@@ -209,8 +211,8 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
                     break;
                 }
                 case GOSSIP_UPDATE_DIGEST: {
-                    ClusterAddress to = CodecUtils.readClusterAddress(in);
-                    ClusterAddress from = CodecUtils.readClusterAddress(in);
+                    ClusterAddress to = readClusterAddress(in);
+                    ClusterAddress from = readClusterAddress(in);
 
                     GossipDigest digest = decodeGossipDigest(in);
 
@@ -219,19 +221,17 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
                     break;
                 }
                 case JOIN_REQUEST: {
-                    InetSocketAddress to = CodecUtils.readAddress(in);
-
+                    InetSocketAddress to = readAddress(in);
                     ClusterNode fromNode = decodeNode(in);
+                    String namespace = in.readUTF();
 
-                    String cluster = in.readUTF();
-
-                    result = new JoinRequest(fromNode, cluster, to);
+                    result = new JoinRequest(fromNode, namespace, to);
 
                     break;
                 }
                 case JOIN_ACCEPT: {
-                    ClusterAddress to = CodecUtils.readClusterAddress(in);
-                    ClusterAddress from = CodecUtils.readClusterAddress(in);
+                    ClusterAddress to = readClusterAddress(in);
+                    ClusterAddress from = readClusterAddress(in);
 
                     Gossip gossip = decodeGossip(in);
 
@@ -240,9 +240,9 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
                     break;
                 }
                 case JOIN_REJECT: {
-                    ClusterAddress to = CodecUtils.readClusterAddress(in);
-                    ClusterAddress from = CodecUtils.readClusterAddress(in);
-                    InetSocketAddress rejectedAddr = CodecUtils.readAddress(in);
+                    ClusterAddress to = readClusterAddress(in);
+                    ClusterAddress from = readClusterAddress(in);
+                    InetSocketAddress rejectedAddr = readAddress(in);
 
                     JoinReject.RejectType rejectType = JoinReject.RejectType.values()[in.readInt()];
 
@@ -277,16 +277,16 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
                     break;
                 }
                 case HEARTBEAT_REQUEST: {
-                    ClusterAddress to = CodecUtils.readClusterAddress(in);
-                    ClusterAddress from = CodecUtils.readClusterAddress(in);
+                    ClusterAddress to = readClusterAddress(in);
+                    ClusterAddress from = readClusterAddress(in);
 
                     result = new HeartbeatRequest(from, to);
 
                     break;
                 }
                 case HEARTBEAT_REPLY: {
-                    ClusterAddress to = CodecUtils.readClusterAddress(in);
-                    ClusterAddress from = CodecUtils.readClusterAddress(in);
+                    ClusterAddress to = readClusterAddress(in);
+                    ClusterAddress from = readClusterAddress(in);
 
                     result = new HeartbeatReply(from, to);
 
@@ -507,7 +507,7 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
 
     private void encodeNode(ClusterNode node, DataWriter out) throws IOException {
         // Address.
-        CodecUtils.writeClusterAddress(node.address(), out);
+        writeClusterAddress(node.address(), out);
 
         // Node name.
         if (node.name().isEmpty()) {
@@ -595,7 +595,7 @@ public class GossipProtocolCodec implements Codec<GossipProtocol> {
 
     private ClusterNode decodeNode(DataReader in) throws IOException {
         // Address.
-        ClusterAddress addr = CodecUtils.readClusterAddress(in);
+        ClusterAddress addr = readClusterAddress(in);
 
         // Node name.
         String nodeName = null;

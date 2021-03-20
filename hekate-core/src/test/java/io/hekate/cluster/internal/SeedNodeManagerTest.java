@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -170,7 +170,7 @@ public class SeedNodeManagerTest extends HekateTestBase {
 
         SeedNodeManager manager = createManager(new SeedNodeProviderAdaptor() {
             @Override
-            public List<InetSocketAddress> findSeedNodes(String cluster) throws HekateException {
+            public List<InetSocketAddress> findSeedNodes(String namespace) throws HekateException {
                 return new ArrayList<>(addresses.keySet());
             }
 
@@ -180,7 +180,7 @@ public class SeedNodeManagerTest extends HekateTestBase {
             }
 
             @Override
-            public void registerRemote(String cluster, InetSocketAddress address) throws HekateException {
+            public void registerRemote(String namespace, InetSocketAddress address) throws HekateException {
                 addresses.put(address, true);
 
                 try {
@@ -191,7 +191,7 @@ public class SeedNodeManagerTest extends HekateTestBase {
             }
 
             @Override
-            public void unregisterRemote(String cluster, InetSocketAddress address) throws HekateException {
+            public void unregisterRemote(String namespace, InetSocketAddress address) throws HekateException {
                 addresses.remove(address);
 
                 try {

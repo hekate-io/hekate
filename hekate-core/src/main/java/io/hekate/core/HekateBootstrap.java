@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -18,17 +18,33 @@ package io.hekate.core;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeFilter;
+import io.hekate.cluster.ClusterService;
+import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.cluster.ClusterView;
 import io.hekate.codec.AutoSelectCodecFactory;
 import io.hekate.codec.Codec;
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.CodecService;
+import io.hekate.coordinate.CoordinationService;
+import io.hekate.coordinate.CoordinationServiceFactory;
 import io.hekate.core.internal.HekateNodeFactory;
 import io.hekate.core.internal.util.ConfigCheck;
+import io.hekate.core.jmx.JmxService;
+import io.hekate.core.jmx.JmxServiceFactory;
 import io.hekate.core.plugin.Plugin;
 import io.hekate.core.service.Service;
 import io.hekate.core.service.ServiceFactory;
+import io.hekate.election.ElectionService;
+import io.hekate.election.ElectionServiceFactory;
+import io.hekate.lock.LockService;
+import io.hekate.lock.LockServiceFactory;
+import io.hekate.messaging.MessagingService;
+import io.hekate.messaging.MessagingServiceFactory;
+import io.hekate.network.NetworkService;
+import io.hekate.network.NetworkServiceFactory;
+import io.hekate.rpc.RpcService;
+import io.hekate.rpc.RpcServiceFactory;
 import io.hekate.util.format.ToString;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -55,13 +71,24 @@ import static io.hekate.core.internal.util.StreamUtils.nullSafe;
  * Configuration options are:
  * </p>
  * <ul>
- * <li>{@link #setClusterName(String) Cluster name}</li>
  * <li>{@link #setNodeName(String) Node name}</li>
  * <li>{@link #setProperties(Map) Node properties}</li>
  * <li>{@link #setRoles(List) Node roles}</li>
  * <li>{@link #setDefaultCodec(CodecFactory) Data serialization codec}</li>
- * <li>{@link #setServices(List) Services} to be provided by the node</li>
  * <li>{@link #setPlugins(List) Plugins} that should run within the node</li>
+ * <li>
+ *     {@link #setServices(List) Services} to be provided by the node:
+ *     <ul>
+ *         <li>{@link #withNetwork(Consumer) Network Service}</li>
+ *         <li>{@link #withCluster(Consumer) Cluster Service}</li>
+ *         <li>{@link #withMessaging(Consumer) Messaging Service}</li>
+ *         <li>{@link #withRpc(Consumer) RPC Service}</li>
+ *         <li>{@link #withLocks(Consumer) Lock Service}</li>
+ *         <li>{@link #withElection(Consumer) Election Service}</li>
+ *         <li>{@link #withCoordination(Consumer) Coordination Service}</li>
+ *         <li>{@link #withJmx(Consumer) JMX Service}</li>
+ *     </ul>
+ * </li>
  * </ul>
  *
  * <p>
@@ -73,14 +100,8 @@ import static io.hekate.core.internal.util.StreamUtils.nullSafe;
  * </p>
  */
 public class HekateBootstrap {
-    /** Default value (={@value}) for {@link #setClusterName(String)}. */
-    public static final String DEFAULT_CLUSTER_NAME = "default";
-
     /** See {@link #setNodeName(String)}. */
     private String nodeName;
-
-    /** See {@link #setClusterName(String)}. */
-    private String clusterName = DEFAULT_CLUSTER_NAME;
 
     /** See {@link #setRoles(List)}. */
     private List<String> roles;
@@ -109,14 +130,17 @@ public class HekateBootstrap {
     /** See {@link #setConfigReport(boolean)}. */
     private boolean configReport;
 
+    /** See {@link #setFatalErrorPolicy(HekateFatalErrorPolicy)}. */
+    private HekateFatalErrorPolicy fatalErrorPolicy = HekateFatalErrorPolicy.terminate();
+
     /**
      * Constructs a new {@link Hekate} instance and asynchronously {@link Hekate#joinAsync() joins} the cluster.
      *
      * @return Future result of this operation.
      *
-     * @throws HekateConfigurationException If configuration is invalid.
+     * @throws HekateException If configuration is invalid.
      */
-    public JoinFuture joinAsync() throws HekateConfigurationException {
+    public JoinFuture joinAsync() throws HekateException {
         return create().joinAsync();
     }
 
@@ -125,11 +149,9 @@ public class HekateBootstrap {
      *
      * @return new {@link Hekate} instance.
      *
-     * @throws HekateConfigurationException If configuration is invalid.
-     * @throws HekateFutureException If failure occurred while initializing or joining to cluster.
-     * @throws InterruptedException If the current thread was interrupted while awaiting for completion of this operation.
+     * @throws HekateException If failure occurred while initializing or joining to cluster.
      */
-    public Hekate join() throws HekateConfigurationException, InterruptedException, HekateFutureException {
+    public Hekate join() throws HekateException {
         return create().join();
     }
 
@@ -142,11 +164,9 @@ public class HekateBootstrap {
      *
      * @return new {@link Hekate} instance.
      *
-     * @throws HekateConfigurationException If configuration is invalid.
-     * @throws HekateFutureException If failure occurred while initializing or joining to cluster.
-     * @throws InterruptedException If the current thread was interrupted while awaiting for completion of this operation.
+     * @throws HekateException If failure occurred while initializing or joining to cluster.
      */
-    public Hekate initialize() throws HekateFutureException, InterruptedException {
+    public Hekate initialize() throws HekateException {
         return create().initialize();
     }
 
@@ -183,51 +203,6 @@ public class HekateBootstrap {
      */
     public HekateBootstrap withNodeName(String nodeName) {
         setNodeName(nodeName);
-
-        return this;
-    }
-
-    /**
-     * Returns the cluster name (see {@link #setClusterName(String)}).
-     *
-     * @return Cluster name.
-     */
-    public String getClusterName() {
-        return clusterName;
-    }
-
-    /**
-     * Sets the cluster name. Can contain only alpha-numeric characters and non-repeatable dots/hyphens.
-     *
-     * <p>
-     * Only those instances that are configured with the same cluster name can form a cluster. Instances with different cluster names will
-     * form completely independent clusters.
-     * </p>
-     *
-     * <p>
-     * Default value of this property is {@value #DEFAULT_CLUSTER_NAME}.
-     * </p>
-     *
-     * <p>
-     * <b>Hint:</b> For breaking nodes into logical sub-groups within the same cluster consider using {@link #setRoles(List) node roles}
-     * together with {@link ClusterView#filter(ClusterNodeFilter) nodes filtering} by role.
-     * </p>
-     *
-     * @param clusterName Cluster name (can contain only alpha-numeric characters and non-repeatable dots/hyphens).
-     */
-    public void setClusterName(String clusterName) {
-        this.clusterName = clusterName;
-    }
-
-    /**
-     * Fluent-style version of {@link #setClusterName(String)}.
-     *
-     * @param clusterName Cluster name.
-     *
-     * @return This instance.
-     */
-    public HekateBootstrap withClusterName(String clusterName) {
-        setClusterName(clusterName);
 
         return this;
     }
@@ -402,8 +377,8 @@ public class HekateBootstrap {
     }
 
     /**
-     * Applies the specified {@code configurer} to a service factory of the specified type. If factory is not registered yet then it will
-     * be automatically registered via {@link #withService(Class)}.
+     * Applies the specified {@code configurer} to a service factory of the specified type. If factory is not registered yet then it will be
+     * automatically registered via {@link #withService(Class)}.
      *
      * @param factoryType Service factory type.
      * @param configurer Service factory configurer.
@@ -452,6 +427,110 @@ public class HekateBootstrap {
     }
 
     /**
+     * Configures {@link JmxService}.
+     *
+     * @param configurer Configuration function.
+     *
+     * @return This instance.
+     *
+     * @see JmxServiceFactory
+     */
+    public HekateBootstrap withJmx(Consumer<JmxServiceFactory> configurer) {
+        return withService(JmxServiceFactory.class, configurer);
+    }
+
+    /**
+     * Configures {@link NetworkService}.
+     *
+     * @param configurer Configuration function.
+     *
+     * @return This instance.
+     *
+     * @see NetworkServiceFactory
+     */
+    public HekateBootstrap withNetwork(Consumer<NetworkServiceFactory> configurer) {
+        return withService(NetworkServiceFactory.class, configurer);
+    }
+
+    /**
+     * Configures {@link ClusterService}.
+     *
+     * @param configurer Configuration function.
+     *
+     * @return This instance.
+     *
+     * @see ClusterServiceFactory
+     */
+    public HekateBootstrap withCluster(Consumer<ClusterServiceFactory> configurer) {
+        return withService(ClusterServiceFactory.class, configurer);
+    }
+
+    /**
+     * Configures {@link MessagingService}.
+     *
+     * @param configurer Configuration function.
+     *
+     * @return This instance.
+     *
+     * @see MessagingServiceFactory
+     */
+    public HekateBootstrap withMessaging(Consumer<MessagingServiceFactory> configurer) {
+        return withService(MessagingServiceFactory.class, configurer);
+    }
+
+    /**
+     * Configures {@link RpcService}.
+     *
+     * @param configurer Configuration function.
+     *
+     * @return This instance.
+     *
+     * @see RpcServiceFactory
+     */
+    public HekateBootstrap withRpc(Consumer<RpcServiceFactory> configurer) {
+        return withService(RpcServiceFactory.class, configurer);
+    }
+
+    /**
+     * Configures {@link LockService}.
+     *
+     * @param configurer Configuration function.
+     *
+     * @return This instance.
+     *
+     * @see LockServiceFactory
+     */
+    public HekateBootstrap withLocks(Consumer<LockServiceFactory> configurer) {
+        return withService(LockServiceFactory.class, configurer);
+    }
+
+    /**
+     * Configures {@link ElectionService}.
+     *
+     * @param configurer Configuration function.
+     *
+     * @return This instance.
+     *
+     * @see ElectionServiceFactory
+     */
+    public HekateBootstrap withElection(Consumer<ElectionServiceFactory> configurer) {
+        return withService(ElectionServiceFactory.class, configurer);
+    }
+
+    /**
+     * Configures {@link CoordinationService}.
+     *
+     * @param configurer Configuration function.
+     *
+     * @return This instance.
+     *
+     * @see CoordinationServiceFactory
+     */
+    public HekateBootstrap withCoordination(Consumer<CoordinationServiceFactory> configurer) {
+        return withService(CoordinationServiceFactory.class, configurer);
+    }
+
+    /**
      * Finds a service factory of the specified type (see {@link #setServices(List)}).
      *
      * @param factoryType Service factory type.
@@ -479,8 +558,8 @@ public class HekateBootstrap {
      * Sets the list of plugins that should run within the local node.
      *
      * <p>
-     * Plugins are custom extensions that run within the context of a local node and whose lifecycle is controlled by the lifecycle of
-     * that node. For more info please see description of the {@link Plugin} interface.
+     * Plugins are custom extensions that run within the context of a local node and whose lifecycle is controlled by the lifecycle of that
+     * node. For more info please see description of the {@link Plugin} interface.
      * </p>
      *
      * @param plugins List of plugins.
@@ -521,8 +600,8 @@ public class HekateBootstrap {
      * Sets the codec factory that should be used by the {@link CodecService}.
      *
      * <p>
-     * This parameter is mandatory and can't be {@code null}.
-     * Also, the specified codec factory must be stateless (see {@link Codec#isStateful()}).
+     * This parameter is mandatory and can't be {@code null}. Also, the specified codec factory must be stateless (see {@link
+     * Codec#isStateful()}).
      * </p>
      *
      * <p>
@@ -618,6 +697,45 @@ public class HekateBootstrap {
         }
 
         lifecycleListeners.add(listener);
+
+        return this;
+    }
+
+    /**
+     * Returns fatal error handling policy (see {@link #setFatalErrorPolicy(HekateFatalErrorPolicy)}).
+     *
+     * @return Fatal error handling policy.
+     */
+    public HekateFatalErrorPolicy getFatalErrorPolicy() {
+        return fatalErrorPolicy;
+    }
+
+    /**
+     * Sets the fatal error handling policy.
+     *
+     * <p>
+     * This policy is applied if {@link Hekate} node faces an unrecoverable internal error.
+     * </p>
+     *
+     * <p>
+     * If not specified then {@link HekateFatalErrorPolicy#terminate()} policy will be used by default.
+     * </p>
+     *
+     * @param fatalErrorPolicy Fatal error handling policy.
+     */
+    public void setFatalErrorPolicy(HekateFatalErrorPolicy fatalErrorPolicy) {
+        this.fatalErrorPolicy = fatalErrorPolicy;
+    }
+
+    /**
+     * Fluent-style version of {@link #setFatalErrorPolicy(HekateFatalErrorPolicy)}.
+     *
+     * @param fatalErrorPolicy Fatal error handling policy.
+     *
+     * @return Fatal error handling policy.
+     */
+    public HekateBootstrap withFatalErrorPolicy(HekateFatalErrorPolicy fatalErrorPolicy) {
+        setFatalErrorPolicy(fatalErrorPolicy);
 
         return this;
     }

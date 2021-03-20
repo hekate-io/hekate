@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -21,7 +21,6 @@ import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.HekateConfigurationException;
 import io.hekate.core.HekateException;
-import io.hekate.core.HekateFutureException;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.core.service.Service;
 import io.hekate.core.service.ServiceFactory;
@@ -171,7 +170,7 @@ public class PluginTest extends HekateNodeTestBase {
                 node.join();
 
                 fail("Error was expected.");
-            } catch (HekateFutureException e) {
+            } catch (HekateException e) {
                 assertEquals(HekateTestError.MESSAGE, e.getCause().getMessage());
             }
 
@@ -253,7 +252,7 @@ public class PluginTest extends HekateNodeTestBase {
                 assertFalse(boot.service(MessagingServiceFactory.class).isPresent());
 
                 // Should register new service factory.
-                boot.withService(MessagingServiceFactory.class, Assert::assertNotNull);
+                boot.withMessaging(Assert::assertNotNull);
 
                 // Check that service factory is now available.
                 assertTrue(boot.service(MessagingServiceFactory.class).isPresent());

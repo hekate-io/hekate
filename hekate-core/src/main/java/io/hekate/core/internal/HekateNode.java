@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -36,7 +36,8 @@ import io.hekate.coordinate.CoordinationService;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
 import io.hekate.core.HekateException;
-import io.hekate.core.HekateFutureException;
+import io.hekate.core.HekateFatalErrorContext;
+import io.hekate.core.HekateFatalErrorPolicy;
 import io.hekate.core.HekateJmx;
 import io.hekate.core.HekateVersion;
 import io.hekate.core.InitializationFuture;
@@ -106,8 +107,6 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
 
     private final String name;
 
-    private final String clusterName;
-
     private final Set<String> roles;
 
     private final Map<String, String> props;
@@ -148,6 +147,8 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
 
     private final HekateLifecycle lifecycle = new HekateLifecycle(this);
 
+    private final HekateFatalErrorPolicy fatalErrorPolicy;
+
     private volatile DefaultClusterTopology topology;
 
     private volatile ScheduledExecutorService sysWorker;
@@ -167,17 +168,16 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
         // Check configuration.
         ConfigCheck check = ConfigCheck.get(HekateBootstrap.class);
 
-        check.notEmpty(boot.getClusterName(), "cluster name");
-        check.validSysName(boot.getClusterName(), "cluster name");
-
         check.validSysName(boot.getNodeName(), "node name");
 
         check.notNull(boot.getDefaultCodec(), "default codec");
         check.isFalse(boot.getDefaultCodec().createCodec().isStateful(), "default codec can't be stateful.");
 
+        check.notNull(boot.getFatalErrorPolicy(), "fatal error policy");
+
         // Basic properties.
         this.name = boot.getNodeName() != null ? boot.getNodeName().trim() : "";
-        this.clusterName = boot.getClusterName().trim();
+        this.fatalErrorPolicy = boot.getFatalErrorPolicy();
         this.report = boot.isConfigReport();
 
         // Node roles.
@@ -368,8 +368,8 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
     }
 
     @Override
-    public Hekate initialize() throws InterruptedException, HekateFutureException {
-        return initializeAsync().get();
+    public Hekate initialize() {
+        return initializeAsync().sync();
     }
 
     @Override
@@ -381,14 +381,14 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
         initializeAsync().thenRun(() ->
             runOnSysThread(() ->
                 guard.withWriteLock(() -> {
-                    try {
-                        if (state == INITIALIZED) {
+                    if (state == INITIALIZED) {
+                        try {
                             become(JOINING);
 
                             clusterMgr.joinAsync();
+                        } catch (Throwable e) {
+                            doTerminateAsync(ClusterLeaveReason.TERMINATE, e);
                         }
-                    } catch (RuntimeException | Error e) {
-                        doTerminateAsync(ClusterLeaveReason.TERMINATE, e);
                     }
                 })
             )
@@ -398,8 +398,8 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
     }
 
     @Override
-    public Hekate join() throws HekateFutureException, InterruptedException {
-        return joinAsync().get();
+    public Hekate join() {
+        return joinAsync().sync();
     }
 
     @Override
@@ -473,8 +473,8 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
     }
 
     @Override
-    public Hekate leave() throws InterruptedException, HekateFutureException {
-        return leaveAsync().get();
+    public Hekate leave() {
+        return leaveAsync().sync();
     }
 
     @Override
@@ -485,8 +485,8 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
     }
 
     @Override
-    public Hekate terminate() throws InterruptedException, HekateFutureException {
-        return terminateAsync().get();
+    public Hekate terminate() {
+        return terminateAsync().sync();
     }
 
     @Override
@@ -542,6 +542,31 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
     }
 
     @Override
+    public void fatalError(Throwable error) {
+        fatalErrorPolicy.handleFatalError(error, new HekateFatalErrorContext() {
+            @Override
+            public void rejoin() {
+                doTerminateAsync(true, ClusterLeaveReason.FATAL_ERROR, error);
+            }
+
+            @Override
+            public void terminate() {
+                doTerminateAsync(false, ClusterLeaveReason.FATAL_ERROR, error);
+            }
+
+            @Override
+            public Hekate hekate() {
+                return HekateNode.this;
+            }
+
+            @Override
+            public String toString() {
+                return HekateFatalErrorContext.class.getSimpleName() + "[cause=" + error + ']';
+            }
+        });
+    }
+
+    @Override
     public Hekate hekate() {
         return this;
     }
@@ -594,7 +619,7 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
                     log.debug("Stopped initialization sequence due to a concurrent leave/terminate event.");
                 }
             }
-        } catch (HekateException | RuntimeException | Error e) {
+        } catch (Throwable e) {
             // Schedule termination while still holding the write lock.
             doTerminateAsync(ClusterLeaveReason.TERMINATE, e);
         } finally {
@@ -658,7 +683,6 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
                         r.value("id", node.id());
                         r.value("address", node.address().socket());
                         r.value("name", node.name());
-                        r.value("cluster", clusterName);
                         r.value("roles", node.roles());
                         r.value("properties", node.properties());
                         r.value("pid", node.runtime().pid());
@@ -694,7 +718,7 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
                     log.debug("Stopped initialization sequence due to a concurrent leave/terminate event.");
                 }
             }
-        } catch (HekateException | RuntimeException | Error e) {
+        } catch (Throwable e) {
             // Schedule termination while still holding the write lock.
             doTerminateAsync(ClusterLeaveReason.TERMINATE, e);
         } finally {
@@ -706,11 +730,6 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
         ClusterContext cluster = createClusterContext();
 
         return new InitializationContext() {
-            @Override
-            public String clusterName() {
-                return clusterName;
-            }
-
             @Override
             public State state() {
                 return state;
@@ -733,12 +752,12 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
 
             @Override
             public void rejoin() {
-                doTerminateAsync(true, ClusterLeaveReason.SPLIT_BRAIN, null);
+                doTerminateAsync(true, ClusterLeaveReason.FATAL_ERROR, null);
             }
 
             @Override
             public void terminate() {
-                doTerminateAsync(ClusterLeaveReason.SPLIT_BRAIN);
+                doTerminateAsync(ClusterLeaveReason.FATAL_ERROR);
             }
 
             @Override
@@ -794,7 +813,7 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
                                         if (err == null) {
                                             // Check that state wasn't changed while we were waiting for synchronization.
                                             if (state == SYNCHRONIZING) {
-                                                log.info("Hekate is UP and running [cluster={}, node={}]", clusterName, node);
+                                                log.info("Hekate is UP and running [node={}]", node);
 
                                                 become(UP);
                                             }
@@ -978,7 +997,7 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
             }
         } else {
             if (log.isErrorEnabled()) {
-                log.error("Terminating because of an unrecoverable error.", cause);
+                log.error("Terminating because of a fatal error.", cause);
             }
         }
 
@@ -1073,7 +1092,6 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
 
         return new ServiceManager(
             name,
-            clusterName,
             this,
             metrics,
             builtInServices,
@@ -1086,8 +1104,8 @@ class HekateNode implements Hekate, JmxSupport<HekateJmx> {
         sysWorker.execute(() -> {
             try {
                 task.run();
-            } catch (RuntimeException | Error e) {
-                log.error("Got an unexpected runtime error.", e);
+            } catch (Throwable e) {
+                log.error("Got an unexpected error.", e);
             }
         });
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -18,15 +18,14 @@ package io.hekate.network.internal;
 
 import io.hekate.HekateNodeParamTestBase;
 import io.hekate.HekateTestContext;
+import io.hekate.core.HekateException;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.network.NetworkClient;
 import io.hekate.network.NetworkConnector;
 import io.hekate.network.NetworkConnectorConfig;
-import io.hekate.network.NetworkServiceFactory;
 import io.hekate.test.NetworkClientCallbackMock;
 import java.io.IOException;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
@@ -43,7 +42,7 @@ public class NettyNetworkServiceTest extends HekateNodeParamTestBase {
     @Test
     public void testClientAfterServiceStop() throws Exception {
         HekateTestNode serverNode = createNode(boot ->
-            boot.withService(NetworkServiceFactory.class, net -> {
+            boot.withNetwork(net -> {
                 net.withConnector(new NetworkConnectorConfig<String>()
                     .withProtocol("test")
                     .withServerHandler((message, from) ->
@@ -54,7 +53,7 @@ public class NettyNetworkServiceTest extends HekateNodeParamTestBase {
         ).join();
 
         HekateTestNode clientNode = createNode(boot ->
-            boot.withService(NetworkServiceFactory.class, net -> {
+            boot.withNetwork(net -> {
                 net.withConnector(new NetworkConnectorConfig<String>()
                     .withProtocol("test")
                 );
@@ -93,7 +92,7 @@ public class NettyNetworkServiceTest extends HekateNodeParamTestBase {
         String protocol = "pre-configured";
 
         HekateTestNode node = createNode(boot ->
-            boot.withService(NetworkServiceFactory.class, net -> {
+            boot.withNetwork(net -> {
                 net.withConnector(new NetworkConnectorConfig<String>()
                     .withProtocol(protocol)
                     .withServerHandler((message, from) ->
@@ -124,7 +123,7 @@ public class NettyNetworkServiceTest extends HekateNodeParamTestBase {
     public void testPortAutoIncrement() throws Exception {
         repeat(3, i -> {
             HekateTestNode node = createNode(boot ->
-                boot.withService(NetworkServiceFactory.class, net -> {
+                boot.withNetwork(net -> {
                     net.setPort(20100);
                     net.setPortRange(10);
                 })
@@ -137,14 +136,14 @@ public class NettyNetworkServiceTest extends HekateNodeParamTestBase {
 
         try {
             createNode(boot ->
-                boot.withService(NetworkServiceFactory.class, net -> {
+                boot.withNetwork(net -> {
                     net.setPort(20100);
                     net.setPortRange(3);
                 })
             ).join();
 
             fail("Error was expected.");
-        } catch (ExecutionException e) {
+        } catch (HekateException e) {
             assertTrue(ErrorUtils.isCausedBy(IOException.class, e));
         }
     }

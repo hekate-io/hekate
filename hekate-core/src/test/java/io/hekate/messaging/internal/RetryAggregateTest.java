@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -18,8 +18,6 @@ package io.hekate.messaging.internal;
 
 import io.hekate.messaging.operation.AggregateResult;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
@@ -194,7 +192,7 @@ public class RetryAggregateTest extends MessagingServiceTestBase {
         repeat(3, i -> {
             failures.set(1);
 
-            AtomicReference<Exception> errRef = new AtomicReference<>();
+            AtomicReference<Throwable> errRef = new AtomicReference<>();
             AtomicReference<TestChannel> leaveRef = new AtomicReference<>();
 
             AggregateResult<String> result = sender.channel().forRemotes()
@@ -210,7 +208,7 @@ public class RetryAggregateTest extends MessagingServiceTestBase {
                                 .leave();
 
                             leaveRef.set(leave);
-                        } catch (ExecutionException | InterruptedException | TimeoutException e) {
+                        } catch (Throwable e) {
                             errRef.compareAndSet(null, e);
                         }
                     })

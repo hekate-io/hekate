@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -30,7 +30,7 @@ public class SendCallbackMock implements SendCallback {
                 onSendSuccess();
 
                 latch.complete(null);
-            } catch (RuntimeException | Error e) {
+            } catch (Throwable e) {
                 latch.completeExceptionally(e);
             }
         } else {

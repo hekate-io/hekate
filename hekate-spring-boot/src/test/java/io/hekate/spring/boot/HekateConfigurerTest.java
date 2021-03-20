@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -23,6 +23,7 @@ import io.hekate.cluster.event.ClusterLeaveEvent;
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.CodecService;
 import io.hekate.core.Hekate;
+import io.hekate.core.HekateFatalErrorPolicy;
 import io.hekate.core.service.Service;
 import io.hekate.core.service.ServiceFactory;
 import io.hekate.network.NetworkService;
@@ -102,7 +103,6 @@ public class HekateConfigurerTest extends HekateAutoConfigurerTestBase {
     public void testDefault() {
         registerAndRefresh(new String[]{
             "hekate.node-name=test-node",
-            "hekate.cluster-name=test-cluster",
             "hekate.roles=role1,role2",
             "hekate.properties.prop1=test1",
             "hekate.properties[long.prop2]=test2"
@@ -114,7 +114,6 @@ public class HekateConfigurerTest extends HekateAutoConfigurerTestBase {
         assertSame(Hekate.State.UP, node.state());
 
         assertEquals("test-node", node.localNode().name());
-        assertEquals("test-cluster", node.cluster().clusterName());
         assertEquals(toSet("role1", "role2"), node.localNode().roles());
         assertEquals(2, node.localNode().properties().size());
         assertEquals("test1", node.localNode().property("prop1"));
@@ -168,5 +167,26 @@ public class HekateConfigurerTest extends HekateAutoConfigurerTestBase {
         assertTrue(getContext().getBeansOfType(CodecFactory.class).isEmpty());
 
         assertFalse(get(DisableTestConfig.class).node.isPresent());
+    }
+
+    @Test
+    public void testFatalErrorPolicyRejoin() {
+        registerAndRefresh(new String[]{"hekate.on-fatal-error=rejoin"}, DefaultTestConfig.class);
+
+        assertEquals(HekateFatalErrorPolicy.rejoin().getClass(), get(HekateFatalErrorPolicy.class).getClass());
+    }
+
+    @Test
+    public void testFatalErrorPolicyTerminate() {
+        registerAndRefresh(new String[]{"hekate.on-fatal-error=terminate"}, DefaultTestConfig.class);
+
+        assertEquals(HekateFatalErrorPolicy.terminate().getClass(), get(HekateFatalErrorPolicy.class).getClass());
+    }
+
+    @Test
+    public void testFatalErrorPolicyExitJvm() {
+        registerAndRefresh(new String[]{"hekate.on-fatal-error=exit-jvm"}, DefaultTestConfig.class);
+
+        assertEquals(HekateFatalErrorPolicy.exitJvm().getClass(), get(HekateFatalErrorPolicy.class).getClass());
     }
 }

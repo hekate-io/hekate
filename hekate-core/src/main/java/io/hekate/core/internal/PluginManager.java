@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -63,7 +63,7 @@ class PluginManager {
 
                 try {
                     plugin.stop();
-                } catch (HekateException e) {
+                } catch (Throwable e) {
                     log.error("Failed to stop plugin [plugin={}]", plugin, e);
                 } finally {
                     started = false;

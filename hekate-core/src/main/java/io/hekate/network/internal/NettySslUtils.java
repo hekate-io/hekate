@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -17,7 +17,7 @@
 package io.hekate.network.internal;
 
 import io.hekate.core.internal.util.ConfigCheck;
-import io.hekate.core.resource.ResourceLoadingException;
+import io.hekate.core.resource.ResourceLoadException;
 import io.hekate.core.resource.ResourceService;
 import io.hekate.network.NetworkSslConfig;
 import io.netty.handler.ssl.OpenSsl;
@@ -59,7 +59,7 @@ final class NettySslUtils {
                 .sessionCacheSize(cfg.getSslSessionCacheSize())
                 .sessionTimeout(cfg.getSslSessionCacheTimeout())
                 .build();
-        } catch (ResourceLoadingException | GeneralSecurityException | IOException e) {
+        } catch (ResourceLoadException | GeneralSecurityException | IOException e) {
             throw check.fail(e);
         }
     }
@@ -82,7 +82,7 @@ final class NettySslUtils {
                 .sessionCacheSize(cfg.getSslSessionCacheSize())
                 .sessionTimeout(cfg.getSslSessionCacheTimeout())
                 .build();
-        } catch (ResourceLoadingException | GeneralSecurityException | IOException e) {
+        } catch (ResourceLoadException | GeneralSecurityException | IOException e) {
             throw check.fail(e);
         }
     }
@@ -90,7 +90,7 @@ final class NettySslUtils {
     private static KeyManagerFactory keyManager(
         NetworkSslConfig cfg,
         ResourceService res
-    ) throws GeneralSecurityException, IOException, ResourceLoadingException {
+    ) throws GeneralSecurityException, IOException, ResourceLoadException {
         KeyManagerFactory factory;
 
         if (cfg.getKeyStoreAlgorithm() == null || cfg.getKeyStoreAlgorithm().isEmpty()) {
@@ -117,7 +117,7 @@ final class NettySslUtils {
     private static TrustManagerFactory trustManager(
         NetworkSslConfig cfg,
         ResourceService resources
-    ) throws GeneralSecurityException, IOException, ResourceLoadingException {
+    ) throws GeneralSecurityException, IOException, ResourceLoadException {
         if (cfg.getTrustStorePath() == null || cfg.getTrustStorePath().isEmpty()) {
             return InsecureTrustManagerFactory.INSTANCE;
         } else {
@@ -142,7 +142,7 @@ final class NettySslUtils {
         String password,
         String type,
         ResourceService resources
-    ) throws IOException, GeneralSecurityException, ResourceLoadingException {
+    ) throws IOException, GeneralSecurityException, ResourceLoadException {
         KeyStore store;
 
         if (type == null || type.isEmpty()) {

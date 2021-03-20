@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -16,7 +16,7 @@
 
 package io.hekate.spring.bean;
 
-import io.hekate.core.resource.ResourceLoadingException;
+import io.hekate.core.resource.ResourceLoadException;
 import io.hekate.core.resource.ResourceService;
 import io.hekate.core.service.ServiceFactory;
 import java.io.IOException;
@@ -45,11 +45,11 @@ class SpringResourceService implements ResourceService {
     }
 
     @Override
-    public InputStream load(String path) throws ResourceLoadingException {
+    public InputStream load(String path) throws ResourceLoadException {
         try {
             return ctx.getResource(path).getInputStream();
         } catch (IOException e) {
-            throw new ResourceLoadingException("Failed to load resource [path=" + path + ']', e);
+            throw new ResourceLoadException("Failed to load resource [path=" + path + ']', e);
         }
     }
 

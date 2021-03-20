@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -18,7 +18,6 @@ package io.hekate.cluster.seed;
 
 import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterServiceFactory;
-import io.hekate.core.HekateBootstrap;
 import io.hekate.core.HekateException;
 import java.net.InetSocketAddress;
 import java.util.List;
@@ -50,7 +49,7 @@ import java.util.List;
  * one by sending a join request message.</li>
  *
  * <li>If any of the discovered nodes replies with the join accept message then cluster service calls {@link #suspendDiscovery()} so that
- * seed node provider could stop all activities that are not necessary after alive seed node have been discovered (f.e. stop advertising
+ * seed node provider could stop all activities that are not necessary after live seed node have been discovered (f.e. stop advertising
  * via multicast). Seed node provider should still keep its local node information registered so that other joining nodes could use
  * the local node as seed node.</li>
  *
@@ -60,10 +59,9 @@ import java.util.List;
  *
  * <h2>Shared state and stale data</h2>
  * <p>
- * If implementation of this interface uses some kind of persistent shared storage for keeping track of alive seed nodes then in case of
- * a particular node crash its address information can still remain registered in the shared storage. In order to clean such stale
- * information the cluster service elects a leader node that periodically scans through all registered addresses, checks their aliveness
- * and removed addresses that are not accessible.
+ * If implementation of this interface uses some kind of persistent shared storage then in case of a particular node crash it's address
+ * information can still remain registered in the shared storage. In order to clean such stale information the cluster service elects
+ * a leader that periodically scans through all registered addresses, checks their aliveness and removes addresses that are not accessible.
  * </p>
  *
  * <p>
@@ -87,23 +85,23 @@ public interface SeedNodeProvider {
     /**
      * Returns the list of known seed node addresses.
      *
-     * @param cluster Cluster name (see {@link HekateBootstrap#setClusterName(String)}).
+     * @param namespace Cluster namespace (see {@link ClusterServiceFactory#setNamespace(String)}).
      *
      * @return List of known seed node addresses.
      *
      * @throws HekateException if failed to provide seed node addresses information due to the system failure.
      */
-    List<InetSocketAddress> findSeedNodes(String cluster) throws HekateException;
+    List<InetSocketAddress> findSeedNodes(String namespace) throws HekateException;
 
     /**
      * Registers the local node address and starts this provider.
      *
-     * @param cluster Cluster name (see {@link HekateBootstrap#setClusterName(String)}).
+     * @param namespace Cluster namespace (see {@link ClusterServiceFactory#setNamespace(String)}).
      * @param node Local node address.
      *
      * @throws HekateException If failed to start discovery due to the system failure.
      */
-    void startDiscovery(String cluster, InetSocketAddress node) throws HekateException;
+    void startDiscovery(String namespace, InetSocketAddress node) throws HekateException;
 
     /**
      * Suspends discovery activities.
@@ -115,12 +113,12 @@ public interface SeedNodeProvider {
     /**
      * Unregisters the local node address and stops this provider.
      *
-     * @param cluster Cluster name (see {@link HekateBootstrap#setClusterName(String)}).
+     * @param namespace Cluster namespace (see {@link ClusterServiceFactory#setNamespace(String)}).
      * @param node Local node address.
      *
      * @throws HekateException If failed to stop discovery due to the system failure.
      */
-    void stopDiscovery(String cluster, InetSocketAddress node) throws HekateException;
+    void stopDiscovery(String namespace, InetSocketAddress node) throws HekateException;
 
     /**
      * Returns the time interval in milliseconds for the cluster service to perform the stale data cleaning. If the returned value if less
@@ -139,12 +137,12 @@ public interface SeedNodeProvider {
      * method).
      * </p>
      *
-     * @param cluster Cluster name (see {@link HekateBootstrap#setClusterName(String)}).
+     * @param namespace Cluster namespace (see {@link ClusterServiceFactory#setNamespace(String)}).
      * @param node Node address that should be registered.
      *
      * @throws HekateException If node couldn't be registered due to the system failure.
      */
-    void registerRemote(String cluster, InetSocketAddress node) throws HekateException;
+    void registerRemote(String namespace, InetSocketAddress node) throws HekateException;
 
     /**
      * Unregisters the specified address from this provider.
@@ -155,10 +153,10 @@ public interface SeedNodeProvider {
      * #findSeedNodes(String)} method).
      * </p>
      *
-     * @param cluster Cluster name (see {@link HekateBootstrap#setClusterName(String)}).
+     * @param namespace Cluster namespace (see {@link ClusterServiceFactory#setNamespace(String)}).
      * @param node Node address that should be unregistered.
      *
      * @throws HekateException If node couldn't be unregistered due to the system failure.
      */
-    void unregisterRemote(String cluster, InetSocketAddress node) throws HekateException;
+    void unregisterRemote(String namespace, InetSocketAddress node) throws HekateException;
 }

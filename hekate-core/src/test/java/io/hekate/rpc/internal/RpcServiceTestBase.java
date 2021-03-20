@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -19,7 +19,6 @@ package io.hekate.rpc.internal;
 import io.hekate.HekateNodeMultiCodecTestBase;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.rpc.RpcServerConfig;
-import io.hekate.rpc.RpcServiceFactory;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -83,12 +82,12 @@ public abstract class RpcServiceTestBase extends HekateNodeMultiCodecTestBase {
         return new ClientAndServer(client, server);
     }
 
-    protected HekateTestNode prepareServer(Object rpc, String tag) throws Exception {
+    protected HekateTestNode prepareServer(Object handler, String tag) throws Exception {
         return createNode(boot -> {
             boot.withNodeName("rpc-server");
-            boot.withService(RpcServiceFactory.class, f ->
-                f.withServer(new RpcServerConfig()
-                    .withHandler(rpc)
+            boot.withRpc(rpc ->
+                rpc.withServer(new RpcServerConfig()
+                    .withHandler(handler)
                     .withTag(tag)
                 )
             );
@@ -106,8 +105,8 @@ public abstract class RpcServiceTestBase extends HekateNodeMultiCodecTestBase {
 
             HekateTestNode server = createNode(boot -> {
                 boot.withNodeName(nodeName);
-                boot.withService(RpcServiceFactory.class, f ->
-                    f.withServer(new RpcServerConfig()
+                boot.withRpc(it ->
+                    it.withServer(new RpcServerConfig()
                         .withHandler(rpc)
                     )
                 );

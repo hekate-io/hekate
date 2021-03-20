@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -17,9 +17,6 @@
 package io.hekate.core;
 
 import io.hekate.util.HekateFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 /**
  * Asynchronous result of {@link Hekate#leaveAsync()} operation.
@@ -40,24 +37,6 @@ public class LeaveFuture extends HekateFuture<Hekate, LeaveFuture> {
         future.complete(node);
 
         return future;
-    }
-
-    @Override
-    public Hekate get() throws InterruptedException, HekateFutureException {
-        try {
-            return super.get();
-        } catch (ExecutionException e) {
-            throw new HekateFutureException(e.getCause().getMessage(), e.getCause());
-        }
-    }
-
-    @Override
-    public Hekate get(long timeout, TimeUnit unit) throws InterruptedException, TimeoutException, HekateFutureException {
-        try {
-            return super.get(timeout, unit);
-        } catch (ExecutionException e) {
-            throw new HekateFutureException(e.getCause().getMessage(), e.getCause());
-        }
     }
 
     @Override

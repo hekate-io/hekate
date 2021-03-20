@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -18,10 +18,8 @@ package io.hekate.javadoc;
 
 import io.hekate.HekateTestBase;
 import io.hekate.cluster.ClusterService;
-import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
-import io.hekate.network.NetworkServiceFactory;
 import org.junit.Test;
 
 import static org.junit.Assert.assertNotNull;
@@ -33,7 +31,6 @@ public class HekateJavadocTest extends HekateTestBase {
         // Start new node with all configuration parameters set to their default values.
         Hekate hekate = new HekateBootstrap()
             .withNodeName("my-node")
-            .withClusterName("my-cluster")
             .join();
         // End:bootstrap
 
@@ -60,11 +57,11 @@ public class HekateJavadocTest extends HekateTestBase {
         // Configure and start new node.
         Hekate hekate = new HekateBootstrap()
             // Configure services.
-            .withService(NetworkServiceFactory.class, net -> {
+            .withNetwork(net -> {
                 net.setPort(10012); // Network port of this node.
                 net.setPortRange(100); // Auto-increment range if port is busy.
             })
-            .withService(ClusterServiceFactory.class, cluster -> {
+            .withCluster(cluster -> {
                 cluster.setGossipInterval(1000); // Gossip once per second.
                 cluster.setSpeedUpGossipSize(100); // Speed up convergence if cluster is <= 100 nodes.
             })

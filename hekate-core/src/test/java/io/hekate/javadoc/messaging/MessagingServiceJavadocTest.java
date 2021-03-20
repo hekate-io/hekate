@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -23,7 +23,6 @@ import io.hekate.messaging.Message;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
-import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.MessagingServiceFactory;
 import io.hekate.messaging.operation.AckMode;
 import io.hekate.messaging.operation.AggregateFuture;
@@ -92,7 +91,7 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
         // Start node.
         Hekate hekate = new HekateBootstrap()
             // Register channel to the messaging service.
-            .withService(MessagingServiceFactory.class, messaging ->
+            .withMessaging(messaging ->
                 messaging.withChannel(channelCfg)
             )
             .join();
@@ -273,8 +272,7 @@ public class MessagingServiceJavadocTest extends HekateNodeTestBase {
         // End:unicast_request_async
     }
 
-    private void unicastRequestSyncExample(MessagingChannel<String> channel)
-        throws MessagingFutureException, InterruptedException {
+    private void unicastRequestSyncExample(MessagingChannel<String> channel) {
         // Start:unicast_request_sync
         // Submit request and synchronously await for the response.
         String response = channel.newRequest("example request").response();

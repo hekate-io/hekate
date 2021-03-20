@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2020 The Hekate Project
+  ~ Copyright 2021 The Hekate Project
   ~
   ~ The Hekate Project licenses this file to you under the Apache License,
   ~ version 2.0 (the "License"); you may not use this file except in compliance
@@ -23,7 +23,7 @@
         http://www.springframework.org/schema/beans/spring-beans.xsd
         http://www.hekate.io/spring/hekate-core
         http://www.hekate.io/spring/hekate-core.xsd">
-    <node id="hekate" name="my-node" cluster="my-cluster">
+    <node id="hekate" name="my-node">
         <!-- Node roles. -->
         <roles>
             <role>role 1</role>
@@ -52,7 +52,7 @@
         </network>
 
         <!-- Cluster service. -->
-        <cluster gossip-interval-ms="1000" gossip-speedup-size="100">
+        <cluster namespace="my-cluster" gossip-interval-ms="1000" gossip-speedup-size="100">
             <seed-node-provider>
                 <multicast group="224.1.2.12" port="45454" interval-ms="200" wait-time-ms="1000" ttl="3"/>
             </seed-node-provider>

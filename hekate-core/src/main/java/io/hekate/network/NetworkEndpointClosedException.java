@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -14,43 +14,37 @@
  * under the License.
  */
 
-package io.hekate.core;
+package io.hekate.network;
 
-import io.hekate.core.internal.util.ErrorUtils;
+import io.hekate.core.HekateException;
 
 /**
- * Generic base class for unchecked errors.
+ * Signals an attempt to perform a networking operation on a {@link NetworkEndpoint} that is closed.
  */
-public class HekateUncheckedException extends RuntimeException {
+public class NetworkEndpointClosedException extends NetworkException {
     private static final long serialVersionUID = 1;
 
     /**
-     * Constructs new instance with the specified error message.
+     * Constructs a new instance.
      *
      * @param message Error message.
      */
-    public HekateUncheckedException(String message) {
+    public NetworkEndpointClosedException(String message) {
         super(message);
     }
 
     /**
-     * Constructs new instance with the specified error message and cause.
+     * Constructs a new instance.
      *
      * @param message Error message.
      * @param cause Cause.
      */
-    public HekateUncheckedException(String message, Throwable cause) {
+    public NetworkEndpointClosedException(String message, Throwable cause) {
         super(message, cause);
     }
 
-    /**
-     * Returns {@code true} if this exception is caused by an error of the specified type.
-     *
-     * @param causeType Error type.
-     *
-     * @return {@code true} if this exception is caused by an error of the specified type.
-     */
-    public boolean isCausedBy(Class<? extends Throwable> causeType) {
-        return ErrorUtils.isCausedBy(causeType, this);
+    @Override
+    public HekateException forkFromAsync() {
+        return new NetworkEndpointClosedException(getMessage(), this);
     }
 }

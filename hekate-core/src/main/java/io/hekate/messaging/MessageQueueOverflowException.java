@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -15,6 +15,8 @@
  */
 
 package io.hekate.messaging;
+
+import io.hekate.core.HekateException;
 
 /**
  * Signals {@link MessagingChannel}'s send queue overflow.
@@ -38,5 +40,14 @@ public class MessageQueueOverflowException extends MessagingException {
      */
     public MessageQueueOverflowException(String message) {
         super(message);
+    }
+
+    private MessageQueueOverflowException(MessageQueueOverflowException cause) {
+        super(cause.getMessage(), cause);
+    }
+
+    @Override
+    public HekateException forkFromAsync() {
+        return new MessageQueueOverflowException(this);
     }
 }

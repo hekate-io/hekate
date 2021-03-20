@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -99,7 +99,6 @@ import java.util.Set;
  * Key configuration options of {@link HekateBootstrap} are:
  * </p>
  * <ul>
- * <li>{@link HekateBootstrap#setClusterName(String) Cluster name}</li>
  * <li>{@link HekateBootstrap#setNodeName(String) Node name}</li>
  * <li>{@link HekateBootstrap#setProperties(Map) Node properties}</li>
  * <li>{@link HekateBootstrap#setRoles(List) Node roles}</li>
@@ -393,11 +392,10 @@ public interface Hekate extends HekateSupport {
      *
      * @return This instance.
      *
-     * @throws HekateFutureException If failure occurred during initialization.
-     * @throws InterruptedException If thread gets interrupted while awaiting for completion of this operation.
+     * @throws HekateException If failure occurred during initialization.
      * @see #initializeAsync()
      */
-    Hekate initialize() throws InterruptedException, HekateFutureException;
+    Hekate initialize() throws HekateException;
 
     /**
      * Asynchronously initializes this instance and joins the cluster.
@@ -420,11 +418,10 @@ public interface Hekate extends HekateSupport {
      *
      * @return This instance.
      *
-     * @throws HekateFutureException If failure occurred while initializing or joining to cluster.
-     * @throws InterruptedException If thread gets interrupted while awaiting for completion of this operation.
+     * @throws HekateException If failure occurred while initializing or joining to cluster.
      * @see #joinAsync()
      */
-    Hekate join() throws InterruptedException, HekateFutureException;
+    Hekate join() throws HekateException;
 
     /**
      * Asynchronously leaves the cluster and terminates this instance.
@@ -447,11 +444,10 @@ public interface Hekate extends HekateSupport {
      *
      * @return This instance.
      *
-     * @throws HekateFutureException If failure occurred while leaving the cluster.
-     * @throws InterruptedException If thread gets interrupted while awaiting for completion of this operation.
+     * @throws HekateException If failure occurred while leaving the cluster.
      * @see #leaveAsync()
      */
-    Hekate leave() throws InterruptedException, HekateFutureException;
+    Hekate leave() throws HekateException;
 
     /**
      * Asynchronously terminates this instance.
@@ -486,11 +482,10 @@ public interface Hekate extends HekateSupport {
      *
      * @return This instance.
      *
-     * @throws HekateFutureException If failure occurred during termination.
-     * @throws InterruptedException If thread gets interrupted while awaiting for completion of this operation.
+     * @throws HekateException If failure occurred during termination.
      * @see #terminateAsync()
      */
-    Hekate terminate() throws InterruptedException, HekateFutureException;
+    Hekate terminate() throws HekateException;
 
     /**
      * Adds <a href="#lifecycle">lifecycle</a> listener.
@@ -509,4 +504,18 @@ public interface Hekate extends HekateSupport {
      * @return {@code true} if listener was removed or {@code false} if there is no such listener.
      */
     boolean removeListener(LifecycleListener listener);
+
+    /**
+     * Signals a fatal error.
+     *
+     * <p>
+     * This method is intended to be used by {@link Hekate} services and components (including various user-defined handlers and callbacks)
+     * in order to notify on an unrecoverable error and trigger {@link HekateFatalErrorPolicy}.
+     * </p>
+     *
+     * @param error Fatal error.
+     *
+     * @see HekateBootstrap#setFatalErrorPolicy(HekateFatalErrorPolicy)
+     */
+    void fatalError(Throwable error);
 }

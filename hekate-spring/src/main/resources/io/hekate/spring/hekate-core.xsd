@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!--
-  ~ Copyright 2020 The Hekate Project
+  ~ Copyright 2021 The Hekate Project
   ~
   ~ The Hekate Project licenses this file to you under the Apache License,
   ~ version 2.0 (the "License"); you may not use this file except in compliance
@@ -49,13 +49,6 @@
                         <xsd:annotation>
                             <xsd:documentation>
                                 See javadoc of 'io.hekate.core.HekateBootstrap#setNodeName(String name)'.
-                            </xsd:documentation>
-                        </xsd:annotation>
-                    </xsd:attribute>
-                    <xsd:attribute name="cluster" type="xsd:string">
-                        <xsd:annotation>
-                            <xsd:documentation>
-                                See javadoc of 'io.hekate.core.HekateBootstrap#setCluserCluster(String)'.
                             </xsd:documentation>
                         </xsd:annotation>
                     </xsd:attribute>
@@ -437,6 +430,13 @@
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
+        <xsd:attribute name="namespace" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.ClusterServiceFactory#setNamespace(String)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
         <xsd:attribute name="gossip-interval-ms" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation>
@@ -664,10 +664,10 @@
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
-        <xsd:attribute name="cluster-column" type="xsd:string">
+        <xsd:attribute name="namespace-column" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation>
-                    See javadoc of 'io.hekate.cluster.seed.jdbc.JdbcSeedNodeProviderConfig#setClusterColumn(java.lang.String)'.
+                    See javadoc of 'io.hekate.cluster.seed.jdbc.JdbcSeedNodeProviderConfig#setNamespaceColumn(java.lang.String)'.
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
@@ -989,32 +989,6 @@
                 </xsd:annotation>
             </xsd:element>
         </xsd:sequence>
-        <xsd:attribute name="action">
-            <xsd:annotation>
-                <xsd:documentation>
-                    See javadoc of
-                    'io.hekate.cluster.ClusterServiceFactory#setSplitBrainAction(io.hekate.cluster.split.SplitBrainAction)'.
-                </xsd:documentation>
-            </xsd:annotation>
-            <xsd:simpleType>
-                <xsd:restriction base="xsd:string">
-                    <xsd:enumeration value="TERMINATE">
-                        <xsd:annotation>
-                            <xsd:documentation>
-                                See javadoc of 'io.hekate.cluster.split.SplitBrainAction#TERMINATE'.
-                            </xsd:documentation>
-                        </xsd:annotation>
-                    </xsd:enumeration>
-                    <xsd:enumeration value="REJOIN">
-                        <xsd:annotation>
-                            <xsd:documentation>
-                                See javadoc of 'io.hekate.cluster.split.SplitBrainAction#REJOIN'.
-                            </xsd:documentation>
-                        </xsd:annotation>
-                    </xsd:enumeration>
-                </xsd:restriction>
-            </xsd:simpleType>
-        </xsd:attribute>
         <xsd:attribute name="check-interval-ms" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation>

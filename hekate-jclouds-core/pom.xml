@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2020 The Hekate Project
+  ~ Copyright 2021 The Hekate Project
   ~
   ~ The Hekate Project licenses this file to you under the Apache License,
   ~ version 2.0 (the "License"); you may not use this file except in compliance
@@ -26,7 +26,7 @@
     <parent>
         <groupId>io.hekate</groupId>
         <artifactId>hekate-parent</artifactId>
-        <version>3.10.0-SNAPSHOT</version>
+        <version>4.0.0</version>
         <relativePath>../hekate-parent</relativePath>
     </parent>
 
@@ -69,6 +69,12 @@
         <dependency>
             <groupId>javax.xml.bind</groupId>
             <artifactId>jaxb-api</artifactId>
+        </dependency>
+
+        <!-- TODO: Required for JClouds + Java 11 -->
+        <dependency>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
         </dependency>
 
         <!-- Test dependencies.-->

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -17,11 +17,12 @@
 package io.hekate.core;
 
 import io.hekate.core.internal.util.ErrorUtils;
+import java.util.concurrent.Future;
 
 /**
- * Generic base class for checked errors.
+ * Generic base class for Hekate errors.
  */
-public class HekateException extends Exception {
+public class HekateException extends RuntimeException {
     private static final long serialVersionUID = 1;
 
     /**
@@ -56,6 +57,20 @@ public class HekateException extends Exception {
     }
 
     /**
+     * Forks this exception by creating a new exception that has this instance as its cause.
+     *
+     * <p>
+     * The primary use case of this method is to re-throw exceptions from asynchronous contexts
+     * (f.e. exceptions thrown by {@link Future#get()} method).
+     * </p>
+     *
+     * @return Fork of this exception.
+     */
+    public HekateException forkFromAsync() {
+        return new HekateException(getMessage(), this);
+    }
+
+    /**
      * Returns {@code true} if this exception is caused by an error of the specified type.
      *
      * @param causeType Error type.
@@ -64,5 +79,17 @@ public class HekateException extends Exception {
      */
     public boolean isCausedBy(Class<? extends Throwable> causeType) {
         return ErrorUtils.isCausedBy(causeType, this);
+    }
+
+    /**
+     * Searches for an error cause of the specified type. Returns {@code null} if there is no such error.
+     *
+     * @param type Error type.
+     * @param <T> Error type.
+     *
+     * @return Error or {@code null}.
+     */
+    public <T extends Throwable> T findCause(Class<T> type) {
+        return ErrorUtils.findCause(type, this);
     }
 }

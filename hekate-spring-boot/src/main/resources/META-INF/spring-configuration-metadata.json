@@ -75,12 +75,6 @@
   ],
   "properties": [
     {
-      "name": "hekate.cluster-name",
-      "type": "java.lang.String",
-      "description": "Cluster name (alpha-numeric characters and non-repeating dots/hyphens).\n Only those instances that are configured with the same cluster name can form a cluster.\n Instances with different cluster names will form completely independent clusters.",
-      "defaultValue": "default"
-    },
-    {
       "name": "hekate.node-name",
       "type": "java.lang.String",
       "description": "Node name (alpha-numeric characters and non-repeating dots/hyphens).",
@@ -103,6 +97,12 @@
       "type": "java.lang.String",
       "description": "Data serialization codec.",
       "defaultValue": "jdk"
+    },
+    {
+      "name": "hekate.on-fatal-error",
+      "type": "java.lang.String",
+      "description": "Fatal error handling policy.",
+      "defaultValue": "terminate"
     },
     {
       "name": "hekate.config-report",
@@ -288,6 +288,12 @@
     },
 
     {
+      "name": "hekate.cluster.namespace",
+      "type": "java.lang.String",
+      "description": "Cluster namespace (alpha-numeric characters and non-repeating dots/hyphens).\n Only those nodes that are configured with the same cluster namespace can form a cluster.\n Nodes that have different namespaces will form completely independent clusters.",
+      "defaultValue": "default"
+    },
+    {
       "name": "hekate.cluster.gossip-interval",
       "type": "java.lang.Long",
       "description": "Time interval in milliseconds between gossip rounds.",
@@ -298,12 +304,6 @@
       "type": "java.lang.Integer",
       "description": "The maximum amount of nodes in the cluster for the gossip protocol to speed up by sending messages at a higher rate\n so that the cluster could converge faster (at the cost of higher network utilization).",
       "defaultValue": 100
-    },
-    {
-      "name": "hekate.cluster.split-brain-action",
-      "type": "io.hekate.cluster.split.SplitBrainAction",
-      "description": "Action in case if the local node is in a split-brain state.",
-      "defaultValue": "terminate"
     },
     {
       "name": "hekate.cluster.split-brain-check-interval",
@@ -438,8 +438,8 @@
     {
       "name": "hekate.cluster.seed.jdbc.cluster-column",
       "type": "java.lang.String",
-      "description": "Column to store the cluster name.",
-      "defaultValue": "cluster_name"
+      "description": "Column to store the cluster namespace.",
+      "defaultValue": "cluster_namespace"
     },
     {
       "name": "hekate.cluster.seed.jdbc.host-column",
@@ -788,6 +788,23 @@
       ]
     },
     {
+      "name": "hekate.on-fatal-error",
+      "values": [
+        {
+          "value": "terminate",
+          "description": "Terminate upon any fatal error by calling Hekate#terminate()."
+        },
+        {
+          "value": "rejoin",
+          "description": "Rejoin upon any fatal error."
+        },
+        {
+          "value": "exit-jvm",
+          "description": "Call System#exit(250) upon any fatal error."
+        }
+      ]
+    },
+    {
       "name": "hekate.network.transport",
       "values": [
         {
@@ -885,23 +902,6 @@
         {
           "name": "any",
           "description": "...all other values will be treated as a directly specified address"
-        }
-      ]
-    },
-    {
-      "name": "hekate.cluster.split-brain-action",
-      "values": [
-        {
-          "value": "rejoin",
-          "description": "Try to rejoin the cluster."
-        },
-        {
-          "value": "terminate",
-          "description": "Terminate Hekate node but keep the JVM running."
-        },
-        {
-          "value": "kill_jvm",
-          "description": "Kills the JVM via System#exit() (exit code 250)."
         }
       ]
     },

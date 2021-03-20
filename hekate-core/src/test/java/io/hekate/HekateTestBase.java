@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -26,6 +26,7 @@ import io.hekate.codec.CodecFactory;
 import io.hekate.codec.DataReader;
 import io.hekate.codec.DataWriter;
 import io.hekate.codec.SingletonCodecFactory;
+import io.hekate.core.HekateTimeoutException;
 import io.hekate.core.ServiceInfo;
 import io.hekate.core.ServiceProperty;
 import io.hekate.core.internal.util.ErrorUtils;
@@ -33,6 +34,7 @@ import io.hekate.core.internal.util.HekateThreadFactory;
 import io.hekate.core.service.internal.DefaultServiceInfo;
 import io.hekate.network.address.AddressPattern;
 import io.hekate.test.HekateTestError;
+import io.hekate.util.HekateFuture;
 import java.io.IOException;
 import java.lang.management.LockInfo;
 import java.lang.management.ManagementFactory;
@@ -80,7 +82,6 @@ import static io.hekate.core.internal.util.Utils.NL;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -311,6 +312,16 @@ public abstract class HekateTestBase {
         try {
             return future.get(AWAIT_TIMEOUT, TimeUnit.SECONDS);
         } catch (TimeoutException e) {
+            System.out.println(threadDump());
+
+            throw e;
+        }
+    }
+
+    public static <T> T get(HekateFuture<T, ?> future) {
+        try {
+            return future.sync(AWAIT_TIMEOUT, TimeUnit.SECONDS);
+        } catch (HekateTimeoutException e) {
             System.out.println(threadDump());
 
             throw e;
@@ -787,7 +798,6 @@ public abstract class HekateTestBase {
 
         Constructor<?> ctor = type.getDeclaredConstructor();
 
-        assertFalse(ctor.isAccessible());
         assertTrue(Modifier.isPrivate(ctor.getModifiers()));
 
         ctor.setAccessible(true);

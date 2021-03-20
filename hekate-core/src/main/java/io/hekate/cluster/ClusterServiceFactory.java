@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -24,10 +24,9 @@ import io.hekate.cluster.internal.DefaultClusterService;
 import io.hekate.cluster.internal.gossip.GossipListener;
 import io.hekate.cluster.seed.SeedNodeProvider;
 import io.hekate.cluster.seed.multicast.MulticastSeedNodeProvider;
-import io.hekate.cluster.split.SplitBrainAction;
 import io.hekate.cluster.split.SplitBrainDetector;
 import io.hekate.core.HekateBootstrap;
-import io.hekate.core.internal.util.ConfigCheck;
+import io.hekate.core.HekateFatalErrorPolicy;
 import io.hekate.core.service.ServiceFactory;
 import io.hekate.util.StateGuard;
 import io.hekate.util.format.ToString;
@@ -48,14 +47,17 @@ import java.util.List;
  * </p>
  */
 public class ClusterServiceFactory implements ServiceFactory<ClusterService> {
+    /** Default value (={@value}) for {@link #setNamespace(String)}. */
+    public static final String DEFAULT_NAMESPACE = "default";
+
     /** Default value (={@value}) in milliseconds for {@link #setGossipInterval(long)}. */
     public static final long DEFAULT_GOSSIP_INTERVAL = 1000;
 
     /** Default value (={@value}) for {@link #setSpeedUpGossipSize(int)}. */
     public static final int DEFAULT_SPEED_UP_SIZE = 100;
 
-    /** See {@link #setSplitBrainAction(SplitBrainAction)}. */
-    private SplitBrainAction splitBrainAction = SplitBrainAction.TERMINATE;
+    /** See {@link #setNamespace(String)}. */
+    private String namespace = DEFAULT_NAMESPACE;
 
     /** See {@link #setSplitBrainDetector(SplitBrainDetector)}. */
     private SplitBrainDetector splitBrainDetector;
@@ -86,6 +88,51 @@ public class ClusterServiceFactory implements ServiceFactory<ClusterService> {
 
     /** See {@link #setGossipSpy(GossipListener)}. */
     private GossipListener gossipSpy;
+
+    /**
+     * Returns the cluster namespace (see {@link #setNamespace(String)}).
+     *
+     * @return Cluster namespace.
+     */
+    public String getNamespace() {
+        return namespace;
+    }
+
+    /**
+     * Sets the cluster namespace. Can contain only alpha-numeric characters and non-repeatable dots/hyphens.
+     *
+     * <p>
+     * Only those nodes that are configured with the same cluster namespace can form a cluster. Nodes that have different namespaces will
+     * form completely independent clusters.
+     * </p>
+     *
+     * <p>
+     * Default value of this property is {@value #DEFAULT_NAMESPACE}.
+     * </p>
+     *
+     * <p>
+     * <b>Hint:</b> For breaking nodes into logical sub-groups within the same cluster consider using
+     * {@link HekateBootstrap#setRoles(List) node roles} with {@link ClusterView#filter(ClusterNodeFilter) nodes filtering}.
+     * </p>
+     *
+     * @param namespace Cluster namespace (can contain only alpha-numeric characters and non-repeatable dots/hyphens).
+     */
+    public void setNamespace(String namespace) {
+        this.namespace = namespace;
+    }
+
+    /**
+     * Fluent-style version of {@link #setNamespace(String)}.
+     *
+     * @param namespace Cluster namespace.
+     *
+     * @return This instance.
+     */
+    public ClusterServiceFactory withNamespace(String namespace) {
+        setNamespace(namespace);
+
+        return this;
+    }
 
     /**
      * Returns seed node provider (see {@link #setSeedNodeProvider(SeedNodeProvider)}).
@@ -163,57 +210,6 @@ public class ClusterServiceFactory implements ServiceFactory<ClusterService> {
     }
 
     /**
-     * Returns the split-brain action (see {@link #setSplitBrainAction(SplitBrainAction)}).
-     *
-     * @return Split-brain action.
-     */
-    public SplitBrainAction getSplitBrainAction() {
-        return splitBrainAction;
-    }
-
-    /**
-     * Sets the split-brain action.
-     *
-     * <p>
-     * This parameter specifies which actions should be performed if cluster
-     * <a href="https://en.wikipedia.org/wiki/Split-brain_(computing)" target="_blank">split-brain</a> is detected. Split-brain can happen
-     * if other cluster members decided that this node is not reachable (due to some networking problems or long GC pauses).
-     * In such case they will remove this node from their topology while this node will think that it is still a member of the cluster.
-     * </p>
-     *
-     * <p>
-     * Default value of this parameter is {@link SplitBrainAction#TERMINATE}.
-     * </p>
-     *
-     * <p>
-     * <b>Note:</b> Actual split-brain detection is performed by a split-brain detector component
-     * (see {@link #setSplitBrainDetector(SplitBrainDetector)}).
-     * </p>
-     *
-     * @param splitBrainAction Action.
-     *
-     * @see #setSplitBrainDetector(SplitBrainDetector)
-     */
-    public void setSplitBrainAction(SplitBrainAction splitBrainAction) {
-        ConfigCheck.get(getClass()).notNull(splitBrainAction, "split-brain action");
-
-        this.splitBrainAction = splitBrainAction;
-    }
-
-    /**
-     * Fluent-style version of {@link #setSplitBrainAction(SplitBrainAction)}.
-     *
-     * @param splitBrainAction Action.
-     *
-     * @return This instance.
-     */
-    public ClusterServiceFactory withSplitBrainAction(SplitBrainAction splitBrainAction) {
-        setSplitBrainAction(splitBrainAction);
-
-        return this;
-    }
-
-    /**
      * Returns the cluster split-brain detector (see {@link #setSplitBrainDetector(SplitBrainDetector)}).
      *
      * @return Cluster split-brain detector.
@@ -233,13 +229,11 @@ public class ClusterServiceFactory implements ServiceFactory<ClusterService> {
      * </p>
      *
      * <p>
-     * If this component detects that local node is not reachable then {@link #setSplitBrainAction(SplitBrainAction) split-brain action}
-     * will be applied to the local node.
+     * If this component detects that local node is not reachable then {@link HekateFatalErrorPolicy} will be applied to the local node
+     * with {@link ClusterSplitBrainException} as a cause.
      * </p>
      *
      * @param splitBrainDetector Cluster split-brain detector.
-     *
-     * @see #setSplitBrainAction(SplitBrainAction)
      */
     public void setSplitBrainDetector(SplitBrainDetector splitBrainDetector) {
         this.splitBrainDetector = splitBrainDetector;
@@ -271,9 +265,8 @@ public class ClusterServiceFactory implements ServiceFactory<ClusterService> {
      * Sets the time interval in milliseconds for split-brain checking.
      *
      * <p>
-     * If the specified value is greater than zero then once per such interval the {@link #setSplitBrainDetector(SplitBrainDetector)
-     * SplitBrainDetector} component will be called to check the node's health. If check fails then the
-     * {@link #setSplitBrainAction(SplitBrainAction) SplitBrainAction} will be applied to the local node.
+     * If the specified value is greater than zero then once per such interval the
+     * {@link #setSplitBrainDetector(SplitBrainDetector) SplitBrainDetector} component will be called to check the node's health.
      * </p>
      *
      * <p>

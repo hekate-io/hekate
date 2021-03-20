@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -18,7 +18,6 @@ package io.hekate.javadoc.cluster.seed;
 
 import io.hekate.HekateTestBase;
 import io.hekate.HekateTestProps;
-import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.cluster.seed.SeedNodeProviderGroup;
 import io.hekate.cluster.seed.SeedNodeProviderGroupConfig;
 import io.hekate.cluster.seed.SeedNodeProviderGroupPolicy;
@@ -80,7 +79,7 @@ public class SeedNodeProviderGroupJavadocTest extends HekateTestBase {
 
         // Start node.
         Hekate hekate = new HekateBootstrap()
-            .withService(ClusterServiceFactory.class, cluster -> {
+            .withCluster(cluster -> {
                 // Register the providers group to the cluster service.
                 cluster.withSeedNodeProvider(new SeedNodeProviderGroup(seedGroupCfg));
             })

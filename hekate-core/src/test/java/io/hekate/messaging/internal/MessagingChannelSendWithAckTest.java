@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -18,22 +18,21 @@ package io.hekate.messaging.internal;
 
 import io.hekate.cluster.ClusterNode;
 import io.hekate.codec.CodecException;
+import io.hekate.core.HekateException;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.core.internal.util.ErrorUtils;
 import io.hekate.messaging.MessageReceiver;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
 import io.hekate.messaging.MessagingException;
-import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.MessagingRemoteException;
-import io.hekate.messaging.MessagingServiceFactory;
 import io.hekate.messaging.loadbalance.EmptyTopologyException;
 import io.hekate.messaging.operation.SendFuture;
+import io.hekate.network.NetworkEndpointClosedException;
 import io.hekate.test.HekateTestError;
 import io.hekate.test.NonDeserializable;
 import io.hekate.test.NonSerializable;
 import java.io.NotSerializableException;
-import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -87,7 +86,7 @@ public class MessagingChannelSendWithAckTest extends MessagingServiceTestBase {
                 .sync();
 
             fail("Error was expected.");
-        } catch (MessagingFutureException e) {
+        } catch (HekateException e) {
             assertTrue("" + e, e.isCausedBy(EmptyTopologyException.class));
         }
     }
@@ -181,7 +180,7 @@ public class MessagingChannelSendWithAckTest extends MessagingServiceTestBase {
                         .submit();
 
                     // Await for timeout.
-                    sleep((long)(idleTimeout * 3));
+                    sleep(idleTimeout * 3);
 
                     // Client must be still connected since there is an in-flight message.
                     assertTrue(client.isConnected());
@@ -266,7 +265,7 @@ public class MessagingChannelSendWithAckTest extends MessagingServiceTestBase {
                     .sync();
 
                 fail("Error was expected.");
-            } catch (MessagingFutureException e) {
+            } catch (HekateException e) {
                 MessagingRemoteException remote = e.findCause(MessagingRemoteException.class);
 
                 assertNotNull(e.toString(), remote);
@@ -296,8 +295,8 @@ public class MessagingChannelSendWithAckTest extends MessagingServiceTestBase {
                     .sync();
 
                 fail("Error was expected.");
-            } catch (MessagingFutureException e) {
-                assertTrue(e.toString(), e.isCausedBy(ClosedChannelException.class));
+            } catch (HekateException e) {
+                assertTrue(e.toString(), e.isCausedBy(NetworkEndpointClosedException.class));
             }
         });
     }
@@ -325,7 +324,7 @@ public class MessagingChannelSendWithAckTest extends MessagingServiceTestBase {
                 sender.channel().forNode(receiver.nodeId()).newSend("request" + i).withAck().sync();
 
                 fail("Error was expected.");
-            } catch (MessagingFutureException e) {
+            } catch (HekateException e) {
                 // No-op.
             }
         });
@@ -336,7 +335,7 @@ public class MessagingChannelSendWithAckTest extends MessagingServiceTestBase {
         HekateTestNode sender = prepareObjectSenderAndReceiver();
 
         repeat(5, i -> {
-            MessagingFutureException err = expect(MessagingFutureException.class, () ->
+            MessagingException err = expect(MessagingException.class, () ->
                 get(sender.messaging().channel("test")
                     .forRemotes()
                     .newSend(new NonSerializable())
@@ -356,7 +355,7 @@ public class MessagingChannelSendWithAckTest extends MessagingServiceTestBase {
         HekateTestNode sender = prepareObjectSenderAndReceiver();
 
         repeat(5, i -> {
-            MessagingFutureException err = expect(MessagingFutureException.class, () ->
+            MessagingRemoteException err = expect(MessagingRemoteException.class, () ->
                 get(sender.messaging().channel("test")
                     .forRemotes()
                     .newSend(new NonDeserializable())
@@ -371,19 +370,20 @@ public class MessagingChannelSendWithAckTest extends MessagingServiceTestBase {
     }
 
     private HekateTestNode prepareObjectSenderAndReceiver() throws Exception {
-        createNode(boot -> boot.withService(MessagingServiceFactory.class, f -> {
-            f.withChannel(MessagingChannelConfig.of(Object.class)
-                .withName("test")
-                .withReceiver(msg -> {
-                    // No-op.
-                })
-            );
-        })).join();
+        createNode(boot -> boot.withMessaging(messaging ->
+            messaging.withChannel(
+                MessagingChannelConfig.of(Object.class)
+                    .withName("test")
+                    .withReceiver(msg -> {
+                        // No-op.
+                    })
+            )
+        )).join();
 
-        return createNode(boot -> boot.withService(MessagingServiceFactory.class, f -> {
-            f.withChannel(MessagingChannelConfig.of(Object.class)
-                .withName("test")
-            );
-        })).join();
+        return createNode(boot -> boot.withMessaging(messaging ->
+            messaging.withChannel(
+                MessagingChannelConfig.of(Object.class).withName("test")
+            )
+        )).join();
     }
 }

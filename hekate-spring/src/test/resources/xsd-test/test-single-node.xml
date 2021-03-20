@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2020 The Hekate Project
+  ~ Copyright 2021 The Hekate Project
   ~
   ~ The Hekate Project licenses this file to you under the Apache License,
   ~ version 2.0 (the "License"); you may not use this file except in compliance
@@ -22,7 +22,7 @@
         http://www.springframework.org/schema/beans/spring-beans.xsd
         http://www.hekate.io/spring/hekate-core
         http://www.hekate.io/spring/hekate-core.xsd">
-    <node id="hekateBean" name="test-node" cluster="test-cluster" config-report="true">
+    <node id="hekateBean" name="test-node" config-report="true">
         <roles>
             <role>role 1</role>
             <role>role 2</role>
@@ -51,12 +51,12 @@
             </server>
         </jmx>
 
-        <cluster id="cluster" gossip-interval-ms="1000" gossip-speedup-size="100">
+        <cluster id="cluster" namespace="test-cluster" gossip-interval-ms="1000" gossip-speedup-size="100">
             <seed-node-provider>
                 <jdbc cleanup-interval-ms="60001"
                     query-timeout-sec="5"
                     table="cn"
-                    cluster-column="c"
+                    namespace-column="c"
                     host-column="h"
                     port-column="p">
                     <datasource>
@@ -71,7 +71,7 @@
                 <heartbeat interval-ms="501" loss-threshold="5" quorum="3"/>
             </failure-detection>
 
-            <split-brain-detection action="TERMINATE" check-interval-ms="1000">
+            <split-brain-detection check-interval-ms="1000">
                 <group require="ANY_VALID">
                     <host-reachable host="127.0.0.1" timeout-ms="3000"/>
                     <group require="ALL_VALID">

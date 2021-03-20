@@ -1,0 +1,27 @@
+codecov:
+  notify:
+    after_n_builds: 14
+    wait_for_ci: true
+
+coverage:
+  precision: 2
+  round: up
+  range: 70...85
+
+  notify:
+    slack:
+      default:
+        url: "secret:d9tuE0QdAFdW5xep5XRsudz3CbyXdYfRG19RNrwUy6UQRXuU6nXolawajrIPtpxUKRfettoJRyDfefcqHmnJy5W31M6RU2TEXuakqscqt9f/pN2TEK3YNE91QkkQ/VoAOyEPmKj8sr/FIvN6rodVreRKcHhpG4GuLxK4NzPwEMA="
+
+  status:
+    project:
+      default:
+        enabled: true
+        target: 80%
+        if_no_uploads: error
+        if_not_found: success
+        if_ci_failed: error
+
+    patch:
+      default:
+        enabled: false

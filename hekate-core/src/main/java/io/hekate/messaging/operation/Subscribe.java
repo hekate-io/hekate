@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -16,11 +16,11 @@
 
 package io.hekate.messaging.operation;
 
+import io.hekate.core.HekateException;
 import io.hekate.messaging.Message;
 import io.hekate.messaging.MessageTimeoutException;
 import io.hekate.messaging.MessagingChannel;
 import io.hekate.messaging.MessagingChannelConfig;
-import io.hekate.messaging.MessagingFutureException;
 import io.hekate.messaging.loadbalance.LoadBalancer;
 import io.hekate.messaging.retry.GenericRetryConfigurer;
 import java.util.List;
@@ -139,8 +139,7 @@ public interface Subscribe<T> {
      *
      * @return List of all {@link Message#partialReply(Object) partial responses} and the {@link Message#reply(Object) final response}.
      *
-     * @throws MessagingFutureException if the operation fails.
-     * @throws InterruptedException if the current thread is interrupted.
+     * @throws HekateException If operation failed.
      */
-    List<T> responses() throws InterruptedException, MessagingFutureException;
+    List<T> responses() throws HekateException;
 }

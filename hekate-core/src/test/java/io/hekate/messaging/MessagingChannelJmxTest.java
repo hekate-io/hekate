@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -34,7 +34,7 @@ public class MessagingChannelJmxTest extends HekateNodeTestBase {
     public void test() throws Exception {
         HekateTestNode node = createNode(boot -> {
             boot.withService(JmxServiceFactory.class);
-            boot.withService(MessagingServiceFactory.class, messaging ->
+            boot.withMessaging(messaging ->
                 messaging.withChannel(MessagingChannelConfig.of(MessagingChannelJmxTest.class)
                     .withName("test.channel")
                     .withIdleSocketTimeout(100500)

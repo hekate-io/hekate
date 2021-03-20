@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -232,11 +232,11 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider, JmxSupport<M
     }
 
     @Override
-    public List<InetSocketAddress> findSeedNodes(String cluster) throws HekateException {
+    public List<InetSocketAddress> findSeedNodes(String namespace) throws HekateException {
         synchronized (mux) {
             if (isRegistered()) {
                 return discovered.stream()
-                    .filter(node -> node.cluster().equals(cluster))
+                    .filter(node -> node.cluster().equals(namespace))
                     .map(SeedNode::address)
                     .collect(toList());
             }
@@ -246,10 +246,10 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider, JmxSupport<M
     }
 
     @Override
-    public void startDiscovery(String cluster, InetSocketAddress address) throws HekateException {
-        log.info("Starting seed node discovery [cluster={}, {}]", cluster, ToString.formatProperties(this));
+    public void startDiscovery(String namespace, InetSocketAddress address) throws HekateException {
+        log.info("Starting seed node discovery [namespace={}, {}]", namespace, ToString.formatProperties(this));
 
-        SeedNode self = new SeedNode(address, cluster);
+        SeedNode self = new SeedNode(address, namespace);
 
         try {
             NetworkInterface nif = selectMulticastInterface(address);
@@ -346,8 +346,8 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider, JmxSupport<M
     }
 
     @Override
-    public void stopDiscovery(String cluster, InetSocketAddress address) throws HekateException {
-        log.info("Stopping seed nodes discovery [cluster={}, address={}]", cluster, address);
+    public void stopDiscovery(String namespace, InetSocketAddress address) throws HekateException {
+        log.info("Stopping seed nodes discovery [namespace={}, address={}]", namespace, address);
 
         cleanup();
     }
@@ -358,12 +358,12 @@ public class MulticastSeedNodeProvider implements SeedNodeProvider, JmxSupport<M
     }
 
     @Override
-    public void registerRemote(String cluster, InetSocketAddress node) throws HekateException {
+    public void registerRemote(String namespace, InetSocketAddress node) throws HekateException {
         // No-op.
     }
 
     @Override
-    public void unregisterRemote(String cluster, InetSocketAddress node) throws HekateException {
+    public void unregisterRemote(String namespace, InetSocketAddress node) throws HekateException {
         // No-op.
     }
 

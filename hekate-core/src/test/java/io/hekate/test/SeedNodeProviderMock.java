@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -30,28 +30,28 @@ public class SeedNodeProviderMock implements SeedNodeProvider {
     private volatile SeedNodeProvider delegate;
 
     @Override
-    public List<InetSocketAddress> findSeedNodes(String cluster) throws HekateException {
+    public List<InetSocketAddress> findSeedNodes(String namespace) throws HekateException {
         if (delegate != null) {
-            return delegate.findSeedNodes(cluster);
+            return delegate.findSeedNodes(namespace);
         }
 
-        List<InetSocketAddress> clusterNodes = nodes.get(cluster);
+        List<InetSocketAddress> clusterNodes = nodes.get(namespace);
 
         return clusterNodes != null ? new ArrayList<>(clusterNodes) : null;
     }
 
     @Override
-    public void startDiscovery(String cluster, InetSocketAddress node) throws HekateException {
+    public void startDiscovery(String namespace, InetSocketAddress node) throws HekateException {
         if (delegate != null) {
-            delegate.startDiscovery(cluster, node);
+            delegate.startDiscovery(namespace, node);
         }
 
-        List<InetSocketAddress> clusterNodes = nodes.get(cluster);
+        List<InetSocketAddress> clusterNodes = nodes.get(namespace);
 
         if (clusterNodes == null) {
             clusterNodes = new CopyOnWriteArrayList<>();
 
-            List<InetSocketAddress> existing = nodes.putIfAbsent(cluster, clusterNodes);
+            List<InetSocketAddress> existing = nodes.putIfAbsent(namespace, clusterNodes);
 
             if (existing != null) {
                 clusterNodes = existing;
@@ -69,15 +69,15 @@ public class SeedNodeProviderMock implements SeedNodeProvider {
     }
 
     @Override
-    public void stopDiscovery(String cluster, InetSocketAddress node) throws HekateException {
-        List<InetSocketAddress> clusterNodes = nodes.get(cluster);
+    public void stopDiscovery(String namespace, InetSocketAddress node) throws HekateException {
+        List<InetSocketAddress> clusterNodes = nodes.get(namespace);
 
         if (clusterNodes != null) {
             clusterNodes.remove(node);
         }
 
         if (delegate != null) {
-            delegate.stopDiscovery(cluster, node);
+            delegate.stopDiscovery(namespace, node);
         }
     }
 
@@ -87,16 +87,16 @@ public class SeedNodeProviderMock implements SeedNodeProvider {
     }
 
     @Override
-    public void registerRemote(String cluster, InetSocketAddress node) throws HekateException {
+    public void registerRemote(String namespace, InetSocketAddress node) throws HekateException {
         if (delegate != null) {
-            delegate.registerRemote(cluster, node);
+            delegate.registerRemote(namespace, node);
         }
     }
 
     @Override
-    public void unregisterRemote(String cluster, InetSocketAddress node) throws HekateException {
+    public void unregisterRemote(String namespace, InetSocketAddress node) throws HekateException {
         if (delegate != null) {
-            delegate.unregisterRemote(cluster, node);
+            delegate.unregisterRemote(namespace, node);
         }
     }
 

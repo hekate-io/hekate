@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -446,9 +446,9 @@ class NettyServer implements NetworkServer, NettyChannelSupport {
 
                                 delay = resolution.retryDelay();
                             }
-                        } catch (RuntimeException | Error e) {
+                        } catch (Throwable e) {
                             if (log.isErrorEnabled()) {
-                                log.error("Got an unexpected runtime error while notifying network server callback on failure.", e);
+                                log.error("Got an unexpected error while notifying network server callback on failure.", e);
                             }
                         }
                     }
@@ -476,9 +476,9 @@ class NettyServer implements NetworkServer, NettyChannelSupport {
                                         doStart(attempt + 1);
                                     }
                                 }
-                            } catch (RuntimeException | Error e) {
+                            } catch (Throwable e) {
                                 if (log.isErrorEnabled()) {
-                                    log.error("Got an unexpected runtime error during network server failover.", e);
+                                    log.error("Got an unexpected error during network server failover.", e);
                                 }
                             }
                         };

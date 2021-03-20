@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -102,7 +102,7 @@ class DefaultCoordinationProcess implements CoordinationProcess {
                     handler.initialize();
 
                     initFuture.complete(null);
-                } catch (RuntimeException | Error e) {
+                } catch (Throwable e) {
                     initFuture.completeExceptionally(e);
                 }
             });
@@ -123,8 +123,8 @@ class DefaultCoordinationProcess implements CoordinationProcess {
                         }
 
                         handler.terminate();
-                    } catch (RuntimeException | Error e) {
-                        log.error("Got an unexpected runtime error during coordination handler termination [process={}]", name, e);
+                    } catch (Throwable e) {
+                        log.error("Got an unexpected error during coordination handler termination [process={}]", name, e);
                     }
                 });
 
@@ -175,8 +175,8 @@ class DefaultCoordinationProcess implements CoordinationProcess {
                         try {
                             // Note we are using the captured context.
                             newCtx.coordinate();
-                        } catch (RuntimeException | Error e) {
-                            log.error("Got an unexpected runtime error during coordination [process={}]", name, e);
+                        } catch (Throwable e) {
+                            log.error("Got an unexpected error during coordination [process={}]", name, e);
                         }
                     });
                 }
@@ -223,7 +223,7 @@ class DefaultCoordinationProcess implements CoordinationProcess {
                             try {
                                 // Note we are using the captured context.
                                 localCtx.processMessage(msg);
-                            } catch (RuntimeException | Error e) {
+                            } catch (Throwable e) {
                                 log.error("Failed to process coordination request [message={}]", msg, e);
 
                                 reject(msg);
@@ -246,7 +246,7 @@ class DefaultCoordinationProcess implements CoordinationProcess {
                         try {
                             // Note we are using the captured context.
                             localCtx.processMessage(msg);
-                        } catch (RuntimeException | Error e) {
+                        } catch (Throwable e) {
                             log.error("Failed to process coordination request [message={}]", msg, e);
 
                             reject(msg);
@@ -300,8 +300,8 @@ class DefaultCoordinationProcess implements CoordinationProcess {
             async.execute(() -> {
                 try {
                     localCtx.cancel();
-                } catch (RuntimeException | Error e) {
-                    log.error("Got an unexpected runtime error while canceling coordination [process={}]", name, e);
+                } catch (Throwable e) {
+                    log.error("Got an unexpected error while canceling coordination [process={}]", name, e);
                 }
             });
         }

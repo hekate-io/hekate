@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -27,7 +27,6 @@ import io.hekate.cluster.seed.SeedNodeProvider;
 import io.hekate.cluster.seed.SeedNodeProviderGroup;
 import io.hekate.cluster.seed.SeedNodeProviderGroupConfig;
 import io.hekate.cluster.seed.SeedNodeProviderGroupPolicy;
-import io.hekate.cluster.split.SplitBrainAction;
 import io.hekate.cluster.split.SplitBrainDetector;
 import io.hekate.core.Hekate;
 import io.hekate.spring.bean.cluster.ClusterServiceBean;
@@ -68,9 +67,9 @@ import org.springframework.context.annotation.Lazy;
  * For example:
  * </p>
  * <ul>
+ * <li>{@link ClusterServiceFactory#setNamespace(String) 'hekate.cluster.namespace'}</li>
  * <li>{@link ClusterServiceFactory#setGossipInterval(long) 'hekate.cluster.gossip-interval'}</li>
  * <li>{@link ClusterServiceFactory#setSpeedUpGossipSize(int) 'hekate.cluster.speed-up-gossip-size'}</li>
- * <li>{@link ClusterServiceFactory#setSplitBrainAction(SplitBrainAction) 'hekate.cluster.split-brain-action'}</li>
  * <li>{@link ClusterServiceFactory#setSplitBrainCheckInterval(long)} 'hekate.cluster.split-brain-check-interval'}</li>
  * </ul>
  *

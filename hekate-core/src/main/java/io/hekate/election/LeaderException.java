@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -16,14 +16,14 @@
 
 package io.hekate.election;
 
-import io.hekate.core.HekateFutureException;
+import io.hekate.core.HekateException;
 
 /**
  * Failure of a leader election.
  *
  * @see ElectionService
  */
-public class LeaderException extends HekateFutureException {
+public class LeaderException extends HekateException {
     private static final long serialVersionUID = 1;
 
     /**
@@ -34,5 +34,10 @@ public class LeaderException extends HekateFutureException {
      */
     public LeaderException(String message, Throwable cause) {
         super(message, cause);
+    }
+
+    @Override
+    public HekateException forkFromAsync() {
+        return new LeaderException(getMessage(), this);
     }
 }

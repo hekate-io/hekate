@@ -7,6 +7,6 @@ in [Hekate.io](https://github.com/hekate-io/hekate) library.
  <dependency>
      <groupId>io.hekate</groupId>
      <artifactId>hekate-codec-fst</artifactId>
-     <version>3.10.0-SNAPSHOT</version>
+     <version>4.0.0</version>
  </dependency>
  ```

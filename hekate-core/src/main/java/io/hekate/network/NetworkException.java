@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -14,25 +14,39 @@
  * under the License.
  */
 
-package io.hekate.messaging;
+package io.hekate.network;
 
-import io.hekate.core.HekateFutureException;
+import io.hekate.core.HekateException;
+import io.hekate.core.HekateIoException;
 
 /**
- * Failure of an asynchronous messaging operation.
- *
- * @see MessagingService
+ * General networking error.
  */
-public class MessagingFutureException extends HekateFutureException {
+public class NetworkException extends HekateIoException {
     private static final long serialVersionUID = 1;
 
     /**
-     * Constructs new instance.
+     * Constructs a new instance.
      *
      * @param message Error message.
-     * @param cause Error cause.
      */
-    public MessagingFutureException(String message, Throwable cause) {
+
+    public NetworkException(String message) {
+        super(message);
+    }
+
+    /**
+     * Constructs a new instance.
+     *
+     * @param message Error message.
+     * @param cause Cause.
+     */
+    public NetworkException(String message, Throwable cause) {
         super(message, cause);
+    }
+
+    @Override
+    public HekateException forkFromAsync() {
+        return new NetworkException(getMessage(), this);
     }
 }

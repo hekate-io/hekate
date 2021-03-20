@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -19,9 +19,9 @@ package io.hekate.cluster.internal;
 import io.hekate.cluster.ClusterAcceptor;
 import io.hekate.cluster.ClusterAddress;
 import io.hekate.cluster.ClusterFilter;
-import io.hekate.cluster.ClusterJoinRejectedException;
 import io.hekate.cluster.ClusterNode;
 import io.hekate.cluster.ClusterNodeId;
+import io.hekate.cluster.ClusterRejectedJoinException;
 import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.cluster.ClusterServiceJmx;
@@ -49,7 +49,6 @@ import io.hekate.cluster.internal.gossip.GossipProtocol.UpdateBase;
 import io.hekate.cluster.internal.gossip.GossipProtocolCodec;
 import io.hekate.cluster.seed.SeedNodeProvider;
 import io.hekate.cluster.seed.multicast.MulticastSeedNodeProvider;
-import io.hekate.cluster.split.SplitBrainAction;
 import io.hekate.cluster.split.SplitBrainDetector;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
@@ -58,7 +57,6 @@ import io.hekate.core.HekateException;
 import io.hekate.core.internal.util.ArgAssert;
 import io.hekate.core.internal.util.ConfigCheck;
 import io.hekate.core.internal.util.HekateThreadFactory;
-import io.hekate.core.internal.util.Jvm;
 import io.hekate.core.jmx.JmxService;
 import io.hekate.core.jmx.JmxSupport;
 import io.hekate.core.report.ConfigReporter;
@@ -118,6 +116,8 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
     private static final String PROTOCOL_ID = "hekate.cluster";
 
+    private final String namespace;
+
     private final long gossipInterval;
 
     private final int speedUpGossipSize;
@@ -164,8 +164,6 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
     private ScheduledFuture<?> joinTask;
 
-    private String clusterName;
-
     private volatile InitializationContext ctx;
 
     private volatile GossipCommManager commMgr;
@@ -178,11 +176,13 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
         ConfigCheck check = ConfigCheck.get(ClusterServiceFactory.class);
 
         check.notNull(factory, "configuration");
+        check.notEmpty(factory.getNamespace(), "cluster name");
+        check.validSysName(factory.getNamespace(), "cluster name");
         check.positive(factory.getGossipInterval(), "gossip interval");
         check.notNull(factory.getFailureDetector(), "failure detector");
-        check.notNull(factory.getSplitBrainAction(), "split-brain action");
 
         // Basic properties.
+        this.namespace = factory.getNamespace();
         this.gossipInterval = factory.getGossipInterval();
         this.speedUpGossipSize = factory.getSpeedUpGossipSize();
         this.failureDetector = factory.getFailureDetector();
@@ -209,7 +209,6 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
         // Split-brain manager.
         splitBrain = new SplitBrainManager(
-            factory.getSplitBrainAction(),
             factory.getSplitBrainCheckInterval(),
             factory.getSplitBrainDetector()
         );
@@ -229,8 +228,6 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
     @Override
     public void resolve(DependencyContext ctx) {
-        clusterName = ctx.clusterName();
-
         net = ctx.require(NetworkService.class);
 
         jmx = ctx.optional(JmxService.class);
@@ -310,7 +307,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             );
 
             // Prepare seed node manager.
-            seedNodeMgr = new SeedNodeManager(ctx.clusterName(), seedNodeProvider);
+            seedNodeMgr = new SeedNodeManager(namespace, seedNodeProvider);
 
             // Prepare workers.
             gossipThread = Executors.newSingleThreadScheduledExecutor(new HekateThreadFactory("ClusterGossip"));
@@ -323,7 +320,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             GossipListener gossipListener = createGossipListener();
 
             // Prepare gossip manager.
-            gossipMgr = new GossipManager(ctx.clusterName(), localNode, speedUpGossipSize, failureDetector, gossipListener);
+            gossipMgr = new GossipManager(namespace, localNode, speedUpGossipSize, failureDetector, gossipListener);
 
             // Prepare gossip communication manager.
             NetworkConnector<GossipProtocol> connector = net.connector(PROTOCOL_ID);
@@ -351,27 +348,11 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             });
 
             // Prepare split-brain manager.
-            splitBrain.initialize(localNode, serviceThread, new SplitBrainManager.Callback() {
-                @Override
-                public void rejoin() {
-                    initCtx.rejoin();
-                }
-
-                @Override
-                public void terminate() {
-                    initCtx.terminate();
-                }
-
-                @Override
-                public void kill() {
-                    Jvm.exit(250);
-                }
-
-                @Override
-                public void error(Throwable t) {
-                    fatalError(t);
-                }
-            });
+            splitBrain.initialize(
+                localNode,
+                serviceThread,
+                this::onFatalError
+            );
 
             // Prepare metrics sink.
             metrics = new ClusterMetricsSink(ctx.metrics());
@@ -397,6 +378,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
     @Override
     public void report(ConfigReporter report) {
         report.section("cluster", cs -> {
+            cs.value("namespace", namespace);
             cs.value("gossip-interval", gossipInterval);
             cs.value("speed-up-gossip-size", speedUpGossipSize);
             cs.value("failure-detector", failureDetector);
@@ -411,7 +393,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             runOnServiceThread(() -> {
                 if (guard.isInitialized()) {
                     if (log.isInfoEnabled()) {
-                        log.info("Joining cluster [cluster={}, local-node={}]", ctx.clusterName(), ctx.localNode());
+                        log.info("Joining cluster [namespace={}, local-node={}]", namespace, ctx.localNode());
                     }
 
                     // Prepare a repeatable join task to re-run in case of a recoverable failure during the join process.
@@ -450,10 +432,10 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                                     return;
                                 }
 
-                                // Start seed nodes discovery.
+                                // Start discovery of seed nodes.
                                 try {
                                     localSeedNodeMgr.startDiscovery(address.socket());
-                                } catch (HekateException e) {
+                                } catch (Exception e) {
                                     // Try to schedule a new join attempt.
                                     boolean scheduled = guard.withReadLockIfInitialized(() -> {
                                         log.error("Failed to start seed nodes discovery "
@@ -493,11 +475,11 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                                     // Make sure that failure detector is terminated.
                                     try {
                                         failureDetector.terminate();
-                                    } catch (RuntimeException | Error e) {
+                                    } catch (Throwable e) {
                                         log.error("Got an unexpected runtime error during the failure detector termination.", e);
                                     }
                                 }
-                            } catch (HekateException | RuntimeException | Error e) {
+                            } catch (Throwable e) {
                                 ctx.terminate(e);
                             }
                         }
@@ -511,9 +493,9 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
     @Override
     public void leaveAsync() {
-        guard.withReadLockIfInitialized(() -> {
-            runOnGossipThread(this::doLeave);
-        });
+        guard.withReadLockIfInitialized(() ->
+            runOnGossipThread(this::doLeave)
+        );
     }
 
     @Override
@@ -700,8 +682,8 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
     }
 
     @Override
-    public String clusterName() {
-        return clusterName;
+    public String namespace() {
+        return namespace;
     }
 
     @Override
@@ -725,10 +707,6 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
     public SplitBrainDetector splitBrainDetector() {
         return splitBrain.detector();
-    }
-
-    public SplitBrainAction splitBrainAction() {
-        return splitBrain.action();
     }
 
     public List<ClusterAcceptor> acceptors() {
@@ -765,7 +743,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             }
 
             // Schedule the asynchronous join task.
-            joinTask = scheduleOn(serviceThread, DefaultClusterService.this::doJoin, 0, gossipInterval);
+            joinTask = scheduleOn(serviceThread, 0, gossipInterval, DefaultClusterService.this::doJoin);
         });
     }
 
@@ -788,8 +766,8 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                         }
                     })
                 );
-            } catch (HekateException e) {
-                log.error("Failed to obtain seed nodes ...will wait for {} ms before trying another attempt.", gossipInterval, e);
+            } catch (Exception e) {
+                log.error("Failed to find seed nodes ...will wait for {} ms before making another attempt.", gossipInterval, e);
             }
         });
     }
@@ -907,8 +885,8 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
                                     send(reply);
                                 });
-                            } catch (RuntimeException | Error e) {
-                                fatalError(e);
+                            } catch (Throwable e) {
+                                onFatalError(e);
                             }
                         }, gossipThread);
                     } else {
@@ -991,7 +969,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             @Override
             public void onJoinReject(ClusterAddress rejectedBy, String reason) {
                 if (ctx.state() == Hekate.State.JOINING) {
-                    ctx.terminate(new ClusterJoinRejectedException(reason, rejectedBy));
+                    ctx.terminate(new ClusterRejectedJoinException(reason, rejectedBy));
                 }
             }
 
@@ -1037,8 +1015,8 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
                                         startPeriodicSplitBrainChecks();
                                     });
-                                } catch (RuntimeException | Error e) {
-                                    fatalError(e);
+                                } catch (Throwable e) {
+                                    onFatalError(e);
                                 }
                             }
                         }, gossipThread);
@@ -1117,8 +1095,8 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                                 if (!event.removed().isEmpty()) {
                                     splitBrain.checkAsync();
                                 }
-                            } catch (RuntimeException | Error e) {
-                                fatalError(e);
+                            } catch (Throwable e) {
+                                onFatalError(e);
                             }
                         });
                     }
@@ -1179,7 +1157,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                     case JOINING:
                     case SYNCHRONIZING:
                     case UP: {
-                        splitBrain.applyAction();
+                        splitBrain.notifyOnSplitBrain();
 
                         break;
                     }
@@ -1215,10 +1193,8 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
             private void startPeriodicSplitBrainChecks() {
                 if (splitBrain.hasDetector() && splitBrain.checkInterval() > 0) {
-                    scheduleOn(
-                        serviceThread,
-                        () -> guard.withReadLockIfInitialized(splitBrain::checkAsync),
-                        0, splitBrain.checkInterval()
+                    scheduleOn(serviceThread, 0, splitBrain.checkInterval(), () ->
+                        guard.withReadLockIfInitialized(splitBrain::checkAsync)
                     );
                 }
             }
@@ -1271,8 +1247,8 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
         gossipThread.execute(() -> {
             try {
                 task.run();
-            } catch (RuntimeException | Error e) {
-                fatalError(e);
+            } catch (Throwable e) {
+                onFatalError(e);
             }
         });
     }
@@ -1281,33 +1257,31 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
         serviceThread.execute(() -> {
             try {
                 task.run();
-            } catch (RuntimeException | Error e) {
-                fatalError(e);
+            } catch (Throwable e) {
+                onFatalError(e);
             }
         });
     }
 
     private ScheduledFuture<?> scheduleOn(ScheduledExecutorService executor, Runnable task, long intervalMs) {
-        return scheduleOn(executor, task, intervalMs, intervalMs);
+        return scheduleOn(executor, intervalMs, intervalMs, task);
     }
 
-    private ScheduledFuture<?> scheduleOn(ScheduledExecutorService executor, Runnable task, long delay, long intervalMs) {
+    private ScheduledFuture<?> scheduleOn(ScheduledExecutorService executor, long delay, long intervalMs, Runnable task) {
         return executor.scheduleWithFixedDelay(() -> {
             try {
                 task.run();
-            } catch (RuntimeException | Error e) {
-                fatalError(e);
+            } catch (Throwable e) {
+                onFatalError(e);
             }
         }, delay, intervalMs, TimeUnit.MILLISECONDS);
     }
 
-    private void fatalError(Throwable e) {
-        log.error("Got an unexpected runtime error.", e);
-
+    private void onFatalError(Throwable e) {
         InitializationContext localCtx = this.ctx;
 
         if (localCtx != null) {
-            localCtx.terminate(e);
+            localCtx.hekate().fatalError(e);
         }
     }
 

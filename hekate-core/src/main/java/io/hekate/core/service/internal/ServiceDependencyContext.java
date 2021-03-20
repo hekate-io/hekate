@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -89,11 +89,6 @@ class ServiceDependencyContext implements DependencyContext {
     @Override
     public String nodeName() {
         return manager.nodeName();
-    }
-
-    @Override
-    public String clusterName() {
-        return manager.clusterName();
     }
 
     @Override

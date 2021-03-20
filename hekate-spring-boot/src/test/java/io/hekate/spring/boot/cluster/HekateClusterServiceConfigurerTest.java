@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -29,7 +29,6 @@ import io.hekate.cluster.seed.SeedNodeProviderGroupPolicy;
 import io.hekate.cluster.seed.StaticSeedNodeProvider;
 import io.hekate.cluster.seed.fs.FsSeedNodeProvider;
 import io.hekate.cluster.seed.multicast.MulticastSeedNodeProvider;
-import io.hekate.cluster.split.SplitBrainAction;
 import io.hekate.cluster.split.SplitBrainDetector;
 import io.hekate.core.Hekate;
 import io.hekate.spring.boot.EnableHekate;
@@ -138,6 +137,18 @@ public class HekateClusterServiceConfigurerTest extends HekateAutoConfigurerTest
     }
 
     @Test
+    public void testNamespace() {
+        registerAndRefresh(
+            new String[]{
+                "hekate.cluster.namespace=test-cluster",
+            },
+            DefaultTestConfig.class
+        );
+
+        assertEquals("test-cluster", getNode().cluster().namespace());
+    }
+
+    @Test
     public void testClusterListener() {
         registerAndRefresh(ClusterListenerTestConfig.class);
 
@@ -171,17 +182,6 @@ public class HekateClusterServiceConfigurerTest extends HekateAutoConfigurerTest
         List<ClusterAcceptor> acceptors = getNode().get(DefaultClusterService.class).acceptors();
 
         assertTrue(acceptors.stream().anyMatch(v -> v instanceof JoinAcceptorsTestConfig.TestAcceptor));
-    }
-
-    @Test
-    public void testSplitBrainDetector() {
-        registerAndRefresh(new String[]{"hekate.cluster.split-brain-action=REJOIN"}, SplitBrainTestConfig.class);
-
-        SplitBrainDetector detector = getNode().get(DefaultClusterService.class).splitBrainDetector();
-
-        assertNotNull(detector);
-        assertSame(SplitBrainTestConfig.TestDetector.class, detector.getClass());
-        assertSame(SplitBrainAction.REJOIN, getNode().get(DefaultClusterService.class).splitBrainAction());
     }
 
     @Test

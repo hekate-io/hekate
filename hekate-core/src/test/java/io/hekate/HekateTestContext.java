@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -16,7 +16,7 @@
 
 package io.hekate;
 
-import io.hekate.core.resource.ResourceLoadingException;
+import io.hekate.core.resource.ResourceLoadException;
 import io.hekate.core.resource.ResourceService;
 import io.hekate.network.NetworkSslConfig;
 import io.hekate.network.NetworkTransportType;
@@ -69,7 +69,7 @@ public class HekateTestContext {
         InputStream stream = Thread.currentThread().getContextClassLoader().getResourceAsStream(path);
 
         if (stream == null) {
-            throw new ResourceLoadingException("Resource not found [path=" + path + ']');
+            throw new ResourceLoadException("Resource not found [path=" + path + ']');
         }
 
         return stream;

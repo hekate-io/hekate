@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2020 The Hekate Project
+  ~ Copyright 2021 The Hekate Project
   ~
   ~ The Hekate Project licenses this file to you under the Apache License,
   ~ version 2.0 (the "License"); you may not use this file except in compliance
@@ -23,7 +23,6 @@
 
     <bean id="hekate" class="io.hekate.spring.bean.HekateSpringBootstrap">
         <property name="nodeName" value="my-node"/>
-        <property name="clusterName" value="my-cluster"/>
         <!-- Node roles. -->
         <property name="roles">
             <list>
@@ -60,6 +59,7 @@
                 </bean>
                 <!-- Cluster service. -->
                 <bean class="io.hekate.cluster.ClusterServiceFactory">
+                    <property name="namespace" value="my-cluster"/>
                     <property name="gossipInterval" value="1000"/>
                     <property name="speedUpGossipSize" value="100"/>
                     <property name="seedNodeProvider">

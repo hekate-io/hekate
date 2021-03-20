@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -17,7 +17,7 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.messaging.MessagingChannel;
-import io.hekate.messaging.MessagingFutureException;
+import io.hekate.messaging.MessagingRemoteException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
@@ -73,7 +73,7 @@ public class RetryGenericPolicyTest extends MessagingServiceTestBase {
 
         failures.set(4);
 
-        expect(MessagingFutureException.class, () ->
+        expect(MessagingRemoteException.class, () ->
             sender.request("test")
         );
     }
@@ -86,7 +86,7 @@ public class RetryGenericPolicyTest extends MessagingServiceTestBase {
 
         failures.set(4);
 
-        expect(MessagingFutureException.class, () ->
+        expect(MessagingRemoteException.class, () ->
             sender.send("test")
         );
     }
@@ -99,7 +99,7 @@ public class RetryGenericPolicyTest extends MessagingServiceTestBase {
 
         failures.set(4);
 
-        expect(MessagingFutureException.class, () ->
+        expect(MessagingRemoteException.class, () ->
             sender.subscribe("test")
         );
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -18,7 +18,6 @@ package io.hekate.cluster.seed.multicast;
 
 import io.hekate.HekateNodeTestBase;
 import io.hekate.HekateTestProps;
-import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.core.internal.HekateTestNode;
 import io.hekate.core.jmx.JmxService;
 import io.hekate.core.jmx.JmxServiceFactory;
@@ -49,7 +48,7 @@ public class MulticastSeedNodeProviderJmxTest extends HekateNodeTestBase {
 
         HekateTestNode node = createNode(boot -> {
             boot.withService(JmxServiceFactory.class);
-            boot.withService(ClusterServiceFactory.class, cluster ->
+            boot.withCluster(cluster ->
                 cluster.withSeedNodeProvider(seedNodeProvider)
             );
         }).join();

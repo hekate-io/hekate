@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Hekate Project
+ * Copyright 2021 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -17,8 +17,6 @@
 package io.hekate.messaging.internal;
 
 import io.hekate.messaging.MessagingChannelClosedException;
-import io.hekate.messaging.MessagingFutureException;
-import io.hekate.messaging.MessagingServiceFactory;
 import io.hekate.messaging.intercept.ServerMessageInterceptor;
 import io.hekate.messaging.intercept.ServerReceiveContext;
 import io.hekate.messaging.loadbalance.EmptyTopologyException;
@@ -94,7 +92,7 @@ public class MessagingServiceTest extends MessagingServiceTestBase {
 
             sender.leave();
 
-            MessagingFutureException err = expect(MessagingFutureException.class, () ->
+            MessagingChannelClosedException err = expect(MessagingChannelClosedException.class, () ->
                 get(sender.channel().forNode(receiver.nodeId()).newRequest("fail").submit())
             );
 
@@ -186,7 +184,7 @@ public class MessagingServiceTest extends MessagingServiceTestBase {
     public void testGlobalInterceptors() throws Exception {
         createChannel(
             c -> c.withReceiver(msg -> msg.reply(msg.payload() + "-OK")),
-            boot -> boot.withService(MessagingServiceFactory.class, msg ->
+            boot -> boot.withMessaging(msg ->
                 msg.withGlobalInterceptor(new ServerMessageInterceptor<Object>() {
                     @Override
                     public void interceptServerReceive(ServerReceiveContext<Object> ctx) {
