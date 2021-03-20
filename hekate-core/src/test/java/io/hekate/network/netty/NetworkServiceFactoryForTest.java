@@ -23,10 +23,6 @@ import io.hekate.network.internal.NettyNetworkService;
 public class NetworkServiceFactoryForTest extends NetworkServiceFactory {
     private NettySpyForTest spy;
 
-    public NettySpyForTest getSpy() {
-        return spy;
-    }
-
     public void setSpy(NettySpyForTest spy) {
         this.spy = spy;
     }
