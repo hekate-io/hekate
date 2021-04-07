@@ -39,7 +39,12 @@ public class HostReachabilityDetectorTest extends HekateTestBase {
 
     @Test
     public void testValid() throws Exception {
-        HostReachabilityDetector detector = new HostReachabilityDetector(localhost, 2000);
+        HostReachabilityDetector detector = new HostReachabilityDetector(localhost, 2000) {
+            @Override
+            boolean isReachable(InetAddress address, int timeout) throws IOException {
+                return true;
+            }
+        };
 
         assertTrue(detector.isValid(newNode()));
     }
