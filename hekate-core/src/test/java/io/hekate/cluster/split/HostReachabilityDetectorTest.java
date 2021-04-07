@@ -18,6 +18,7 @@ package io.hekate.cluster.split;
 
 import io.hekate.HekateTestBase;
 import io.hekate.core.report.DefaultConfigReporter;
+import java.io.IOException;
 import java.net.InetAddress;
 import org.junit.Test;
 
@@ -36,14 +37,19 @@ public class HostReachabilityDetectorTest extends HekateTestBase {
 
     @Test
     public void testInvalid() throws Exception {
-        HostReachabilityDetector detector = new HostReachabilityDetector("some.invalid.host", 2000);
+        HostReachabilityDetector detector = new HostReachabilityDetector("some.invalid.host", 2123) {
+            @Override
+            boolean isReachable(InetAddress address, int timeout) throws IOException {
+                return false;
+            }
+        };
 
         assertFalse(detector.isValid(newNode()));
     }
 
     @Test
     public void testConfigReport() throws Exception {
-        HostReachabilityDetector detector = new HostReachabilityDetector(InetAddress.getLocalHost().getHostAddress(), 2000);
+        HostReachabilityDetector detector = new HostReachabilityDetector(InetAddress.getLocalHost().getHostAddress());
 
         assertEquals(
             NL
