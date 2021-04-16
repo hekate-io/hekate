@@ -108,9 +108,7 @@ public class HostReachabilityDetector implements SplitBrainDetector, ConfigRepor
     @Override
     public boolean isValid(ClusterNode localNode) {
         try {
-            InetAddress address = InetAddress.getByName(host);
-
-            boolean reachable = address.isReachable(timeout);
+            boolean reachable = isReachable(InetAddress.getByName(host), timeout);
 
             if (reachable) {
                 if (DEBUG) {
@@ -130,6 +128,11 @@ public class HostReachabilityDetector implements SplitBrainDetector, ConfigRepor
         }
 
         return false;
+    }
+
+    // Package level for testing purposes.
+    boolean isReachable(InetAddress address, int timeout) throws IOException {
+        return address.isReachable(timeout);
     }
 
     @Override
