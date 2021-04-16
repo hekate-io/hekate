@@ -25,7 +25,6 @@ import io.hekate.network.NetworkServiceFactory;
 import io.hekate.spring.boot.EnableHekate;
 import io.hekate.spring.boot.HekateAutoConfigurerTestBase;
 import io.hekate.spring.boot.network.InjectConnector;
-import java.net.InetAddress;
 import java.net.UnknownHostException;
 import org.junit.Test;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -69,7 +68,7 @@ public class NetworkInjectionJavadocTest extends HekateAutoConfigurerTestBase {
         @Bean
         public SeedNodeProvider seedNodeProvider() throws UnknownHostException {
             return new StaticSeedNodeProvider(new StaticSeedNodeProviderConfig()
-                .withAddress(InetAddress.getLocalHost().getHostAddress() + ':' + NetworkServiceFactory.DEFAULT_PORT)
+                .withAddress(localhost().getHostAddress() + ':' + NetworkServiceFactory.DEFAULT_PORT)
             );
         }
     }

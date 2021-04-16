@@ -23,7 +23,6 @@ import io.hekate.lock.DistributedLock;
 import io.hekate.network.NetworkServiceFactory;
 import io.hekate.spring.boot.HekateAutoConfigurerTestBase;
 import io.hekate.spring.boot.lock.InjectLock;
-import java.net.InetAddress;
 import java.net.UnknownHostException;
 import org.junit.Test;
 import org.springframework.context.annotation.Bean;
@@ -49,7 +48,7 @@ public class LockInjectionJavadocTest extends HekateAutoConfigurerTestBase {
         @Bean
         public SeedNodeProvider seedNodeProvider() throws UnknownHostException {
             return new StaticSeedNodeProvider(new StaticSeedNodeProviderConfig()
-                .withAddress(InetAddress.getLocalHost().getHostAddress() + ':' + NetworkServiceFactory.DEFAULT_PORT)
+                .withAddress(localhost().getHostAddress() + ':' + NetworkServiceFactory.DEFAULT_PORT)
             );
         }
     }

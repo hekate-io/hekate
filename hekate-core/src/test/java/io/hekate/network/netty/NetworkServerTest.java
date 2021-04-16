@@ -601,12 +601,12 @@ public class NetworkServerTest extends NetworkTestBase {
             List<NetworkEndpoint<?>> connectedP2 = server.clients("protocol-2");
 
             assertEquals(2, connectedP1.size());
-            assertTrue(connectedP1.stream().anyMatch(e -> e.remoteAddress().equals(p1c1.localAddress())));
-            assertTrue(connectedP1.stream().anyMatch(e -> e.remoteAddress().equals(p1c2.localAddress())));
+            assertTrue(connectedP1.stream().anyMatch(e -> e.remoteAddress().getPort() == p1c1.localAddress().getPort()));
+            assertTrue(connectedP1.stream().anyMatch(e -> e.remoteAddress().getPort() == p1c2.localAddress().getPort()));
 
             assertEquals(2, connectedP2.size());
-            assertTrue(connectedP2.stream().anyMatch(e -> e.remoteAddress().equals(p2c1.localAddress())));
-            assertTrue(connectedP2.stream().anyMatch(e -> e.remoteAddress().equals(p2c2.localAddress())));
+            assertTrue(connectedP2.stream().anyMatch(e -> e.remoteAddress().getPort() == p2c1.localAddress().getPort()));
+            assertTrue(connectedP2.stream().anyMatch(e -> e.remoteAddress().getPort() == p2c2.localAddress().getPort()));
 
             // Disconnect 1 client from each protocol.
             get(p1c1.disconnect());
@@ -620,10 +620,10 @@ public class NetworkServerTest extends NetworkTestBase {
             connectedP2 = server.clients("protocol-2");
 
             assertEquals(1, connectedP1.size());
-            assertTrue(connectedP1.stream().anyMatch(e -> e.remoteAddress().equals(p1c2.localAddress())));
+            assertTrue(connectedP1.stream().anyMatch(e -> e.remoteAddress().getPort() == p1c2.localAddress().getPort()));
 
             assertEquals(1, connectedP2.size());
-            assertTrue(connectedP2.stream().anyMatch(e -> e.remoteAddress().equals(p2c2.localAddress())));
+            assertTrue(connectedP2.stream().anyMatch(e -> e.remoteAddress().getPort() == p2c2.localAddress().getPort()));
 
             // Disconnect server endpoints.
             get(connectedP1.get(0).disconnect());

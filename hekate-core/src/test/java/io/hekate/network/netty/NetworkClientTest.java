@@ -42,7 +42,6 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import java.io.IOException;
 import java.net.ConnectException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.util.IdentityHashMap;
@@ -79,7 +78,7 @@ public class NetworkClientTest extends NetworkTestBase {
             assertSame(NetworkClient.State.DISCONNECTED, client.state());
 
             try {
-                client.connect(new InetSocketAddress(InetAddress.getLocalHost(), 15001), callback).get();
+                client.connect(new InetSocketAddress(localhost(), 15001), callback).get();
 
                 fail("Error was expected");
             } catch (ExecutionException e) {
@@ -103,7 +102,7 @@ public class NetworkClientTest extends NetworkTestBase {
 
             assertSame(NetworkClient.State.DISCONNECTED, client.state());
 
-            NetworkFuture<String> future = client.connect(new InetSocketAddress(InetAddress.getLocalHost(), 15001), callback);
+            NetworkFuture<String> future = client.connect(new InetSocketAddress(localhost(), 15001), callback);
 
             NetworkSendCallbackMock<String> sendCallback = new NetworkSendCallbackMock<>();
 
