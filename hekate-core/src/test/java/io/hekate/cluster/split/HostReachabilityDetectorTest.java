@@ -18,7 +18,11 @@ package io.hekate.cluster.split;
 
 import io.hekate.HekateTestBase;
 import io.hekate.core.report.DefaultConfigReporter;
+import io.hekate.test.HekateTestError;
+import io.hekate.util.format.ToString;
+import java.io.IOException;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import org.junit.Test;
 
 import static io.hekate.core.internal.util.Utils.NL;
@@ -27,23 +31,51 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class HostReachabilityDetectorTest extends HekateTestBase {
+    private final String localhost;
+
+    public HostReachabilityDetectorTest() throws UnknownHostException {
+        localhost = localhost().getHostAddress();
+    }
+
     @Test
     public void testValid() throws Exception {
-        HostReachabilityDetector detector = new HostReachabilityDetector(InetAddress.getLocalHost().getHostAddress(), 2000);
+        HostReachabilityDetector detector = new HostReachabilityDetector(localhost, 2000) {
+            @Override
+            boolean isReachable(InetAddress address, int timeout) throws IOException {
+                return true;
+            }
+        };
 
         assertTrue(detector.isValid(newNode()));
     }
 
     @Test
-    public void testInvalid() throws Exception {
-        HostReachabilityDetector detector = new HostReachabilityDetector("some.invalid.host", 2000);
+    public void testNotReachable() throws Exception {
+        HostReachabilityDetector detector = new HostReachabilityDetector(localhost, 2123) {
+            @Override
+            boolean isReachable(InetAddress address, int timeout) throws IOException {
+                return false;
+            }
+        };
+
+        assertFalse(detector.isValid(newNode()));
+    }
+
+    @Test
+    public void testReachabilityCheckFailure() throws Exception {
+        HostReachabilityDetector detector = new HostReachabilityDetector(localhost, 2123) {
+            @Override
+            boolean isReachable(InetAddress address, int timeout) throws IOException {
+                throw new IOException(HekateTestError.MESSAGE);
+            }
+        };
 
         assertFalse(detector.isValid(newNode()));
     }
 
     @Test
     public void testConfigReport() throws Exception {
-        HostReachabilityDetector detector = new HostReachabilityDetector(InetAddress.getLocalHost().getHostAddress(), 2000);
+        HostReachabilityDetector detector = new HostReachabilityDetector(localhost);
 
         assertEquals(
             NL
@@ -52,5 +84,12 @@ public class HostReachabilityDetectorTest extends HekateTestBase {
                 + "    timeout: " + detector.timeout() + NL,
             DefaultConfigReporter.report(detector)
         );
+    }
+
+    @Test
+    public void testToString() {
+        HostReachabilityDetector detector = new HostReachabilityDetector(localhost);
+
+        assertEquals(ToString.format(detector), detector.toString());
     }
 }

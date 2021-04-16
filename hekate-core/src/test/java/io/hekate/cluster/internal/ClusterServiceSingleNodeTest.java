@@ -299,7 +299,7 @@ public class ClusterServiceSingleNodeTest extends HekateNodeParamTestBase {
 
     @Test
     public void testJoinWithInvalidSeedNode() throws Exception {
-        InetAddress addr = InetAddress.getLocalHost();
+        InetAddress addr = localhost();
         String host = addr instanceof Inet6Address ? '[' + addr.getHostAddress() + ']' : addr.getHostAddress();
 
         int port = newTcpPort();
