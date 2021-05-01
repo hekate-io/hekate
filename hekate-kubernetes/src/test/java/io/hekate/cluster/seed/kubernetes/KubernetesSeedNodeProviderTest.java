@@ -104,7 +104,7 @@ public class KubernetesSeedNodeProviderTest extends HekateTestBase {
             "Kubernetes seed node discovery failure [namespace=test, container-port-name=hekate]",
             () -> new KubernetesSeedNodeProvider(new KubernetesSeedNodeProviderConfig()
                 .withTrustCertificates(false) // <-- Must cause failure.
-                .withMasterUrl(server.getClient().getMasterUrl().toExternalForm())
+                .withMasterUrl(masterUrl())
                 .withNamespace(server.getClient().getNamespace())
             ).findSeedNodes(CLUSTER)
         );
@@ -128,7 +128,7 @@ public class KubernetesSeedNodeProviderTest extends HekateTestBase {
     private KubernetesSeedNodeProvider createProvider(String portName) {
         return new KubernetesSeedNodeProvider(new KubernetesSeedNodeProviderConfig()
             .withContainerPortName(portName)
-            .withMasterUrl(server.getClient().getMasterUrl().toExternalForm())
+            .withMasterUrl(masterUrl())
             .withNamespace(server.getClient().getNamespace())
             .withTrustCertificates(true)
         );
@@ -145,5 +145,9 @@ public class KubernetesSeedNodeProviderTest extends HekateTestBase {
             .build();
 
         server.getClient().pods().create(pod);
+    }
+
+    private String masterUrl() {
+        return "https://" + localhost() + ':' + server.getClient().getMasterUrl().getPort();
     }
 }
