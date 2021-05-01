@@ -30,13 +30,14 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static io.hekate.core.internal.util.Utils.NL;
+import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class KubernetesSeedNodeProviderTest extends HekateTestBase {
     public static final String CLUSTER = "ignore";
 
-    private final KubernetesServer server = new KubernetesServer(true, true);
+    private final KubernetesServer server = new KubernetesServer(true, true, localhost(), 0, emptyList());
 
     @Before
     public void setUp() {
