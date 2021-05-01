@@ -37,7 +37,7 @@ import static org.junit.Assert.assertTrue;
 public class KubernetesSeedNodeProviderTest extends HekateTestBase {
     public static final String CLUSTER = "ignore";
 
-    private final KubernetesServer server = new KubernetesServer(true, true, localhost(), 0, emptyList());
+    private final KubernetesServer server = new KubernetesServer(false, true, localhost(), 0, emptyList());
 
     @Before
     public void setUp() {
@@ -103,8 +103,7 @@ public class KubernetesSeedNodeProviderTest extends HekateTestBase {
         expectExactMessage(HekateException.class,
             "Kubernetes seed node discovery failure [namespace=test, container-port-name=hekate]",
             () -> new KubernetesSeedNodeProvider(new KubernetesSeedNodeProviderConfig()
-                .withTrustCertificates(false) // <-- Must cause failure.
-                .withMasterUrl(masterUrl())
+                .withMasterUrl(masterUrl(server.getClient().getMasterUrl().getPort() + 1)) // <-- Must cause failure.
                 .withNamespace(server.getClient().getNamespace())
             ).findSeedNodes(CLUSTER)
         );
@@ -148,6 +147,10 @@ public class KubernetesSeedNodeProviderTest extends HekateTestBase {
     }
 
     private String masterUrl() {
-        return "https://" + localhost() + ':' + server.getClient().getMasterUrl().getPort();
+        return masterUrl(server.getClient().getMasterUrl().getPort());
+    }
+
+    private String masterUrl(int port) {
+        return "http://" + localhost() + ':' + port;
     }
 }
