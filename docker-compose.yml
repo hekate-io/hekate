@@ -38,12 +38,14 @@ services:
       POSTGRES_PASSWORD: hekate-test
   etcd:
     container_name: hekate-test-etcd
-    image: quay.io/coreos/etcd:v3.3.9
+    image: bitnami/etcd:3.5.0
     ports:
       - "2479:2379"
-    command: etcd -name=hekate-etcd -advertise-client-urls http://etcd:2379 -listen-client-urls http://0.0.0.0:2379
+    environment:
+      ETCD_LISTEN_CLIENT_URLS: http://0.0.0.0:2379
+      ALLOW_NONE_AUTHENTICATION: 'yes'
   consul:
     container_name: hekate-test-consul
-    image: consul:1.7.2
+    image: consul:1.8.14
     ports:
       - "8501:8500"

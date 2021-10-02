@@ -21,8 +21,8 @@ import java.util.ArrayList;
 import java.util.List;
 import org.junit.Test;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 
 import static java.util.Collections.synchronizedList;
@@ -32,8 +32,8 @@ public class HekateDeferredJoinTest extends HekateAutoConfigurerTestBase {
     static class TestListener implements Hekate.LifecycleListener {
         private final List<String> events = synchronizedList(new ArrayList<>());
 
-        @EventListener(ApplicationReadyEvent.class)
-        public void onAppReady() {
+        @EventListener(ContextRefreshedEvent.class)
+        public void onAppReady(Object evt) {
             events.add("app-ready");
         }
 
