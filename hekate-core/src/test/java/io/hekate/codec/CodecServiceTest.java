@@ -24,9 +24,7 @@ import io.hekate.cluster.ClusterNodeId;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.cluster.internal.DefaultClusterHash;
 import io.hekate.cluster.internal.DefaultClusterTopology;
-import io.hekate.codec.fst.FstCodecFactory;
 import io.hekate.codec.internal.DefaultCodecService;
-import io.hekate.codec.kryo.KryoCodecFactory;
 import io.hekate.util.format.ToString;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -64,10 +62,8 @@ public class CodecServiceTest extends HekateTestBase {
 
     @Parameters(name = "{index}:{0}")
     public static Collection<CodecFactory<Object>> getCodecFactories() {
-        return asList(
-            new JdkCodecFactory<>(),
-            new KryoCodecFactory<>(),
-            new FstCodecFactory<>()
+        return singletonList(
+            new JdkCodecFactory<>()
         );
     }
 

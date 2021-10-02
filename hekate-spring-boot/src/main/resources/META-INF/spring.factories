@@ -1,6 +1,4 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-  io.hekate.spring.boot.codec.HekateKryoCodecConfigurer,\
-  io.hekate.spring.boot.codec.HekateFstCodecConfigurer,\
   io.hekate.spring.boot.codec.HekateJdkCodecConfigurer,\
   io.hekate.spring.boot.core.jmx.HekateJmxServiceConfigurer,\
   io.hekate.spring.boot.network.HekateNetworkServiceConfigurer,\

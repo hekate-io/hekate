@@ -21,7 +21,7 @@
     <groupId>io.hekate</groupId>
     <artifactId>hekate-parent</artifactId>
     <packaging>pom</packaging>
-    <version>4.0.0</version>
+    <version>4.1.0-SNAPSHOT</version>
 
     <name>Hekate.io</name>
     <description>Java library for cluster communications and computing.</description>
@@ -62,16 +62,12 @@
 
         <!-- Production dependencies.-->
         <spring.boot.version>2.5.5</spring.boot.version>
-        <kryo.version>4.0.2</kryo.version>
-        <kryo.serializers.version>0.43</kryo.serializers.version>
-        <fst.version>2.57</fst.version>
         <zookeeper.curator.version>5.2.0</zookeeper.curator.version>
         <jetcd.version>0.5.10</jetcd.version>
         <consul.client.version>1.5.3</consul.client.version>
         <kubernetes.client.version>5.6.0</kubernetes.client.version>
         <jclouds.version>2.4.0</jclouds.version>
         <aws.sdk.version>1.12.43</aws.sdk.version>
-        <classgraph.version>4.8.113</classgraph.version>
 
         <!-- Maven plugins.-->
         <maven.compiler.plugin.version>3.8.0</maven.compiler.plugin.version>
@@ -105,25 +101,6 @@
                 <version>${spring.boot.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
-            </dependency>
-
-            <!-- Serialization. -->
-            <dependency>
-                <groupId>com.esotericsoftware</groupId>
-                <artifactId>kryo-shaded</artifactId>
-                <version>${kryo.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>de.javakaffee</groupId>
-                <artifactId>kryo-serializers</artifactId>
-                <version>${kryo.serializers.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>de.ruedigermoeller</groupId>
-                <artifactId>fst</artifactId>
-                <version>${fst.version}</version>
             </dependency>
 
             <!-- Apache JClouds. -->
@@ -226,26 +203,6 @@
                         <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-
-            <!-- Utilities. -->
-            <dependency>
-                <groupId>io.github.classgraph</groupId>
-                <artifactId>classgraph</artifactId>
-                <version>${classgraph.version}</version>
-            </dependency>
-
-            <!-- Conflicting dependencies of Kryo and FST.  -->
-            <dependency>
-                <groupId>org.objenesis</groupId>
-                <artifactId>objenesis</artifactId>
-                <version>2.6</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.javassist</groupId>
-                <artifactId>javassist</artifactId>
-                <version>3.28.0-GA</version>
             </dependency>
 
             <!-- Conflicting dependencies of Etcd Client.  -->
@@ -735,10 +692,6 @@
                                     ${project.parent.basedir}/../hekate-spring/src/test/resources/javadoc;
                                     ${project.parent.basedir}/../hekate-spring-boot/src/test/java/io/hekate/javadoc;
                                     ${project.parent.basedir}/../hekate-spring-boot/src/test/resources/javadoc;
-                                    ${project.parent.basedir}/../hekate-codec-kryo/src/test/java/io/hekate/javadoc;
-                                    ${project.parent.basedir}/../hekate-codec-kryo/src/test/resources/javadoc;
-                                    ${project.parent.basedir}/../hekate-codec-fst/src/test/java/io/hekate/javadoc;
-                                    ${project.parent.basedir}/../hekate-codec-fst/src/test/resources/javadoc;
                                     ${project.parent.basedir}/../hekate-kubernetes/src/test/resources/javadoc;
                                 </argument>
                             </arguments>

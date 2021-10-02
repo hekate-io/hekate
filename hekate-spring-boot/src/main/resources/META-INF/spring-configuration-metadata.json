@@ -776,14 +776,6 @@
         {
           "value": "jdk",
           "description": "JDK default serialization."
-        },
-        {
-          "value": "fst",
-          "description": "FST serialization (see https://github.com/RuedigerMoeller/fast-serialization).\n Requires 'io.hekate:hekate-codec-fst' to be on the classpath."
-        },
-        {
-          "value": "kryo",
-          "description": "Kryo serialization (see https://github.com/EsotericSoftware/kryo).\n Requires 'io.hekate:hekate-codec-kryo' to be on the classpath."
         }
       ]
     },

@@ -69,22 +69,6 @@ fast and flexible logging library for Java, which can be obtained at:
   * HOMEPAGE:
     * http://logback.qos.ch/
 
-This product optionally depends on 'Kryo', the fast and efficient object
-graph serialization framework for Java, which can be obtained at:
-
-  * LICENSE:
-    * license/kryo.license.txt (BSD License)
-  * HOMEPAGE:
-    * https://github.com/EsotericSoftware/kryo
-
-This product optionally depends on 'Fast-Serialization', the Fast JDK-compatible
-serialization for Java, which can be obtained at:
-
-  * LICENSE:
-    * license/fst.license.txt (Apache License 2.0)
-  * HOMEPAGE:
-    * https://github.com/RuedigerMoeller/fast-serialization
-
 This product optionally depends on 'AWS SDK for Java', which can be
 obtained at:
 

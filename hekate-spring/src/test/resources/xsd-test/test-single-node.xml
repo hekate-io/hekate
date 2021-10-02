@@ -42,7 +42,7 @@
         </property-providers>
 
         <default-codec>
-            <s:bean class="io.hekate.codec.fst.FstCodecFactory"/>
+            <s:bean class="io.hekate.codec.JdkCodecFactory"/>
         </default-codec>
 
         <jmx domain="foo.bar">

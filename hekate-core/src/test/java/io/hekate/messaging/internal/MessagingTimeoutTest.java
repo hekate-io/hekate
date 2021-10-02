@@ -233,7 +233,7 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
                 c.withInterceptor(new ClientMessageInterceptor<String>() {
                     @Override
                     public void interceptClientSend(ClientSendContext ctx) {
-                        sleep(50);
+                        sleep(100);
                     }
                 });
             }

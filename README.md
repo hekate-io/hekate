@@ -15,15 +15,15 @@ Open source [Apache License v2.0](http://www.apache.org/licenses/)
 - **Distributed Service Discovery**
     - Decentralized Service Discovery (based on performance-optimized [Gossip](https://en.wikipedia.org/wiki/Gossip_protocol) protocol)
     - Easy integration into existing infrastructure
-        - Clouds (based on [Apache JClouds](https://jclouds.apache.org))
+        - Clouds (based on Apache JClouds)
             - Amazon EC2 and S3
             - Google Cloud Storage and Compute Engine
             - Azure Blob Storage
             - etc
-        - [Kubernetes](https://kubernetes.io)    
-        - [ZooKeeper](https://zookeeper.apache.org)
-        - [Etcd](https://github.com/coreos/etcd)
-        - [Consul](https://github.com/hashicorp/consul)
+        - Kubernetes    
+        - ZooKeeper
+        - Etcd
+        - Consul
         - IP Multicast
         - Shared Database (JDBC-based)
         - Shared File System
@@ -39,9 +39,7 @@ Open source [Apache License v2.0](http://www.apache.org/licenses/)
     - Back Pressure Policies
     - Error Retry Policies
     - Pluggable Serialization
-        - [Kryo](https://github.com/EsotericSoftware/kryo)
-        - [FST](https://github.com/RuedigerMoeller/fast-serialization)
-        - [Protocol Buffers](https://developers.google.com/protocol-buffers/) (_work in progress_)
+        - Google Protocol Buffers (_work in progress_)
         - JDK Serialization
         - Manual Serialization
         
@@ -65,10 +63,9 @@ Open source [Apache License v2.0](http://www.apache.org/licenses/)
     - Configurable Lock Groups (aka Lock Regions)
                 
 - **Spring Boot/Framework Support (optional)**
-    - [Spring Boot](https://spring.io/projects/spring-boot) Auto-configurations and @Annotations
+    - Spring Boot Auto-configurations and @Annotations
     - Spring-compliant Beans
-    - [Spring XML Schema](https://docs.spring.io/spring/docs/4.3.x/spring-framework-reference/html/xsd-configuration.html) 
-      to Simplify Configuration
+    - Spring XML Schema
 
 - **Metrics**
     - Internal Metrics Recording and Publishing via [Micrometer.io](https://micrometer.io/) 
@@ -78,7 +75,7 @@ Open source [Apache License v2.0](http://www.apache.org/licenses/)
 
 ## Documentation
 
-- [Javadocs](http://javadoc.io/doc/io.hekate/hekate-all/) (Follow ~~the White Rabbit~~ `[« start here]` marks).
+- [Javadocs](http://javadoc.io/doc/io.hekate/hekate-all/) (Follow ~~the White Rabbit~~ `[« start here]` marks)
 - Reference Guide (coming soon...) 
 - [Spring Boot Properties Reference](http://javadoc.io/doc/io.hekate/hekate-all/latest/spring-boot.properties.txt)
 
@@ -130,7 +127,7 @@ Please see the **[hekate-io/hekate-examples](https://github.com/hekate-io/hekate
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-spring-boot</artifactId>
-    <version>4.0.0</version>
+    <version>4.1.0-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -139,7 +136,7 @@ Please see the **[hekate-io/hekate-examples](https://github.com/hekate-io/hekate
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-spring</artifactId>
-    <version>4.0.0</version>
+    <version>4.1.0-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -148,7 +145,7 @@ Please see the **[hekate-io/hekate-examples](https://github.com/hekate-io/hekate
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-core</artifactId>
-    <version>4.0.0</version>
+    <version>4.1.0-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -161,11 +158,6 @@ Please see the **[hekate-io/hekate-examples](https://github.com/hekate-io/hekate
         - [hekate-zookeeper](hekate-zookeeper/) - Integration with [Apache ZooKeeper](https://zookeeper.apache.org) 
         - [hekate-etcd](hekate-etcd/) - Integration with [Etcd](https://github.com/etcd-io/etcd) 
         - [hekate-consul](hekate-consul/) - Integration with [Consul](https://github.com/hashicorp/consul) 
-    - **Serialization Codecs**
-        - [hekate-codec-kryo](hekate-codec-kryo/README.md) - Integration with [Kryo](https://github.com/EsotericSoftware/kryo) for data 
-          serialization.
-        - [hekate-codec-fst](hekate-codec-fst/README.md) - Integration with [FST](https://github.com/RuedigerMoeller/fast-serialization) for 
-          data serialization.
 
 ## How to build
 

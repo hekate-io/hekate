@@ -25,15 +25,13 @@
     <parent>
         <groupId>io.hekate</groupId>
         <artifactId>hekate-parent</artifactId>
-        <version>4.0.0</version>
+        <version>4.1.0-SNAPSHOT</version>
         <relativePath>hekate-parent</relativePath>
     </parent>
 
     <modules>
         <module>hekate-build-util</module>
         <module>hekate-core</module>
-        <module>hekate-codec-kryo</module>
-        <module>hekate-codec-fst</module>
         <module>hekate-spring</module>
         <module>hekate-spring-boot</module>
         <module>hekate-zookeeper</module>

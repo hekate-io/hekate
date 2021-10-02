@@ -251,8 +251,8 @@ public class HekateConfigurer {
      * @param plugins All {@link Plugin}s found in the application context.
      * @param listeners All {@link LifecycleListener}s found in the application context.
      * @param metrics Metrics registry.
-     * @param codec Default codec factory.
      * @param fatalErrorPolicy Fatal error handling policy.
+     * @param defaultCodec Default codec factory.
      */
     public HekateConfigurer(
         Optional<List<PropertyProvider>> propertyProviders,
@@ -261,13 +261,13 @@ public class HekateConfigurer {
         Optional<List<LifecycleListener>> listeners,
         Optional<MeterRegistry> metrics,
         Optional<HekateFatalErrorPolicy> fatalErrorPolicy,
-        @Qualifier("default") Optional<CodecFactory<Object>> codec
+        @Qualifier("default") Optional<CodecFactory<Object>> defaultCodec
     ) {
         this.services = services.orElse(null);
         this.plugins = plugins.orElse(null);
         this.propertyProviders = propertyProviders.orElse(null);
         this.listeners = listeners.orElse(null);
-        this.codec = codec;
+        this.codec = defaultCodec;
         this.metrics = metrics.orElse(null);
         this.fatalErrorPolicy = fatalErrorPolicy;
     }
