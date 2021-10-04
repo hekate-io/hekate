@@ -194,6 +194,7 @@ public abstract class HekateTestBase {
         KNOWN_THREAD_PREFIXES.add("JMX ".toLowerCase());
         KNOWN_THREAD_PREFIXES.add("main".toLowerCase());
         KNOWN_THREAD_PREFIXES.add("process reaper".toLowerCase());
+        KNOWN_THREAD_PREFIXES.add("Notification Thread".toLowerCase());
 
         // Maven surefire plugin threads.
         KNOWN_THREAD_PREFIXES.add("surefire-".toLowerCase());

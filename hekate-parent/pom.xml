@@ -73,17 +73,16 @@
         <maven.compiler.plugin.version>3.8.0</maven.compiler.plugin.version>
         <maven.javadoc.plugin.version>3.2.0</maven.javadoc.plugin.version>
         <maven.jar.plugin.version>3.1.0</maven.jar.plugin.version>
-        <maven.exec.plugin.version>1.6.0</maven.exec.plugin.version>
+        <maven.exec.plugin.version>3.0.0</maven.exec.plugin.version>
         <maven.flatten.plugin.version>1.0.1</maven.flatten.plugin.version>
         <maven.antrun.plugin.version>1.8</maven.antrun.plugin.version>
         <maven.git-commit-id.plugin.version>2.2.0</maven.git-commit-id.plugin.version>
         <maven.build.helper.plugin.version>3.0.0</maven.build.helper.plugin.version>
         <maven.surefire.plugin.version>2.22.0</maven.surefire.plugin.version>
         <maven.jacoco.plugin.version>0.8.6</maven.jacoco.plugin.version>
-        <maven.enforcer.plugin.version>1.4.1</maven.enforcer.plugin.version>
+        <maven.enforcer.plugin.version>3.0.0</maven.enforcer.plugin.version>
         <maven.source.plugin.version>3.0.1</maven.source.plugin.version>
         <maven.deploy.plugin.version>2.8.2</maven.deploy.plugin.version>
-        <maven.spotbugs.plugin.version>4.0.4</maven.spotbugs.plugin.version>
         <maven.checkstyle.plugin.version>3.1.0</maven.checkstyle.plugin.version>
         <maven.checkstyle.plugin.lib.version>8.29</maven.checkstyle.plugin.lib.version>
         <maven.clean.plugin.version>3.0.0</maven.clean.plugin.version>
@@ -212,6 +211,25 @@
                 <version>3.17.2</version>
             </dependency>
 
+            <dependency>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>animal-sniffer-annotations</artifactId>
+                <version>1.19</version>
+            </dependency>
+
+            <!-- Conflicting dependencies of Apache JClouds.  -->
+            <dependency>
+                <groupId>com.sun.istack</groupId>
+                <artifactId>istack-commons-runtime</artifactId>
+                <version>3.0.12</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.osgi</groupId>
+                <artifactId>org.osgi.core</artifactId>
+                <version>6.0.0</version>
+            </dependency>
+
             <!-- Conflicting dependencies of Consul Client.  -->
             <dependency>
                 <groupId>com.google.guava</groupId>
@@ -235,6 +253,13 @@
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>okhttp</artifactId>
                 <version>3.12.1</version>
+            </dependency>
+
+            <!-- Conflicting dependencies of Apache Zookeeper.  -->
+            <dependency>
+                <groupId>log4j</groupId>
+                <artifactId>log4j</artifactId>
+                <version>1.2.17</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -261,24 +286,6 @@
                             <rulesets>
                                 <ruleset>${project.parent.basedir}/../pmd/rules.xml</ruleset>
                             </rulesets>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>check</id>
-                                <phase>prepare-package</phase>
-                                <goals>
-                                    <goal>check</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-
-                    <plugin>
-                        <groupId>com.github.spotbugs</groupId>
-                        <artifactId>spotbugs-maven-plugin</artifactId>
-                        <version>${maven.spotbugs.plugin.version}</version>
-                        <configuration>
-                            <excludeFilterFile>${project.parent.basedir}/../findbugs/exclude.xml</excludeFilterFile>
                         </configuration>
                         <executions>
                             <execution>
