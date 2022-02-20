@@ -123,7 +123,7 @@ public final class CodeSamplesProcessorMain {
                         path = path.substring(0, splitIdx).trim();
                     }
 
-                    if (path.isEmpty() || (section != null && section.isEmpty())) {
+                    if (path.isEmpty() || section != null && section.isEmpty()) {
                         throw new IllegalStateException("Failed to parse 'source' directive: " + s);
                     }
 

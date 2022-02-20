@@ -18,7 +18,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        java: [8, 11]
+        java: [8, 11, 17]
 
     runs-on: ${{matrix.os}}
 
@@ -56,7 +56,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
-        java: [8, 11]
+        java: [8, 11, 17]
         transport: [NIO, EPOLL]
         ssl: [NO, JDK, OPEN_SSL]
         exclude:

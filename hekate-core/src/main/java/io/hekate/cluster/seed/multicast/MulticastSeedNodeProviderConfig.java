@@ -28,7 +28,7 @@ public class MulticastSeedNodeProviderConfig {
     public static final String DEFAULT_GROUP = "224.1.2.12";
 
     /** Default value (={@value}) for {@link #setPort(int)}. */
-    public static final int DEFAULT_PORT = 45454;
+    public static final int DEFAULT_PORT = 45_454;
 
     /** Default value (={@value}) for {@link #setTtl(int)}. */
     public static final int DEFAULT_TTL = 3;

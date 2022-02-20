@@ -47,7 +47,7 @@ import java.util.List;
  */
 public class NetworkServiceFactory implements ServiceFactory<NetworkService> {
     /** Default value (={@value}) for {@link #setPort(int)}. */
-    public static final int DEFAULT_PORT = 10012;
+    public static final int DEFAULT_PORT = 10_012;
 
     /** Default value (={@value}) for {@link #setPortRange(int)}. */
     public static final int DEFAULT_PORT_RANGE = 100;

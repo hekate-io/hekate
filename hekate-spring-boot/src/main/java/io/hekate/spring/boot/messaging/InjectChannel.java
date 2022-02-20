@@ -55,8 +55,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
 @Target({ElementType.METHOD, ElementType.FIELD, ElementType.PARAMETER, ElementType.ANNOTATION_TYPE})
 public @interface InjectChannel {
     /**
-     * Specifies the {@link MessagingChannelConfig#setName(String) name} of a {@link MessagingChannel} that should be injected (see {@link
-     * MessagingService#channel(String)}).
+     * Specifies the {@link MessagingChannelConfig#setName(String) name} of a {@link MessagingChannel} that should be injected
+     * (see {@link MessagingService#channel(String)}).
      *
      * @return Name of a {@link MessagingChannel}.
      */

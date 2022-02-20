@@ -55,8 +55,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
 @Target({ElementType.METHOD, ElementType.FIELD, ElementType.PARAMETER, ElementType.ANNOTATION_TYPE})
 public @interface InjectLockRegion {
     /**
-     * Specifies the {@link LockRegionConfig#setName(String) name} of a {@link LockRegion} that should be injected (see {@link
-     * LockService#region(String)}).
+     * Specifies the {@link LockRegionConfig#setName(String) name} of a {@link LockRegion} that should be injected
+     * (see {@link LockService#region(String)}).
      *
      * @return Name of a {@link LockRegion}.
      */

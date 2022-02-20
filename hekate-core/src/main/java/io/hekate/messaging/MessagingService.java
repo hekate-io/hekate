@@ -291,8 +291,8 @@ import java.util.List;
  * <h3>Thread Affinity</h3>
  * <p>
  * Besides providing a hint to the {@link LoadBalancer}, specifying an affinity key also instructs the messaging channel to process all
- * messages of the same affinity key on the same thread. This applies both to sending a message (see {@link SendCallback} or {@link
- * RequestCallback}) and to receiving a message (see {@link MessageReceiver#receive(Message)}).
+ * messages of the same affinity key on the same thread. This applies both to sending a message (see {@link SendCallback} or
+ * {@link RequestCallback}) and to receiving a message (see {@link MessageReceiver#receive(Message)}).
  * </p>
  *
  * <a id="cluster_topology_filtering"></a>

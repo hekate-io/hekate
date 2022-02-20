@@ -65,8 +65,8 @@ public @interface InjectLock {
     String name();
 
     /**
-     * Specifies the {@link LockRegionConfig#setName(String) name} of a {@link LockRegion} that should be used to get the lock (see {@link
-     * LockService#region(String)}).
+     * Specifies the {@link LockRegionConfig#setName(String) name} of a {@link LockRegion} that should be used to get the lock
+     * (see {@link LockService#region(String)}).
      *
      * @return Name of a {@link LockRegion}.
      */

@@ -20,9 +20,12 @@ import io.hekate.HekateTestBase;
 import org.junit.Test;
 
 import static io.hekate.core.internal.util.Utils.camelCase;
+import static io.hekate.core.internal.util.Utils.hasText;
+import static io.hekate.core.internal.util.Utils.nullOrTrim;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class UtilsTest extends HekateTestBase {
@@ -57,5 +60,18 @@ public class UtilsTest extends HekateTestBase {
         expect(UnsupportedOperationException.class, () -> {
             Utils.nullSafeImmutableCopy(asList(1, 2, 3)).add(4);
         });
+    }
+
+    @Test
+    public void testHasText() {
+        assertFalse(hasText(nullOrTrim(null)));
+        assertFalse(hasText(nullOrTrim("")));
+        assertFalse(hasText(nullOrTrim("   ")));
+        assertFalse(hasText(nullOrTrim(" \n  ")));
+
+        assertTrue(hasText(nullOrTrim("a")));
+        assertTrue(hasText(nullOrTrim("  a")));
+        assertTrue(hasText(nullOrTrim("a  ")));
+        assertTrue(hasText(nullOrTrim("  a  ")));
     }
 }

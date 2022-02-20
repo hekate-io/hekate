@@ -110,7 +110,7 @@ public final class ConfigCheck {
     public void notEmpty(String value, String component) throws HekateConfigurationException {
         notNull(value, component);
 
-        that(!value.trim().isEmpty(), component + " must be a non-empty string.");
+        that(Utils.hasText(value), component + " must be a non-empty string.");
     }
 
     public void notEmpty(Stream<?> stream, String component) throws HekateConfigurationException {

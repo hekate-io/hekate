@@ -435,12 +435,16 @@ class NettyClientContext<T> {
             // Unwrap error.
             Optional<Throwable> err = rawError.map(NettyErrorUtils::unwrap);
 
-            if (debug) {
-                if (oldState == CONNECTING && err.isPresent()) {
+            if (oldState == CONNECTING && err.isPresent()) {
+                if (debug) {
                     log.debug("Failed to connect [to={}]", id, err.get());
-                } else if (oldState == CONNECTED && err.isPresent()) {
+                }
+            } else if (oldState == CONNECTED && err.isPresent()) {
+                if (debug) {
                     log.debug("Disconnected on error [from={}, state={}]", id, oldState, err.get());
-                } else {
+                }
+            } else {
+                if (debug) {
                     log.debug("Disconnected [from={}, state={}]", id, oldState);
                 }
             }

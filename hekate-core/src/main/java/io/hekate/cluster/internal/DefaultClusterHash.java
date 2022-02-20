@@ -50,11 +50,12 @@ public class DefaultClusterHash implements ClusterHash, Serializable {
 
         Arrays.sort(sorted);
 
+        int idx = 0;
         int len = sorted.length;
 
         byte[] buf = new byte[len * Long.BYTES * 2];
 
-        for (int i = 0, idx = 0; i < len; i++) {
+        for (int i = 0; i < len; i++) {
             ClusterNodeId id = sorted[i].id();
 
             idx = setBytes(id.hiBits(), idx, buf);

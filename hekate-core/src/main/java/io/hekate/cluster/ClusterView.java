@@ -33,8 +33,8 @@ import java.util.function.Predicate;
  *
  * <p>
  * Filtering can be done by calling {@link ClusterView#filter(ClusterNodeFilter)} method on the {@link ClusterView} interface. The
- * resulting view will contain only those nodes that match the specified {@link ClusterNodeFilter}. Filtering is also applied to all {@link
- * ClusterEvent}s that are received by {@link ClusterEventListener}s registered to this view.
+ * resulting view will contain only those nodes that match the specified {@link ClusterNodeFilter}. Filtering is also applied to all
+ * {@link ClusterEvent}s that are received by {@link ClusterEventListener}s registered to this view.
  * </p>
  *
  * <p>

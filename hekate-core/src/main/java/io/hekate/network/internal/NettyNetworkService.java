@@ -187,7 +187,7 @@ public class NettyNetworkService implements NetworkService, NetworkServiceManage
 
         ConfigCheck check = ConfigCheck.get(NetworkServiceFactory.class);
 
-        check.range(factory.getPort(), 0, 65535, "port");
+        check.range(factory.getPort(), 0, 65_535, "port");
         check.notNull(factory.getTransport(), "transport");
         check.notNull(factory.getHostSelector(), "address selector");
         check.positive(factory.getNioThreads(), "NIO thread pool size");

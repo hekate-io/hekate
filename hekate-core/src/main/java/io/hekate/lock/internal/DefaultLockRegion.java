@@ -955,10 +955,12 @@ class DefaultLockRegion implements LockRegion {
         }
 
         msg.reply(response, err -> {
-            if (DEBUG) {
-                if (err == null) {
+            if (err == null) {
+                if (DEBUG) {
                     log.debug("Successfully sent lock migration response [response={}]", response);
-                } else {
+                }
+            } else {
+                if (DEBUG) {
                     log.debug("Failed to send lock migration response [response={}, cause={}]", response, err.toString());
                 }
             }
@@ -971,10 +973,12 @@ class DefaultLockRegion implements LockRegion {
         }
 
         msg.reply(response, err -> {
-            if (DEBUG) {
-                if (err == null) {
+            if (err == null) {
+                if (DEBUG) {
                     log.debug("Successfully sent lock response [response={}]", response);
-                } else {
+                }
+            } else {
+                if (DEBUG) {
                     log.debug("Failed to send lock response [response={}, cause={}]", response, err.toString());
                 }
             }

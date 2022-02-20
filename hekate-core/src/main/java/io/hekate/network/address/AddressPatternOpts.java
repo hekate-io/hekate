@@ -96,7 +96,7 @@ final class AddressPatternOpts {
         String ipNotMatch = null;
         String exactAddress = null;
 
-        if (!pattern.equals(ANY)) {
+        if (!ANY.equals(pattern)) {
             //////////////////////////////////////////////////////////////////
             // 1) Any address.
             //////////////////////////////////////////////////////////////////

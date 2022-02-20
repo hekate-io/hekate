@@ -172,8 +172,6 @@
 
         <module name="StringLiteralEquality"/>
 
-        <module name="UnnecessaryParentheses"/>
-
         <module name="UnnecessarySemicolonInTryWithResources"/>
 
         <module name="UnnecessarySemicolonInEnumeration"/>
@@ -215,8 +213,7 @@
         <module name="MissingJavadocPackage"/>
 
         <module name="JavadocMethod">
-            <property name="scope" value="protected"/>
-            <property name="validateThrows" value="true"/>
+            <property name="accessModifiers" value="public, protected"/>
         </module>
 
         <module name="MissingJavadocMethod">
