@@ -27,16 +27,11 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Set up JDK
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v2
         with:
           java-version: ${{matrix.java}}
-
-      - name: Cache Maven packages
-        uses: actions/cache@v1
-        with:
-          path: ~/.m2
-          key: ${{runner.os}}-m2-${{hashFiles('**/pom.xml')}}
-          restore-keys: ${{runner.os}}-m2
+          distribution: adopt
+          cache: 'maven'
 
       - name: Build
         run: './mvnw clean install -B -DskipTests=true'
@@ -99,20 +94,15 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Set up JDK
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v2
         with:
           java-version: ${{matrix.java}}
+          distribution: adopt
+          cache: 'maven'
 
       - name: Start docker-compose stack
         run: docker-compose up -d
         if: ${{runner.os != 'Windows'}}
-
-      - name: Cache Maven packages
-        uses: actions/cache@v1
-        with:
-          path: ~/.m2
-          key: ${{runner.os}}-m2-${{hashFiles('**/pom.xml')}}
-          restore-keys: ${{runner.os}}-m2
 
       # Test on Linux (exclusive with Windows).
       - name: Run Tests
