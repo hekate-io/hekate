@@ -55,13 +55,13 @@ jobs:
         transport: [NIO, EPOLL]
         ssl: [NO, JDK, OPEN_SSL]
         exclude:
-          # Exclude SSL on windows.
+          # Exclude SSL on Windows.
           - os: windows-latest
             ssl: JDK
           - os: windows-latest
             ssl: OPEN_SSL
 
-          # Exclude EPOLL on windows.
+          # Exclude EPOLL on Windows.
           - os: windows-latest
             transport: EPOLL
 
