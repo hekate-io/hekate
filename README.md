@@ -70,7 +70,7 @@ Open source [Apache License v2.0](http://www.apache.org/licenses/)
 - **Metrics**
     - Internal Metrics Recording and Publishing via [Micrometer.io](https://micrometer.io/) 
 
-- **Raft-based Replicated State Machines (_planned_)**
+- **Raft-based Replicated State Machines (_work in progress_)**
 
 
 ## Documentation
@@ -163,7 +163,7 @@ Please see the **[hekate-io/hekate-examples](https://github.com/hekate-io/hekate
 
 ### Software requirements:
 
- - Latest stable [Java SDK](https://adoptopenjdk.net/) (8+)
+ - Latest stable [Java SDK](https://adoptopenjdk.net/) (8, 11, 17)
  - Latest stable [Docker](https://www.docker.com) (required for tests only)
 
 
@@ -181,6 +181,8 @@ Please see the **[hekate-io/hekate-examples](https://github.com/hekate-io/hekate
   - run `./mvnw clean package`
   
 ## Release History
+
+ - v.4.1.0 (3-Apr-2022) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.4.1.0)]
 
  - v.4.0.0 (20-Mar-2021) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.4.0.0)]
 
