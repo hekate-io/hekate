@@ -94,6 +94,8 @@ class GossipSeedNodesSate {
 
     private static final Logger log = LoggerFactory.getLogger(GossipSeedNodesSate.class);
 
+    private final Set<InetSocketAddress> inflight = new HashSet<>();
+
     private final InetSocketAddress localAddress;
 
     private List<SeedNodeState> seeds;
@@ -126,10 +128,15 @@ class GossipSeedNodesSate {
     }
 
     public InetSocketAddress nextSeed() {
+        return nextSeed(true);
+    }
+
+    public InetSocketAddress nextSeed(boolean trackInflight) {
         // TODO: Prefer RETRY nodes if already tried all nodes.
 
         if (lastTried != null) {
             lastTried = seeds.stream()
+                .filter(s -> !inflight.contains(s.address()))
                 .filter(s -> s.status() != Status.BAN && !s.address().equals(localAddress) && compare(s.address(), lastTried) > 0)
                 .findFirst()
                 .map(SeedNodeState::address)
@@ -138,19 +145,30 @@ class GossipSeedNodesSate {
 
         if (lastTried == null) {
             lastTried = seeds.stream()
+                .filter(s -> !inflight.contains(s.address()))
                 .filter(s -> s.status() != Status.BAN && !s.address().equals(localAddress))
                 .findFirst()
                 .map(SeedNodeState::address)
                 .orElse(null);
         }
 
+        if (trackInflight && lastTried != null) {
+            inflight.add(lastTried);
+        }
+
         return lastTried;
+    }
+
+    public void onSendComplete(InetSocketAddress seed) {
+        inflight.remove(seed);
     }
 
     public void update(List<InetSocketAddress> newSeeds) {
         Set<InetSocketAddress> uniqueAddresses = new HashSet<>(newSeeds);
 
         uniqueAddresses.add(localAddress);
+
+        inflight.retainAll(uniqueAddresses);
 
         this.seeds = uniqueAddresses.stream()
             // Preserve state of previously checked addresses.

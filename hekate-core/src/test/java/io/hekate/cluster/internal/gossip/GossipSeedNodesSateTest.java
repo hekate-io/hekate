@@ -36,7 +36,7 @@ public class GossipSeedNodesSateTest extends HekateTestBase {
         GossipSeedNodesSate s = new GossipSeedNodesSate(newSocketAddress(1), emptyList());
 
         assertTrue(s.isSelfJoin());
-        assertNull(s.nextSeed());
+        assertNull(s.nextSeed(false));
     }
 
     @Test
@@ -53,8 +53,31 @@ public class GossipSeedNodesSateTest extends HekateTestBase {
 
         repeat(3, i -> {
             for (InetSocketAddress addr : seeds) {
+                assertEquals(addr, s.nextSeed(false));
+            }
+        });
+    }
+
+    @Test
+    public void testNextSeedInflight() throws Exception {
+        List<InetSocketAddress> seeds = new ArrayList<>();
+
+        seeds.add(newSocketAddress(1));
+        seeds.add(newSocketAddress(2));
+        seeds.add(newSocketAddress(3));
+
+        GossipSeedNodesSate s = new GossipSeedNodesSate(newSocketAddress(1000), seeds);
+
+        assertFalse(s.isSelfJoin());
+
+        repeat(3, i -> {
+            for (InetSocketAddress addr : seeds) {
                 assertEquals(addr, s.nextSeed());
             }
+
+            assertNull(s.nextSeed());
+
+            seeds.forEach(s::onSendComplete);
         });
     }
 
@@ -72,7 +95,7 @@ public class GossipSeedNodesSateTest extends HekateTestBase {
 
         repeat(3, i -> {
             for (InetSocketAddress addr : seeds) {
-                assertEquals(addr, s.nextSeed());
+                assertEquals(addr, s.nextSeed(false));
             }
         });
 
@@ -80,13 +103,13 @@ public class GossipSeedNodesSateTest extends HekateTestBase {
 
         s.update(seeds);
 
-        assertEquals(seeds.get(seeds.size() - 1), s.nextSeed());
+        assertEquals(seeds.get(seeds.size() - 1), s.nextSeed(false));
 
         seeds.add(newSocketAddress(1));
 
         s.update(seeds);
 
-        assertEquals(seeds.get(seeds.size() - 1), s.nextSeed());
+        assertEquals(seeds.get(seeds.size() - 1), s.nextSeed(false));
     }
 
     @Test
@@ -103,7 +126,7 @@ public class GossipSeedNodesSateTest extends HekateTestBase {
 
         repeat(3, i -> {
             for (InetSocketAddress addr : seeds) {
-                assertEquals(addr, s.nextSeed());
+                assertEquals(addr, s.nextSeed(false));
             }
         });
 
@@ -111,13 +134,13 @@ public class GossipSeedNodesSateTest extends HekateTestBase {
 
         s.update(seeds);
 
-        assertEquals(seeds.get(0), s.nextSeed());
+        assertEquals(seeds.get(0), s.nextSeed(false));
 
         seeds.remove(seeds.get(seeds.size() - 1));
 
         s.update(seeds);
 
-        assertEquals(seeds.get(0), s.nextSeed());
+        assertEquals(seeds.get(0), s.nextSeed(false));
     }
 
     @Test
@@ -130,14 +153,14 @@ public class GossipSeedNodesSateTest extends HekateTestBase {
 
         GossipSeedNodesSate s = new GossipSeedNodesSate(newSocketAddress(1000), seeds);
 
-        assertEquals(seeds.get(0), s.nextSeed());
-        assertEquals(seeds.get(1), s.nextSeed());
+        assertEquals(seeds.get(0), s.nextSeed(false));
+        assertEquals(seeds.get(1), s.nextSeed(false));
 
         seeds.remove(1);
 
         s.update(seeds);
 
-        assertEquals(seeds.get(0), s.nextSeed());
+        assertEquals(seeds.get(0), s.nextSeed(false));
     }
 
     @Test
@@ -154,13 +177,13 @@ public class GossipSeedNodesSateTest extends HekateTestBase {
 
         repeat(3, i -> {
             for (InetSocketAddress addr : seeds) {
-                assertEquals(addr, s.nextSeed());
+                assertEquals(addr, s.nextSeed(false));
             }
 
             seeds.forEach(s::onReject);
 
             for (InetSocketAddress addr : seeds) {
-                assertEquals(addr, s.nextSeed());
+                assertEquals(addr, s.nextSeed(false));
             }
         });
     }
@@ -187,7 +210,7 @@ public class GossipSeedNodesSateTest extends HekateTestBase {
 
         repeat(3, i -> {
             for (InetSocketAddress addr : seeds) {
-                assertEquals(addr, s.nextSeed());
+                assertEquals(addr, s.nextSeed(false));
             }
 
             seeds.stream()
@@ -195,7 +218,7 @@ public class GossipSeedNodesSateTest extends HekateTestBase {
                 .forEach(s::onReject);
 
             for (InetSocketAddress addr : seeds) {
-                assertEquals(addr, s.nextSeed());
+                assertEquals(addr, s.nextSeed(false));
             }
         });
     }
@@ -211,7 +234,7 @@ public class GossipSeedNodesSateTest extends HekateTestBase {
         GossipSeedNodesSate s = new GossipSeedNodesSate(newSocketAddress(1000), seeds);
 
         for (InetSocketAddress addr : seeds) {
-            assertEquals(addr, s.nextSeed());
+            assertEquals(addr, s.nextSeed(false));
         }
 
         seeds.forEach(seed -> s.onFailure(seed, TEST_ERROR));
@@ -230,7 +253,7 @@ public class GossipSeedNodesSateTest extends HekateTestBase {
         GossipSeedNodesSate s = new GossipSeedNodesSate(newSocketAddress(1000), seeds);
 
         for (InetSocketAddress addr : seeds) {
-            assertEquals(addr, s.nextSeed());
+            assertEquals(addr, s.nextSeed(false));
         }
 
         seeds.forEach(s::onBan);
@@ -249,7 +272,7 @@ public class GossipSeedNodesSateTest extends HekateTestBase {
         GossipSeedNodesSate s = new GossipSeedNodesSate(newSocketAddress(1), seeds);
 
         for (InetSocketAddress addr : seeds) {
-            assertEquals(addr, s.nextSeed());
+            assertEquals(addr, s.nextSeed(false));
         }
 
         seeds.forEach(s::onReject);

@@ -136,6 +136,14 @@ public class GossipManager {
         return tryJoin(true);
     }
 
+    public JoinRequest onSendComplete(JoinRequest join) {
+        if (join != null && seedNodesSate != null) {
+            seedNodesSate.onSendComplete(join.toAddress());
+        }
+
+        return join;
+    }
+
     public JoinRequest processJoinReject(JoinReject msg) {
         if (localGossip.hasMembers()) {
             if (DEBUG) {
@@ -711,6 +719,15 @@ public class GossipManager {
 
     public GossipNodeStatus status() {
         return status;
+    }
+
+    // Package level for testing purposes.
+    JoinRequest joinStateless(List<InetSocketAddress> seedNodes) {
+        JoinRequest join = join(seedNodes);
+
+        onSendComplete(join);
+
+        return join;
     }
 
     private JoinRequest tryJoin(boolean trySelfJoin) {

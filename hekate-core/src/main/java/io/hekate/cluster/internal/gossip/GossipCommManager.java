@@ -172,7 +172,7 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
         }
     }
 
-    public void sendAndDisconnect(GossipProtocol msg) {
+    public void sendAndDisconnect(GossipProtocol msg, Runnable onComplete) {
         Optional<Throwable> callbackErr = listener.onBeforeSend(msg);
 
         if (callbackErr.isPresent()) {
@@ -193,6 +193,8 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
 
                 @Override
                 public void onDisconnect(NetworkClient<GossipProtocol> client, Optional<Throwable> cause) {
+                    onComplete.run();
+
                     cause.ifPresent(err ->
                         listener.onSendFailure(msg, err)
                     );

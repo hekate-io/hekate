@@ -758,10 +758,6 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                         JoinRequest msg = gossipMgr.join(nodes);
 
                         if (msg != null) {
-                            if (log.isInfoEnabled()) {
-                                log.info("Sending cluster join request [seed-node={}].", msg.toAddress());
-                            }
-
                             sendAndDisconnect(msg);
                         }
                     })
@@ -1211,10 +1207,26 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
         }
     }
 
-    private void sendAndDisconnect(GossipProtocol msg) {
-        if (msg != null) {
-            commMgr.sendAndDisconnect(msg);
+    private void sendAndDisconnect(JoinRequest join) {
+        if (join != null) {
+            if (log.isInfoEnabled()) {
+                log.info("Sending cluster join request [seed-node={}].", join.toAddress());
+            }
+
+            commMgr.sendAndDisconnect(join, () ->
+                guard.withReadLockIfInitialized(() ->
+                    runOnGossipThread(() ->
+                        onSendComplete(join)
+                    )
+                )
+            );
         }
+    }
+
+    private boolean onSendComplete(JoinRequest msg) {
+        return guard.withReadLockIfInitialized(() ->
+            gossipMgr.onSendComplete(msg)
+        );
     }
 
     private boolean isCoordinator(ClusterTopology topology) {
