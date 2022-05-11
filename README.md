@@ -127,7 +127,7 @@ Please see the **[hekate-io/hekate-examples](https://github.com/hekate-io/hekate
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-spring-boot</artifactId>
-    <version>4.1.0</version>
+    <version>4.1.1</version>
 </dependency>
 ```
 
@@ -136,7 +136,7 @@ Please see the **[hekate-io/hekate-examples](https://github.com/hekate-io/hekate
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-spring</artifactId>
-    <version>4.1.0</version>
+    <version>4.1.1</version>
 </dependency>
 ```
 
@@ -145,7 +145,7 @@ Please see the **[hekate-io/hekate-examples](https://github.com/hekate-io/hekate
 <dependency>
     <groupId>io.hekate</groupId>
     <artifactId>hekate-core</artifactId>
-    <version>4.1.0</version>
+    <version>4.1.1</version>
 </dependency>
 ```
 
@@ -181,6 +181,8 @@ Please see the **[hekate-io/hekate-examples](https://github.com/hekate-io/hekate
   - run `./mvnw clean package`
   
 ## Release History
+
+ - v.4.1.1 (11-May-2022) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.4.1.1)]
 
  - v.4.1.0 (3-Apr-2022) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.4.1.0)]
 
@@ -219,7 +221,5 @@ Please see the **[hekate-io/hekate-examples](https://github.com/hekate-io/hekate
  - v.2.4.1 (15-Jul-2018) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.2.4.1)]
 
  - v.2.4.0 (15-Jul-2018) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.2.4.0)]
-
- - v.2.3.1 (18-May-2018) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.2.3.1)]
 
  - [...and so on](https://github.com/hekate-io/hekate/releases)
