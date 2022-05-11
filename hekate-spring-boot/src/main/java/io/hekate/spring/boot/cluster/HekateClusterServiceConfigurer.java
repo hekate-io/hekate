@@ -106,6 +106,11 @@ import org.springframework.context.annotation.Lazy;
  * <li>{@link HekateStaticSeedNodeProviderConfigurer}</li>
  * </ul>
  *
+ * <p>
+ * Special configuration property {@link ClusterServiceFactory#setSeedNodeFailFast(boolean) 'hekate.cluster.seed-node-fail-fast'} controls
+ * network timeouts handling when contacting seed nodes.
+ * </p>
+ *
  * @see ClusterService
  * @see HekateConfigurer
  */

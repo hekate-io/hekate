@@ -124,6 +124,8 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
     private final SeedNodeProvider seedNodeProvider;
 
+    private final boolean seedNodeFailFast;
+
     private final FailureDetector failureDetector;
 
     private final SplitBrainManager splitBrain;
@@ -206,6 +208,8 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
         } else {
             seedNodeProvider = factory.getSeedNodeProvider();
         }
+
+        this.seedNodeFailFast = factory.isSeedNodeFailFast();
 
         // Split-brain manager.
         splitBrain = new SplitBrainManager(
@@ -307,7 +311,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             );
 
             // Prepare seed node manager.
-            seedNodeMgr = new SeedNodeManager(namespace, seedNodeProvider);
+            seedNodeMgr = new SeedNodeManager(namespace, seedNodeProvider, seedNodeFailFast);
 
             // Prepare workers.
             gossipThread = Executors.newSingleThreadScheduledExecutor(new HekateThreadFactory("ClusterGossip"));
@@ -320,7 +324,14 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             GossipListener gossipListener = createGossipListener();
 
             // Prepare gossip manager.
-            gossipMgr = new GossipManager(namespace, localNode, speedUpGossipSize, failureDetector, gossipListener);
+            gossipMgr = new GossipManager(
+                namespace,
+                localNode,
+                speedUpGossipSize,
+                seedNodeFailFast,
+                failureDetector,
+                gossipListener
+            );
 
             // Prepare gossip communication manager.
             NetworkConnector<GossipProtocol> connector = net.connector(PROTOCOL_ID);
@@ -383,6 +394,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             cs.value("speed-up-gossip-size", speedUpGossipSize);
             cs.value("failure-detector", failureDetector);
             cs.value("split-brain", splitBrain);
+            cs.value("seed-node-fail-fast", seedNodeFailFast);
             cs.value("seed-node-provider", seedNodeProvider);
         });
     }

@@ -237,6 +237,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
             setProperty(cluster, clusterEl, "namespace", "namespace");
             setProperty(cluster, clusterEl, "gossipInterval", "gossip-interval-ms");
             setProperty(cluster, clusterEl, "speedUpGossipSize", "gossip-speedup-size");
+            setProperty(cluster, clusterEl, "seedNodeFailFast", "seed-node-fail-fast");
 
             parseSeedNodeProvider(cluster, clusterEl, ctx);
 

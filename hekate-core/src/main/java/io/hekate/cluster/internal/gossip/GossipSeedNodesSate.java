@@ -98,12 +98,17 @@ class GossipSeedNodesSate {
 
     private final InetSocketAddress localAddress;
 
+    private final boolean seedNodeFailFast;
+
+    private final Set<InetSocketAddress> inflight = new HashSet<>();
+
     private List<SeedNodeState> seeds;
 
     private InetSocketAddress lastTried;
 
-    public GossipSeedNodesSate(InetSocketAddress localAddress, List<InetSocketAddress> seeds) {
+    public GossipSeedNodesSate(InetSocketAddress localAddress, List<InetSocketAddress> seeds, boolean seedNodeFailFast) {
         this.localAddress = localAddress;
+        this.seedNodeFailFast = seedNodeFailFast;
 
         Set<InetSocketAddress> uniqueAddresses = new HashSet<>(seeds);
 
@@ -203,7 +208,7 @@ class GossipSeedNodesSate {
             .filter(s -> s.status() != Status.BAN && s.status() != Status.FAILED && s.address().equals(seed))
             .findFirst()
             .ifPresent(s -> {
-                if (cause instanceof NetworkTimeoutException) {
+                if (isNetworkTimeout(cause) && !seedNodeFailFast) {
                     if (log.isWarnEnabled()) {
                         log.warn("Seed node timeout ...will retry [address={}, cause={}]", s.address(), String.valueOf(cause));
                     }
@@ -233,6 +238,10 @@ class GossipSeedNodesSate {
 
     private boolean triedAllNodes() {
         return seeds.stream().allMatch(s -> s.address().equals(localAddress) || s.status() != Status.NEW);
+    }
+
+    private boolean isNetworkTimeout(Throwable cause) {
+        return cause instanceof NetworkTimeoutException;
     }
 
     private static int compare(InetSocketAddress a1, InetSocketAddress a2) {

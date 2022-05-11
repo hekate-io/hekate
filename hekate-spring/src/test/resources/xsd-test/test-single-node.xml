@@ -51,7 +51,7 @@
             </server>
         </jmx>
 
-        <cluster id="cluster" namespace="test-cluster" gossip-interval-ms="1000" gossip-speedup-size="100">
+        <cluster id="cluster" namespace="test-cluster" gossip-interval-ms="1000" gossip-speedup-size="100" seed-node-fail-fast="false">
             <seed-node-provider>
                 <jdbc cleanup-interval-ms="60001"
                     query-timeout-sec="5"

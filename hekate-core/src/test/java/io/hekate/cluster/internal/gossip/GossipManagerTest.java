@@ -1081,7 +1081,7 @@ public class GossipManagerTest extends HekateTestBase {
 
         FailureDetector heartbeats = new FailureDetectorMock(node, nodeFailures);
 
-        return new GossipManager(cluster, node, 0, heartbeats, new GossipListener() {
+        return new GossipManager(cluster, node, 0, false, heartbeats, new GossipListener() {
             @Override
             public void onJoinReject(ClusterAddress rejectedBy, String reason) {
                 say("Join rejected on " + node + " by " + rejectedBy + " with reason '" + reason + '\'');

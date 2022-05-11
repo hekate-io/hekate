@@ -451,6 +451,13 @@
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
+        <xsd:attribute name="seed-node-fail-fast" type="xsd:boolean">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.ClusterServiceFactory#setSeedNodeFailFast(boolean)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
     </xsd:complexType>
 
     <xsd:complexType name="clusterSeedNodeProviderOrGroup">

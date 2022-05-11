@@ -252,6 +252,6 @@ public class SeedNodeManagerTest extends HekateTestBase {
     }
 
     private SeedNodeManager createManager(SeedNodeProvider provider) {
-        return new SeedNodeManager("test", provider);
+        return new SeedNodeManager("test", provider, false);
     }
 }

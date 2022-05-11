@@ -56,6 +56,9 @@ public class ClusterServiceFactory implements ServiceFactory<ClusterService> {
     /** Default value (={@value}) for {@link #setSpeedUpGossipSize(int)}. */
     public static final int DEFAULT_SPEED_UP_SIZE = 100;
 
+    /** Default value (={@value}) for {@link #setSeedNodeFailFast(boolean)}. */
+    public static final boolean DEFAULT_SEED_NODE_FAIL_FAST = false;
+
     /** See {@link #setNamespace(String)}. */
     private String namespace = DEFAULT_NAMESPACE;
 
@@ -67,6 +70,8 @@ public class ClusterServiceFactory implements ServiceFactory<ClusterService> {
 
     /** See {@link #setSeedNodeProvider(SeedNodeProvider)}. */
     private SeedNodeProvider seedNodeProvider;
+
+    private boolean seedNodeFailFast = DEFAULT_SEED_NODE_FAIL_FAST;
 
     /** See {@link #setFailureDetector(FailureDetector)}. */
     private FailureDetector failureDetector = new DefaultFailureDetector();
@@ -168,6 +173,41 @@ public class ClusterServiceFactory implements ServiceFactory<ClusterService> {
      */
     public ClusterServiceFactory withSeedNodeProvider(SeedNodeProvider seedNodeProvider) {
         setSeedNodeProvider(seedNodeProvider);
+
+        return this;
+    }
+
+    /**
+     * Returns {@code true} connection timeouts should not be retried when contacting seed nodes.
+     *
+     * @return {@code true} if connection timeouts should not be retried when contacting seed nodes.
+     */
+    public boolean isSeedNodeFailFast() {
+        return seedNodeFailFast;
+    }
+
+    /**
+     * Sets the flag indicating that connection timeouts should not be retried when contacting seed nodes.
+     *
+     * <p>
+     * Default value of this property is {@value #DEFAULT_SEED_NODE_FAIL_FAST}.
+     * </p>
+     *
+     * @param seedNodeFailFast {@code true} if connection timeouts should not be retried when contacting seed nodes.
+     */
+    public void setSeedNodeFailFast(boolean seedNodeFailFast) {
+        this.seedNodeFailFast = seedNodeFailFast;
+    }
+
+    /**
+     * Fluent-style version of {@link #setSeedNodeFailFast(boolean)} .
+     *
+     * @param seedNodeFailFast {@code true} if connection timeouts should not be retried when contacting seed nodes.
+     *
+     * @return This instance.
+     */
+    public ClusterServiceFactory withSeedNodeFailFast(boolean seedNodeFailFast) {
+        setSeedNodeFailFast(seedNodeFailFast);
 
         return this;
     }

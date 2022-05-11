@@ -33,7 +33,7 @@ import static org.junit.Assert.assertTrue;
 public class GossipSeedNodesSateTest extends HekateTestBase {
     @Test
     public void testEmpty() throws Exception {
-        GossipSeedNodesSate s = new GossipSeedNodesSate(newSocketAddress(1), emptyList());
+        GossipSeedNodesSate s = new GossipSeedNodesSate(newSocketAddress(1), emptyList(), false);
 
         assertTrue(s.isSelfJoin());
         assertNull(s.nextSeed(false));
@@ -47,7 +47,26 @@ public class GossipSeedNodesSateTest extends HekateTestBase {
         seeds.add(newSocketAddress(2));
         seeds.add(newSocketAddress(3));
 
-        GossipSeedNodesSate s = new GossipSeedNodesSate(newSocketAddress(1000), seeds);
+        GossipSeedNodesSate s = new GossipSeedNodesSate(newSocketAddress(1000), seeds, false);
+
+        assertFalse(s.isSelfJoin());
+
+        repeat(3, i -> {
+            for (InetSocketAddress addr : seeds) {
+                assertEquals(addr, s.nextSeed(false));
+            }
+        });
+    }
+
+    @Test
+    public void testNextSeedBusy() throws Exception {
+        List<InetSocketAddress> seeds = new ArrayList<>();
+
+        seeds.add(newSocketAddress(1));
+        seeds.add(newSocketAddress(2));
+        seeds.add(newSocketAddress(3));
+
+        GossipSeedNodesSate s = new GossipSeedNodesSate(newSocketAddress(1000), seeds, false);
 
         assertFalse(s.isSelfJoin());
 
@@ -89,7 +108,7 @@ public class GossipSeedNodesSateTest extends HekateTestBase {
         seeds.add(newSocketAddress(20));
         seeds.add(newSocketAddress(30));
 
-        GossipSeedNodesSate s = new GossipSeedNodesSate(newSocketAddress(1000), seeds);
+        GossipSeedNodesSate s = new GossipSeedNodesSate(newSocketAddress(1000), seeds, false);
 
         assertFalse(s.isSelfJoin());
 
@@ -120,7 +139,7 @@ public class GossipSeedNodesSateTest extends HekateTestBase {
         seeds.add(newSocketAddress(20));
         seeds.add(newSocketAddress(30));
 
-        GossipSeedNodesSate s = new GossipSeedNodesSate(newSocketAddress(1000), seeds);
+        GossipSeedNodesSate s = new GossipSeedNodesSate(newSocketAddress(1000), seeds, false);
 
         assertFalse(s.isSelfJoin());
 
@@ -151,7 +170,7 @@ public class GossipSeedNodesSateTest extends HekateTestBase {
         seeds.add(newSocketAddress(20));
         seeds.add(newSocketAddress(30));
 
-        GossipSeedNodesSate s = new GossipSeedNodesSate(newSocketAddress(1000), seeds);
+        GossipSeedNodesSate s = new GossipSeedNodesSate(newSocketAddress(1000), seeds, false);
 
         assertEquals(seeds.get(0), s.nextSeed(false));
         assertEquals(seeds.get(1), s.nextSeed(false));
@@ -171,7 +190,7 @@ public class GossipSeedNodesSateTest extends HekateTestBase {
         seeds.add(newSocketAddress(2));
         seeds.add(newSocketAddress(3));
 
-        GossipSeedNodesSate s = new GossipSeedNodesSate(newSocketAddress(1000), seeds);
+        GossipSeedNodesSate s = new GossipSeedNodesSate(newSocketAddress(1000), seeds, false);
 
         assertFalse(s.isSelfJoin());
 
@@ -204,7 +223,7 @@ public class GossipSeedNodesSateTest extends HekateTestBase {
         rejects.add(seeds.get(3));
         rejects.add(seeds.get(4));
 
-        GossipSeedNodesSate s = new GossipSeedNodesSate(newSocketAddress(1000), seeds);
+        GossipSeedNodesSate s = new GossipSeedNodesSate(newSocketAddress(1000), seeds, false);
 
         assertFalse(s.isSelfJoin());
 
@@ -231,7 +250,7 @@ public class GossipSeedNodesSateTest extends HekateTestBase {
         seeds.add(newSocketAddress(20));
         seeds.add(newSocketAddress(30));
 
-        GossipSeedNodesSate s = new GossipSeedNodesSate(newSocketAddress(1000), seeds);
+        GossipSeedNodesSate s = new GossipSeedNodesSate(newSocketAddress(1000), seeds, false);
 
         for (InetSocketAddress addr : seeds) {
             assertEquals(addr, s.nextSeed(false));
@@ -250,7 +269,7 @@ public class GossipSeedNodesSateTest extends HekateTestBase {
         seeds.add(newSocketAddress(20));
         seeds.add(newSocketAddress(30));
 
-        GossipSeedNodesSate s = new GossipSeedNodesSate(newSocketAddress(1000), seeds);
+        GossipSeedNodesSate s = new GossipSeedNodesSate(newSocketAddress(1000), seeds, false);
 
         for (InetSocketAddress addr : seeds) {
             assertEquals(addr, s.nextSeed(false));
@@ -269,7 +288,7 @@ public class GossipSeedNodesSateTest extends HekateTestBase {
         seeds.add(newSocketAddress(20));
         seeds.add(newSocketAddress(30));
 
-        GossipSeedNodesSate s = new GossipSeedNodesSate(newSocketAddress(1), seeds);
+        GossipSeedNodesSate s = new GossipSeedNodesSate(newSocketAddress(1), seeds, false);
 
         for (InetSocketAddress addr : seeds) {
             assertEquals(addr, s.nextSeed(false));
