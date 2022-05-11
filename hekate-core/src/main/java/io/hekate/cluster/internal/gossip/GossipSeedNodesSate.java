@@ -100,8 +100,6 @@ class GossipSeedNodesSate {
 
     private final boolean seedNodeFailFast;
 
-    private final Set<InetSocketAddress> inflight = new HashSet<>();
-
     private List<SeedNodeState> seeds;
 
     private InetSocketAddress lastTried;

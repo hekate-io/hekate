@@ -85,7 +85,7 @@ public class GossipSeedNodesSateTest extends HekateTestBase {
         seeds.add(newSocketAddress(2));
         seeds.add(newSocketAddress(3));
 
-        GossipSeedNodesSate s = new GossipSeedNodesSate(newSocketAddress(1000), seeds);
+        GossipSeedNodesSate s = new GossipSeedNodesSate(newSocketAddress(1000), seeds, false);
 
         assertFalse(s.isSelfJoin());
 
