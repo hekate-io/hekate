@@ -182,6 +182,8 @@ Please see the **[hekate-io/hekate-examples](https://github.com/hekate-io/hekate
   
 ## Release History
 
+ - v.4.1.2 (12-May-2022) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.4.1.2)]
+
  - v.4.1.1 (11-May-2022) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.4.1.1)]
 
  - v.4.1.0 (3-Apr-2022) - [[release notes](https://github.com/hekate-io/hekate/releases/tag/v.4.1.0)]
