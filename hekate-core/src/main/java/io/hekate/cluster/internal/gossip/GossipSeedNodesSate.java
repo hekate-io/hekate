@@ -34,6 +34,8 @@ class GossipSeedNodesSate {
 
         RETRY,
 
+        TIMEOUT,
+
         FAILED,
 
         BAN
@@ -211,7 +213,7 @@ class GossipSeedNodesSate {
                         log.warn("Seed node timeout ...will retry [address={}, cause={}]", s.address(), String.valueOf(cause));
                     }
 
-                    s.updateStatus(Status.RETRY);
+                    s.updateStatus(Status.TIMEOUT);
                 } else {
                     if (log.isWarnEnabled()) {
                         log.warn("Couldn't contact seed node [address={}, cause={}]", s.address(), String.valueOf(cause));
@@ -235,7 +237,9 @@ class GossipSeedNodesSate {
     }
 
     private boolean triedAllNodes() {
-        return seeds.stream().allMatch(s -> s.address().equals(localAddress) || s.status() != Status.NEW);
+        return seeds.stream().allMatch(s ->
+            s.address().equals(localAddress) || (s.status() != Status.NEW && s.status() != Status.TIMEOUT)
+        );
     }
 
     private boolean isNetworkTimeout(Throwable cause) {

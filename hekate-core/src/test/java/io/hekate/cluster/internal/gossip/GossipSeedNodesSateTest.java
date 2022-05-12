@@ -17,6 +17,7 @@
 package io.hekate.cluster.internal.gossip;
 
 import io.hekate.HekateTestBase;
+import io.hekate.network.NetworkConnectTimeoutException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -56,6 +57,30 @@ public class GossipSeedNodesSateTest extends HekateTestBase {
                 assertEquals(addr, s.nextSeed(false));
             }
         });
+    }
+
+    @Test
+    public void testOrderOnNetworkTimeout() throws Exception {
+        List<InetSocketAddress> seeds = new ArrayList<>();
+
+        seeds.add(newSocketAddress(100));
+        seeds.add(newSocketAddress(200));
+        seeds.add(newSocketAddress(300));
+
+        for (int localPort = 0; localPort <= 303; localPort += 101) {
+            say("Local port: " + localPort);
+
+            GossipSeedNodesSate s = new GossipSeedNodesSate(newSocketAddress(localPort), seeds, false);
+
+            repeat(3, i ->
+                seeds.forEach(seed -> {
+                    assertFalse(s.isSelfJoin());
+                    assertEquals(seed, s.nextSeed(false));
+
+                    s.onFailure(seed, new NetworkConnectTimeoutException(TEST_ERROR.getMessage()));
+                })
+            );
+        }
     }
 
     @Test
