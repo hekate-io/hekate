@@ -65,7 +65,7 @@
         <zookeeper.curator.version>5.2.0</zookeeper.curator.version>
         <jetcd.version>0.5.10</jetcd.version>
         <consul.client.version>1.5.3</consul.client.version>
-        <kubernetes.client.version>5.6.0</kubernetes.client.version>
+        <kubernetes.client.version>5.7.4</kubernetes.client.version>
         <jclouds.version>2.4.0</jclouds.version>
         <aws.sdk.version>1.12.43</aws.sdk.version>
 
