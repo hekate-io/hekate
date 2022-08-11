@@ -116,4 +116,4 @@ jobs:
         run: './mvnw test -pl !hekate-all -B'
 
       - name: Upload code coverage results
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v3
