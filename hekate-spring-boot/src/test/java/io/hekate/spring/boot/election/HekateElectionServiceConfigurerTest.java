@@ -22,19 +22,27 @@ import io.hekate.election.ElectionService;
 import io.hekate.spring.boot.HekateAutoConfigurerTestBase;
 import io.hekate.spring.boot.HekateTestConfigBase;
 import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
 
 public class HekateElectionServiceConfigurerTest extends HekateAutoConfigurerTestBase {
+    @Configuration
     @EnableAutoConfiguration
     public static class LeaderTestConfig extends HekateTestConfigBase {
-        @Autowired
-        private ElectionService electionService;
+        @Component
+        public static class InjectionTestBean {
+            private final ElectionService electionService;
+
+            public InjectionTestBean(ElectionService electionService) {
+                this.electionService = electionService;
+            }
+        }
 
         @Bean
         public CandidateConfig candidate() {
@@ -46,7 +54,7 @@ public class HekateElectionServiceConfigurerTest extends HekateAutoConfigurerTes
     public void testLeader() throws Exception {
         registerAndRefresh(LeaderTestConfig.class);
 
-        assertNotNull(get(LeaderTestConfig.class).electionService);
+        assertNotNull(get(LeaderTestConfig.InjectionTestBean.class).electionService);
         assertNotNull(get("electionService", ElectionService.class));
 
         assertEquals(getNode().localNode(), getNode().election().leader("test").get());

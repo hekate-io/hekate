@@ -66,15 +66,6 @@ public class HekateRpcServiceConfigurerTest extends HekateAutoConfigurerTestBase
             private TestRpc rpc3;
         }
 
-        @InjectRpcClient(tag = "rpc-1")
-        private TestRpc rpc1;
-
-        @InjectRpcClient(tag = "rpc-2")
-        private TestRpc rpc2;
-
-        @InjectRpcClient
-        private TestRpc rpc3;
-
         @Bean
         public InnerBean innerBean() {
             return new InnerBean();
@@ -112,26 +103,17 @@ public class HekateRpcServiceConfigurerTest extends HekateAutoConfigurerTestBase
 
         assertNotNull(get("rpcService", RpcService.class));
 
-        TestRpc rpc1 = get(RpcTestConfig.class).rpc1;
-        TestRpc rpc2 = get(RpcTestConfig.class).rpc2;
-        TestRpc rpc3 = get(RpcTestConfig.class).rpc3;
-        TestRpc innerRpc1 = get(RpcTestConfig.InnerBean.class).rpc1;
-        TestRpc innerRpc2 = get(RpcTestConfig.InnerBean.class).rpc2;
-        TestRpc innerRpc3 = get(RpcTestConfig.InnerBean.class).rpc3;
+        TestRpc rpc1 = get(RpcTestConfig.InnerBean.class).rpc1;
+        TestRpc rpc2 = get(RpcTestConfig.InnerBean.class).rpc2;
+        TestRpc rpc3 = get(RpcTestConfig.InnerBean.class).rpc3;
 
         assertNotNull(rpc1);
         assertNotNull(rpc2);
         assertNotNull(rpc3);
-        assertNotNull(innerRpc1);
-        assertNotNull(innerRpc2);
-        assertNotNull(innerRpc3);
 
         assertEquals(8, rpc1.someMethod(4));
         assertEquals(16, rpc2.someMethod(4));
         assertEquals(16, rpc3.someMethod(4));
-        assertEquals(8, innerRpc1.someMethod(4));
-        assertEquals(16, innerRpc2.someMethod(4));
-        assertEquals(16, innerRpc3.someMethod(4));
 
         class TestAutowire {
             @Autowired

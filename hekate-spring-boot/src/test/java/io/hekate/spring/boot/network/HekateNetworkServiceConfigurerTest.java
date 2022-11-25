@@ -36,11 +36,11 @@ public class HekateNetworkServiceConfigurerTest extends HekateAutoConfigurerTest
     public static class NetworkTestConfig extends HekateTestConfigBase {
         private static class InnerBean {
             @InjectConnector("test2")
-            private NetworkConnector<Object> innerConnector;
-        }
+            private NetworkConnector<Object> connector2;
 
-        @InjectConnector("test1")
-        private NetworkConnector<Object> connector;
+            @InjectConnector("test1")
+            private NetworkConnector<Object> connector1;
+        }
 
         @Bean
         public InnerBean innerBean() {
@@ -74,11 +74,11 @@ public class HekateNetworkServiceConfigurerTest extends HekateAutoConfigurerTest
 
         assertNotNull(get("networkService", NetworkService.class));
 
-        assertNotNull(get(NetworkTestConfig.class).connector);
-        assertNotNull(get(NetworkTestConfig.InnerBean.class).innerConnector);
+        assertNotNull(get(NetworkTestConfig.InnerBean.class).connector1);
+        assertNotNull(get(NetworkTestConfig.InnerBean.class).connector2);
 
-        assertEquals("test1", get(NetworkTestConfig.class).connector.protocol());
-        assertEquals("test2", get(NetworkTestConfig.InnerBean.class).innerConnector.protocol());
+        assertEquals("test1", get(NetworkTestConfig.InnerBean.class).connector1.protocol());
+        assertEquals("test2", get(NetworkTestConfig.InnerBean.class).connector2.protocol());
 
         assertNotNull(getNode().network().connector("test1"));
         assertNotNull(getNode().network().connector("test2"));

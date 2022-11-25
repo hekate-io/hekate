@@ -25,18 +25,16 @@ import io.hekate.coordinate.CoordinatorContext;
 import io.hekate.spring.boot.HekateAutoConfigurerTestBase;
 import io.hekate.spring.boot.HekateTestConfigBase;
 import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 import static org.junit.Assert.assertNotNull;
 
 public class HekateCoordinationServiceConfigurerTest extends HekateAutoConfigurerTestBase {
+    @Configuration
     @EnableAutoConfiguration
     public static class CoordinationTestConfig extends HekateTestConfigBase {
-        @Autowired
-        private CoordinationService coordinationService;
-
         @Bean
         public CoordinationProcessConfig process1() {
             return new CoordinationProcessConfig().withName("test.process").withHandler(new CoordinationHandler() {
@@ -56,6 +54,19 @@ public class HekateCoordinationServiceConfigurerTest extends HekateAutoConfigure
                 }
             });
         }
+
+        @Bean
+        public InjectionTestBean injectionTestBean(CoordinationService coordinationService) {
+            return new InjectionTestBean(coordinationService);
+        }
+    }
+
+    public static class InjectionTestBean {
+        private CoordinationService coordinationService;
+
+        public InjectionTestBean(CoordinationService coordinationService) {
+            this.coordinationService = coordinationService;
+        }
     }
 
     @Test
@@ -63,7 +74,7 @@ public class HekateCoordinationServiceConfigurerTest extends HekateAutoConfigure
         registerAndRefresh(CoordinationTestConfig.class);
 
         assertNotNull(get("coordinationService", CoordinationService.class));
-        assertNotNull(get(CoordinationTestConfig.class).coordinationService);
+        assertNotNull(get(InjectionTestBean.class).coordinationService);
         assertNotNull(getNode().coordination().process("test.process").future().get());
     }
 }

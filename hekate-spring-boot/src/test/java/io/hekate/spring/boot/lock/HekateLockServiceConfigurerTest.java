@@ -36,17 +36,17 @@ public class HekateLockServiceConfigurerTest extends HekateAutoConfigurerTestBas
     public static class LockTestConfig extends HekateTestConfigBase {
         private static class InnerBean {
             @InjectLockRegion("test1")
-            private LockRegion innerRegion;
+            private LockRegion region2;
 
             @InjectLock(region = "test1", name = "lock2")
-            private DistributedLock innerLock;
+            private DistributedLock lock2;
+
+            @InjectLockRegion("test1")
+            private LockRegion region1;
+
+            @InjectLock(region = "test1", name = "lock1")
+            private DistributedLock lock1;
         }
-
-        @InjectLockRegion("test1")
-        private LockRegion region;
-
-        @InjectLock(region = "test1", name = "lock1")
-        private DistributedLock lock;
 
         @Bean
         public InnerBean innerBean() {
@@ -80,13 +80,13 @@ public class HekateLockServiceConfigurerTest extends HekateAutoConfigurerTestBas
 
         assertNotNull(get("lockService", LockService.class));
 
-        assertNotNull(get(LockTestConfig.class).region);
-        assertNotNull(get(LockTestConfig.class).lock);
-        assertNotNull(get(LockTestConfig.InnerBean.class).innerRegion);
-        assertNotNull(get(LockTestConfig.InnerBean.class).innerLock);
+        assertNotNull(get(LockTestConfig.InnerBean.class).region1);
+        assertNotNull(get(LockTestConfig.InnerBean.class).region2);
+        assertNotNull(get(LockTestConfig.InnerBean.class).lock1);
+        assertNotNull(get(LockTestConfig.InnerBean.class).lock2);
 
-        assertEquals("lock1", get(LockTestConfig.class).lock.name());
-        assertEquals("lock2", get(LockTestConfig.InnerBean.class).innerLock.name());
+        assertEquals("lock1", get(LockTestConfig.InnerBean.class).lock1.name());
+        assertEquals("lock2", get(LockTestConfig.InnerBean.class).lock2.name());
 
         assertNotNull(getNode().locks().region("test1"));
         assertNotNull(getNode().locks().region("test2"));

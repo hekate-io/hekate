@@ -76,9 +76,6 @@ public class HekateMessagingServiceConfigurerTest extends HekateAutoConfigurerTe
             private MessagingChannel<Object> innerChannel;
         }
 
-        @InjectChannel("test1")
-        private MessagingChannel<Object> channel;
-
         @Bean
         public InnerBean innerBean() {
             return new InnerBean();
@@ -177,12 +174,9 @@ public class HekateMessagingServiceConfigurerTest extends HekateAutoConfigurerTe
 
         assertNotNull(get("messagingService", MessagingService.class));
 
-        assertNotNull(get(MessagingTestConfig.class).channel);
-
         assertNotNull(get(MessagingTestConfig.InnerBean.class).innerChannel);
         assertNotNull(get(MessagingTestConfig.InnerComponent.class).channel3);
 
-        assertEquals("test1", get(MessagingTestConfig.class).channel.name());
         assertEquals("test2", get(MessagingTestConfig.InnerBean.class).innerChannel.name());
         assertEquals("test3", get(MessagingTestConfig.InnerComponent.class).channel3.name());
         assertEquals("test4", get(MessagingTestConfig.InnerComponent.class).channel4.name());

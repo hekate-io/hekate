@@ -20,8 +20,8 @@ import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.PodList;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.cluster.seed.SeedNodeProvider;
@@ -195,7 +195,7 @@ public class KubernetesSeedNodeProvider implements SeedNodeProvider, ConfigRepor
             log.debug("Searching for seed node addresses [namespace={}, container-port-name={}]", config.getNamespace(), containerPortName);
         }
 
-        try (KubernetesClient client = new DefaultKubernetesClient(config)) {
+        try (KubernetesClient client = new KubernetesClientBuilder().withConfig(config).build()) {
             List<InetSocketAddress> seedNodes = new ArrayList<>();
 
             PodList pods = client.pods().list();

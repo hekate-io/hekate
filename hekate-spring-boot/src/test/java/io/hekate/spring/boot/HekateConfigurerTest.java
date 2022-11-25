@@ -33,9 +33,9 @@ import java.util.Optional;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.EventListener;
-import org.springframework.stereotype.Component;
 
 import static java.util.Collections.synchronizedList;
 import static org.junit.Assert.assertEquals;
@@ -46,42 +46,59 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 public class HekateConfigurerTest extends HekateAutoConfigurerTestBase {
-    @Configuration
     @EnableAutoConfiguration
     public static class DefaultTestConfig extends HekateTestConfigBase {
-        @Component
-        public static class TestClusterListener {
-            private final List<ClusterEvent> events = synchronizedList(new ArrayList<>());
-
-            @EventListener
-            public void onJoin(ClusterJoinEvent evt) {
-                events.add(evt);
-            }
-
-            @EventListener
-            public void onLeave(ClusterLeaveEvent evt) {
-                events.add(evt);
-            }
+        @Bean
+        public InjectionTestBean injectionTestBean(Hekate node, CodecService codecService, NetworkService networkService) {
+            return new InjectionTestBean(node, codecService, networkService);
         }
 
-        @Component
-        public static class TestLifecycleListener implements Hekate.LifecycleListener {
-            private final List<Hekate.State> states = synchronizedList(new ArrayList<>());
-
-            @Override
-            public void onStateChanged(Hekate changed) {
-                states.add(changed.state());
-            }
+        @Bean
+        public TestClusterListener testClusterListener() {
+            return new TestClusterListener();
         }
 
-        @Autowired
-        private Hekate node;
+        @Bean
+        public TestLifecycleListener testLifecycleListener() {
+            return new TestLifecycleListener();
+        }
+    }
 
-        @Autowired
-        private CodecService codecService;
+    public static class TestClusterListener {
+        private final List<ClusterEvent> events = synchronizedList(new ArrayList<>());
 
-        @Autowired
-        private NetworkService networkService;
+        @EventListener
+        public void onJoin(ClusterJoinEvent evt) {
+            events.add(evt);
+        }
+
+        @EventListener
+        public void onLeave(ClusterLeaveEvent evt) {
+            events.add(evt);
+        }
+    }
+
+    public static class TestLifecycleListener implements Hekate.LifecycleListener {
+        private final List<Hekate.State> states = synchronizedList(new ArrayList<>());
+
+        @Override
+        public void onStateChanged(Hekate changed) {
+            states.add(changed.state());
+        }
+    }
+
+    public static class InjectionTestBean {
+        private final Hekate node;
+
+        private final CodecService codecService;
+
+        private final NetworkService networkService;
+
+        public InjectionTestBean(Hekate node, CodecService codecService, NetworkService networkService) {
+            this.node = node;
+            this.codecService = codecService;
+            this.networkService = networkService;
+        }
     }
 
     @Configuration
@@ -119,14 +136,14 @@ public class HekateConfigurerTest extends HekateAutoConfigurerTestBase {
         assertEquals("test1", node.localNode().property("prop1"));
         assertEquals("test2", node.localNode().property("long.prop2"));
 
-        DefaultTestConfig app = get(DefaultTestConfig.class);
+        InjectionTestBean app = get(InjectionTestBean.class);
 
         assertNotNull(app.node);
         assertNotNull(app.codecService);
         assertNotNull(app.networkService);
 
-        DefaultTestConfig.TestClusterListener clusterListener = get(DefaultTestConfig.TestClusterListener.class);
-        DefaultTestConfig.TestLifecycleListener lifecycleListener = get(DefaultTestConfig.TestLifecycleListener.class);
+        TestClusterListener clusterListener = get(TestClusterListener.class);
+        TestLifecycleListener lifecycleListener = get(TestLifecycleListener.class);
 
         getContext().close();
 
