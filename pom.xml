@@ -40,7 +40,7 @@
         <module>hekate-kubernetes</module>
         <module>hekate-jclouds-core</module>
         <module>hekate-jclouds-aws</module>
-        <module>hekate-tracing-zipkin</module>
+        <module>hekate-zipkin</module>
         <module>hekate-all</module>
     </modules>
 
