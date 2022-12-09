@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Hekate Project
+ * Copyright 2022 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -428,10 +428,12 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
         ChannelHandlerContext localCtx = this.handlerCtx;
 
         if (localCtx != null) {
-            if (debug) {
-                if (pause) {
+            if (pause) {
+                if (debug) {
                     log.debug("Pausing inbound receiver [from={}, protocol={}]", address(), protocol);
-                } else {
+                }
+            } else {
+                if (debug) {
                     log.debug("Resuming Pausing inbound receiver [from={}, protocol={}]", address(), protocol);
                 }
             }
@@ -602,13 +604,15 @@ class NettyServerClient extends ChannelInboundHandlerAdapter implements NetworkE
                 }
             } else {
                 // Failed operation.
+                Throwable cause = result.cause();
+
                 if (debug) {
-                    log.debug("Failed to send to client [to={}, message={}]", address(), msg, result.cause());
+                    log.debug("Failed to send to client [to={}, message={}]", address(), msg, cause);
                 }
 
                 // Notify channel pipeline on error (ignore if channel is already closed).
                 if (channel.isOpen()) {
-                    channel.pipeline().fireExceptionCaught(result.cause());
+                    channel.pipeline().fireExceptionCaught(cause);
                 }
             }
 

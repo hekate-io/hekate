@@ -312,6 +312,12 @@
       "defaultValue": 0
     },
     {
+      "name": "hekate.cluster.seed-node-fail-fast",
+      "type": "java.lang.Boolean",
+      "description": "Controls connection timeout handling when contacting seed nodes (if true then timeouts will not be retried).",
+      "defaultValue": false
+    },
+    {
       "name": "hekate.cluster.health.heartbeat-interval",
       "type": "java.lang.Long",
       "description": "Time interval in milliseconds to send heartbeat messages to remote nodes.",
@@ -776,14 +782,6 @@
         {
           "value": "jdk",
           "description": "JDK default serialization."
-        },
-        {
-          "value": "fst",
-          "description": "FST serialization (see https://github.com/RuedigerMoeller/fast-serialization).\n Requires 'io.hekate:hekate-codec-fst' to be on the classpath."
-        },
-        {
-          "value": "kryo",
-          "description": "Kryo serialization (see https://github.com/EsotericSoftware/kryo).\n Requires 'io.hekate:hekate-codec-kryo' to be on the classpath."
         }
       ]
     },

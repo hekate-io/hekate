@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Hekate Project
+ * Copyright 2022 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -33,6 +33,8 @@ class GossipSeedNodesSate {
         NEW,
 
         RETRY,
+
+        TIMEOUT,
 
         FAILED,
 
@@ -94,14 +96,19 @@ class GossipSeedNodesSate {
 
     private static final Logger log = LoggerFactory.getLogger(GossipSeedNodesSate.class);
 
+    private final Set<InetSocketAddress> inflight = new HashSet<>();
+
     private final InetSocketAddress localAddress;
+
+    private final boolean seedNodeFailFast;
 
     private List<SeedNodeState> seeds;
 
     private InetSocketAddress lastTried;
 
-    public GossipSeedNodesSate(InetSocketAddress localAddress, List<InetSocketAddress> seeds) {
+    public GossipSeedNodesSate(InetSocketAddress localAddress, List<InetSocketAddress> seeds, boolean seedNodeFailFast) {
         this.localAddress = localAddress;
+        this.seedNodeFailFast = seedNodeFailFast;
 
         Set<InetSocketAddress> uniqueAddresses = new HashSet<>(seeds);
 
@@ -126,10 +133,15 @@ class GossipSeedNodesSate {
     }
 
     public InetSocketAddress nextSeed() {
+        return nextSeed(true);
+    }
+
+    public InetSocketAddress nextSeed(boolean trackInflight) {
         // TODO: Prefer RETRY nodes if already tried all nodes.
 
         if (lastTried != null) {
             lastTried = seeds.stream()
+                .filter(s -> !inflight.contains(s.address()))
                 .filter(s -> s.status() != Status.BAN && !s.address().equals(localAddress) && compare(s.address(), lastTried) > 0)
                 .findFirst()
                 .map(SeedNodeState::address)
@@ -138,19 +150,30 @@ class GossipSeedNodesSate {
 
         if (lastTried == null) {
             lastTried = seeds.stream()
+                .filter(s -> !inflight.contains(s.address()))
                 .filter(s -> s.status() != Status.BAN && !s.address().equals(localAddress))
                 .findFirst()
                 .map(SeedNodeState::address)
                 .orElse(null);
         }
 
+        if (trackInflight && lastTried != null) {
+            inflight.add(lastTried);
+        }
+
         return lastTried;
+    }
+
+    public void onSendComplete(InetSocketAddress seed) {
+        inflight.remove(seed);
     }
 
     public void update(List<InetSocketAddress> newSeeds) {
         Set<InetSocketAddress> uniqueAddresses = new HashSet<>(newSeeds);
 
         uniqueAddresses.add(localAddress);
+
+        inflight.retainAll(uniqueAddresses);
 
         this.seeds = uniqueAddresses.stream()
             // Preserve state of previously checked addresses.
@@ -185,12 +208,12 @@ class GossipSeedNodesSate {
             .filter(s -> s.status() != Status.BAN && s.status() != Status.FAILED && s.address().equals(seed))
             .findFirst()
             .ifPresent(s -> {
-                if (cause instanceof NetworkTimeoutException) {
+                if (isNetworkTimeout(cause) && !seedNodeFailFast) {
                     if (log.isWarnEnabled()) {
                         log.warn("Seed node timeout ...will retry [address={}, cause={}]", s.address(), String.valueOf(cause));
                     }
 
-                    s.updateStatus(Status.RETRY);
+                    s.updateStatus(Status.TIMEOUT);
                 } else {
                     if (log.isWarnEnabled()) {
                         log.warn("Couldn't contact seed node [address={}, cause={}]", s.address(), String.valueOf(cause));
@@ -214,7 +237,13 @@ class GossipSeedNodesSate {
     }
 
     private boolean triedAllNodes() {
-        return seeds.stream().allMatch(s -> s.address().equals(localAddress) || s.status() != Status.NEW);
+        return seeds.stream().allMatch(s ->
+            s.address().equals(localAddress) || (s.status() != Status.NEW && s.status() != Status.TIMEOUT)
+        );
+    }
+
+    private boolean isNetworkTimeout(Throwable cause) {
+        return cause instanceof NetworkTimeoutException;
     }
 
     private static int compare(InetSocketAddress a1, InetSocketAddress a2) {

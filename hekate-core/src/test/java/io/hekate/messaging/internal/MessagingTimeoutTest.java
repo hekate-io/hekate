@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Hekate Project
+ * Copyright 2022 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -233,7 +233,7 @@ public class MessagingTimeoutTest extends MessagingServiceTestBase {
                 c.withInterceptor(new ClientMessageInterceptor<String>() {
                     @Override
                     public void interceptClientSend(ClientSendContext ctx) {
-                        sleep(50);
+                        sleep(100);
                     }
                 });
             }

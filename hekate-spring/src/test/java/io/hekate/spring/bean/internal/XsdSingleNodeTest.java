@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Hekate Project
+ * Copyright 2022 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -27,7 +27,7 @@ import io.hekate.cluster.seed.jdbc.JdbcSeedNodeProvider;
 import io.hekate.cluster.split.HostReachabilityDetector;
 import io.hekate.cluster.split.SplitBrainDetectorGroup;
 import io.hekate.codec.CodecService;
-import io.hekate.codec.fst.FstCodecFactory;
+import io.hekate.codec.JdkCodecFactory;
 import io.hekate.coordinate.CoordinationService;
 import io.hekate.core.Hekate;
 import io.hekate.core.HekateBootstrap;
@@ -177,7 +177,7 @@ public class XsdSingleNodeTest extends HekateTestBase {
 
         assertEquals("some-value-from-provider", hekate.localNode().property("some-property-from-provider"));
 
-        assertTrue(hekate.get(CodecService.class).codecFactory().toString().contains(FstCodecFactory.class.getSimpleName()));
+        assertTrue(hekate.get(CodecService.class).codecFactory().toString().contains(JdkCodecFactory.class.getSimpleName()));
     }
 
     private void verifyMessaging() {

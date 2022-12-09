@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2021 The Hekate Project
+  ~ Copyright 2022 The Hekate Project
   ~
   ~ The Hekate Project licenses this file to you under the Apache License,
   ~ version 2.0 (the "License"); you may not use this file except in compliance
@@ -45,6 +45,13 @@
         <exclude name="ConfusingTernary"/>
         <exclude name="IdenticalCatchBranches"/>
         <exclude name="UselessParentheses"/>
+        <exclude name="LinguisticNaming"/>
+    </rule>
+
+    <rule ref="category/java/codestyle.xml/FieldNamingConventions">
+        <properties>
+            <property name="constantPattern" value="(log)|([A-Z][A-Z0-9_]*)" />
+        </properties>
     </rule>
 
     <rule ref="category/java/design.xml">
@@ -70,6 +77,8 @@
         <exclude name="UseUtilityClass"/>
         <exclude name="AvoidRethrowingException"/>
         <exclude name="LoosePackageCoupling"/>
+        <exclude name="CognitiveComplexity"/>
+        <exclude name="AvoidUncheckedExceptionsInSignatures"/>
     </rule>
 
     <rule ref="category/java/documentation.xml/UncommentedEmptyConstructor"/>
@@ -83,14 +92,14 @@
         <exclude name="AvoidDuplicateLiterals"/>
         <exclude name="CompareObjectsWithEquals"/>
         <exclude name="AvoidCatchingThrowable"/>
-        <exclude name="MissingBreakInSwitch"/>
         <exclude name="AvoidFieldNameMatchingTypeName"/>
         <exclude name="UseProperClassLoader"/>
         <exclude name="LoggerIsNotStaticFinal"/>
         <exclude name="AvoidLiteralsInIfCondition"/>
         <exclude name="ConstructorCallsOverridableMethod"/>
-        <!-- TODO: Disabled because of https://github.com/pmd/pmd/issues/253 -->
-        <exclude name="InvalidSlf4jMessageFormat"/>
+        <exclude name="CloseResource"/>
+        <exclude name="ImplicitSwitchFallThrough"/>
+        <exclude name="AvoidAccessibilityAlteration"/>
     </rule>
 
     <rule ref="category/java/errorprone.xml/EmptyCatchBlock">
@@ -147,15 +156,16 @@
         <exclude name="JUnit4TestShouldUseBeforeAnnotation"/>
         <exclude name="JUnit4TestShouldUseAfterAnnotation"/>
         <exclude name="AvoidStringBufferField"/>
+        <exclude name="ForLoopVariableCount"/>
     </rule>
 
     <rule ref="category/java/bestpractices.xml/GuardLogStatement">
         <properties>
             <property name="logLevels">
-                <value>trace, debug</value>
+                <value>trace, trace, debug, debug, debug</value>
             </property>
             <property name="guardsMethods">
-                <value>TRACE, DEBUG</value>
+                <value>trace, TRACE, debug, DEBUG, isDebugEnabled</value>
             </property>
         </properties>
     </rule>

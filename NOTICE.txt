@@ -2,7 +2,7 @@
                             The Hekate Project
                             =================
 
-Copyright 2021 The Hekate Project
+Copyright 2022 The Hekate Project
 
 The Hekate Project licenses this file to you under the Apache License,
 version 2.0 (the "License"); you may not use this file except in compliance
@@ -68,22 +68,6 @@ fast and flexible logging library for Java, which can be obtained at:
     * license/logback.license.txt (Dual License: EPL v1.0 + LGPL v2.1)
   * HOMEPAGE:
     * http://logback.qos.ch/
-
-This product optionally depends on 'Kryo', the fast and efficient object
-graph serialization framework for Java, which can be obtained at:
-
-  * LICENSE:
-    * license/kryo.license.txt (BSD License)
-  * HOMEPAGE:
-    * https://github.com/EsotericSoftware/kryo
-
-This product optionally depends on 'Fast-Serialization', the Fast JDK-compatible
-serialization for Java, which can be obtained at:
-
-  * LICENSE:
-    * license/fst.license.txt (Apache License 2.0)
-  * HOMEPAGE:
-    * https://github.com/RuedigerMoeller/fast-serialization
 
 This product optionally depends on 'AWS SDK for Java', which can be
 obtained at:

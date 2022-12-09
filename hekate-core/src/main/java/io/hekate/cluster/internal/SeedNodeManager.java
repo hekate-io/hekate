@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Hekate Project
+ * Copyright 2022 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -55,6 +55,8 @@ class SeedNodeManager {
 
     private final long cleanupInterval;
 
+    private final boolean seedNodeFailFast;
+
     private final AtomicBoolean started = new AtomicBoolean();
 
     private ScheduledExecutorService cleaner;
@@ -63,9 +65,10 @@ class SeedNodeManager {
 
     private AliveAddressProvider aliveAddressProvider;
 
-    public SeedNodeManager(String namespace, SeedNodeProvider provider) {
+    public SeedNodeManager(String namespace, SeedNodeProvider provider, boolean seedNodeFailFast) {
         this.namespace = namespace;
         this.provider = provider;
+        this.seedNodeFailFast = seedNodeFailFast;
         this.cleanupInterval = provider.cleanupInterval();
     }
 
@@ -237,51 +240,23 @@ class SeedNodeManager {
                                 log.debug("Failed seed node address detected [address={}]", addr);
                             }
 
-                            // Synchronize only for an asynchronous task submission.
-                            synchronized (cleanupMux) {
-                                if (cleaner == null) {
-                                    if (DEBUG) {
-                                        log.debug("Skipped seed node address cleaning since cleanup task was cancelled [address={}]", addr);
-                                    }
-                                } else {
-                                    cleaner.execute(() -> {
-                                        // We are not synchronized here anymore.
-                                        try {
-                                            // Double check that node is not alive.
-                                            Set<InetSocketAddress> currentAlive = aliveAddressProvider.getAliveAddresses();
+                            tryUnregisterRemoteAddress(addr, aliveAddressProvider);
 
-                                            if (currentAlive.contains(addr)) {
-                                                if (DEBUG) {
-                                                    log.debug("Skipped seed node address cleaning since it is alive [address={}]", addr);
-                                                }
-
-                                                return;
-                                            }
-
-                                            if (DEBUG) {
-                                                log.debug("Unregistering failed seed node address "
-                                                    + "[namespace={}, address={}]", namespace, addr);
-                                            }
-
-                                            provider.unregisterRemote(namespace, addr);
-                                        } catch (Throwable e) {
-                                            if (log.isErrorEnabled()) {
-                                                log.error("Failed to unregister seed node address "
-                                                    + "[namespace={}, address={}]", namespace, addr, e);
-                                            }
-                                        }
-                                    });
+                            break;
+                        }
+                        case TIMEOUT: {
+                            if (seedNodeFailFast) {
+                                if (DEBUG) {
+                                    log.debug("Timed out seed node address detected [address={}]", addr);
                                 }
+
+                                tryUnregisterRemoteAddress(addr, aliveAddressProvider);
                             }
 
                             break;
                         }
                         case SUCCESS: {
                             // Node is alive. Do nothing.
-                            break;
-                        }
-                        case TIMEOUT: {
-                            // We can't decide whether the node is alive or not. Do nothing.
                             break;
                         }
                         default: {
@@ -296,6 +271,45 @@ class SeedNodeManager {
             }
         } catch (Throwable e) {
             log.error("Got an error while cleaning stale seed nodes.", e);
+        }
+    }
+
+    private void tryUnregisterRemoteAddress(InetSocketAddress addr, AliveAddressProvider aliveAddress) {
+        // Synchronize only for the asynchronous task submission.
+        synchronized (cleanupMux) {
+            if (cleaner == null) {
+                if (DEBUG) {
+                    log.debug("Skipped seed node address cleaning since cleanup task was cancelled [address={}]", addr);
+                }
+            } else {
+                cleaner.execute(() -> {
+                    // We are not synchronized here anymore.
+                    try {
+                        // Double check that node is not alive.
+                        Set<InetSocketAddress> currentAlive = aliveAddress.getAliveAddresses();
+
+                        if (currentAlive.contains(addr)) {
+                            if (DEBUG) {
+                                log.debug("Skipped seed node address cleaning since it is alive [address={}]", addr);
+                            }
+
+                            return;
+                        }
+
+                        if (DEBUG) {
+                            log.debug("Unregistering failed seed node address "
+                                + "[namespace={}, address={}]", namespace, addr);
+                        }
+
+                        provider.unregisterRemote(namespace, addr);
+                    } catch (Throwable e) {
+                        if (log.isErrorEnabled()) {
+                            log.error("Failed to unregister seed node address "
+                                + "[namespace={}, address={}]", namespace, addr, e);
+                        }
+                    }
+                });
+            }
         }
     }
 

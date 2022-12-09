@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Hekate Project
+ * Copyright 2022 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -27,7 +27,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static io.hekate.core.internal.util.Utils.NL;
-import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 
 public class EtcdSeedNodeProviderTest extends PersistentSeedNodeProviderTestBase<EtcdSeedNodeProvider> {
@@ -89,10 +88,11 @@ public class EtcdSeedNodeProviderTest extends PersistentSeedNodeProviderTestBase
 
     @Test
     public void testErrors() throws Exception {
-        EtcdSeedNodeProvider provider = createProvider(cfg ->
-            // Invalid URL.
-            cfg.setEndpoints(singletonList("http://localhost:0000"))
-        );
+        EtcdSeedNodeProvider provider = createProvider(cfg -> {
+            // Invalid user.
+            cfg.setUsername("invalid");
+            cfg.setPassword("invalid");
+        });
 
         InetSocketAddress address = newSocketAddress();
 

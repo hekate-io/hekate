@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Hekate Project
+ * Copyright 2022 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -29,7 +29,7 @@ import org.jclouds.blobstore.BlobStore;
  */
 public class CloudStoreSeedNodeProviderConfig extends CloudPropertiesBase<CloudStoreSeedNodeProviderConfig> {
     /** Default value (={@value}) for {@link #setCleanupInterval(long)}. */
-    public static final long DEFAULT_CLEANUP_INTERVAL = 60000;
+    public static final long DEFAULT_CLEANUP_INTERVAL = 60_000;
 
     /** See {@link #setProvider(String)}. */
     private String provider;

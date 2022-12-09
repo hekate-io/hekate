@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-  ~ Copyright 2021 The Hekate Project
+  ~ Copyright 2022 The Hekate Project
   ~
   ~ The Hekate Project licenses this file to you under the Apache License,
   ~ version 2.0 (the "License"); you may not use this file except in compliance
@@ -172,8 +172,6 @@
 
         <module name="StringLiteralEquality"/>
 
-        <module name="UnnecessaryParentheses"/>
-
         <module name="UnnecessarySemicolonInTryWithResources"/>
 
         <module name="UnnecessarySemicolonInEnumeration"/>
@@ -215,8 +213,7 @@
         <module name="MissingJavadocPackage"/>
 
         <module name="JavadocMethod">
-            <property name="scope" value="protected"/>
-            <property name="validateThrows" value="true"/>
+            <property name="accessModifiers" value="public, protected"/>
         </module>
 
         <module name="MissingJavadocMethod">

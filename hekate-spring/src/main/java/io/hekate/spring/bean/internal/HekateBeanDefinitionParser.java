@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Hekate Project
+ * Copyright 2022 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -237,6 +237,7 @@ public class HekateBeanDefinitionParser extends AbstractSingleBeanDefinitionPars
             setProperty(cluster, clusterEl, "namespace", "namespace");
             setProperty(cluster, clusterEl, "gossipInterval", "gossip-interval-ms");
             setProperty(cluster, clusterEl, "speedUpGossipSize", "gossip-speedup-size");
+            setProperty(cluster, clusterEl, "seedNodeFailFast", "seed-node-fail-fast");
 
             parseSeedNodeProvider(cluster, clusterEl, ctx);
 

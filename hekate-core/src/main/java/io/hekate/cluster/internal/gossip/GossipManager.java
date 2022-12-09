@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Hekate Project
+ * Copyright 2022 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -73,11 +73,13 @@ public class GossipManager {
 
     private final int speedUpSize;
 
+    private final boolean seedNodeFailFast;
+
+    private GossipSeedNodesSate seedNodesSate;
+
     private GossipNodeStatus status;
 
     private Gossip localGossip;
-
-    private GossipSeedNodesSate seedNodesSate;
 
     private Set<ClusterNode> lastTopology = emptySet();
 
@@ -91,6 +93,7 @@ public class GossipManager {
         String namespace,
         ClusterNode localNode,
         int speedUpSize,
+        boolean seedNodeFailFast,
         FailureDetector failureDetector,
         GossipListener gossipListener
     ) {
@@ -100,6 +103,7 @@ public class GossipManager {
         this.failureDetector = failureDetector;
         this.listener = gossipListener;
         this.speedUpSize = speedUpSize;
+        this.seedNodeFailFast = seedNodeFailFast;
 
         id = localNode.id();
 
@@ -128,12 +132,20 @@ public class GossipManager {
         }
 
         if (seedNodesSate == null) {
-            seedNodesSate = new GossipSeedNodesSate(address.socket(), seedNodes);
+            seedNodesSate = new GossipSeedNodesSate(address.socket(), seedNodes, seedNodeFailFast);
         } else {
             seedNodesSate.update(seedNodes);
         }
 
         return tryJoin(true);
+    }
+
+    public JoinRequest onSendComplete(JoinRequest join) {
+        if (join != null && seedNodesSate != null) {
+            seedNodesSate.onSendComplete(join.toAddress());
+        }
+
+        return join;
     }
 
     public JoinRequest processJoinReject(JoinReject msg) {
@@ -711,6 +723,15 @@ public class GossipManager {
 
     public GossipNodeStatus status() {
         return status;
+    }
+
+    // Package level for testing purposes.
+    JoinRequest joinStateless(List<InetSocketAddress> seedNodes) {
+        JoinRequest join = join(seedNodes);
+
+        onSendComplete(join);
+
+        return join;
     }
 
     private JoinRequest tryJoin(boolean trySelfJoin) {

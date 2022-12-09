@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Hekate Project
+ * Copyright 2022 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -955,10 +955,12 @@ class DefaultLockRegion implements LockRegion {
         }
 
         msg.reply(response, err -> {
-            if (DEBUG) {
-                if (err == null) {
+            if (err == null) {
+                if (DEBUG) {
                     log.debug("Successfully sent lock migration response [response={}]", response);
-                } else {
+                }
+            } else {
+                if (DEBUG) {
                     log.debug("Failed to send lock migration response [response={}, cause={}]", response, err.toString());
                 }
             }
@@ -971,10 +973,12 @@ class DefaultLockRegion implements LockRegion {
         }
 
         msg.reply(response, err -> {
-            if (DEBUG) {
-                if (err == null) {
+            if (err == null) {
+                if (DEBUG) {
                     log.debug("Successfully sent lock response [response={}]", response);
-                } else {
+                }
+            } else {
+                if (DEBUG) {
                     log.debug("Failed to send lock response [response={}, cause={}]", response, err.toString());
                 }
             }

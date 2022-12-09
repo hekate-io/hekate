@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Hekate Project
+ * Copyright 2022 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -41,7 +41,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Before;
 import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 
@@ -61,12 +60,22 @@ public class HekateClusterServiceConfigurerTest extends HekateAutoConfigurerTest
     public static class ClusterListenerTestConfig extends HekateTestConfigBase {
         private final AtomicInteger fired = new AtomicInteger();
 
-        @Autowired
-        private ClusterService clusterService;
-
         @Bean
         public ClusterEventListener listener() {
             return event -> fired.incrementAndGet();
+        }
+
+        @Bean
+        public InjectionTestBean injectionTestBean(ClusterService clusterService) {
+            return new InjectionTestBean(clusterService);
+        }
+    }
+
+    public static class InjectionTestBean {
+        private final ClusterService clusterService;
+
+        public InjectionTestBean(ClusterService clusterService) {
+            this.clusterService = clusterService;
         }
     }
 
@@ -153,7 +162,7 @@ public class HekateClusterServiceConfigurerTest extends HekateAutoConfigurerTest
         registerAndRefresh(ClusterListenerTestConfig.class);
 
         assertEquals(1, get(ClusterListenerTestConfig.class).fired.get());
-        assertNotNull(get(ClusterListenerTestConfig.class).clusterService);
+        assertNotNull(get(InjectionTestBean.class).clusterService);
         assertNotNull(get("clusterService", ClusterService.class));
     }
 

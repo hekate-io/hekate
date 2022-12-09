@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Hekate Project
+ * Copyright 2022 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -124,6 +124,8 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
 
     private final SeedNodeProvider seedNodeProvider;
 
+    private final boolean seedNodeFailFast;
+
     private final FailureDetector failureDetector;
 
     private final SplitBrainManager splitBrain;
@@ -206,6 +208,8 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
         } else {
             seedNodeProvider = factory.getSeedNodeProvider();
         }
+
+        this.seedNodeFailFast = factory.isSeedNodeFailFast();
 
         // Split-brain manager.
         splitBrain = new SplitBrainManager(
@@ -307,7 +311,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             );
 
             // Prepare seed node manager.
-            seedNodeMgr = new SeedNodeManager(namespace, seedNodeProvider);
+            seedNodeMgr = new SeedNodeManager(namespace, seedNodeProvider, seedNodeFailFast);
 
             // Prepare workers.
             gossipThread = Executors.newSingleThreadScheduledExecutor(new HekateThreadFactory("ClusterGossip"));
@@ -320,7 +324,14 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             GossipListener gossipListener = createGossipListener();
 
             // Prepare gossip manager.
-            gossipMgr = new GossipManager(namespace, localNode, speedUpGossipSize, failureDetector, gossipListener);
+            gossipMgr = new GossipManager(
+                namespace,
+                localNode,
+                speedUpGossipSize,
+                seedNodeFailFast,
+                failureDetector,
+                gossipListener
+            );
 
             // Prepare gossip communication manager.
             NetworkConnector<GossipProtocol> connector = net.connector(PROTOCOL_ID);
@@ -383,6 +394,7 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
             cs.value("speed-up-gossip-size", speedUpGossipSize);
             cs.value("failure-detector", failureDetector);
             cs.value("split-brain", splitBrain);
+            cs.value("seed-node-fail-fast", seedNodeFailFast);
             cs.value("seed-node-provider", seedNodeProvider);
         });
     }
@@ -758,10 +770,6 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
                         JoinRequest msg = gossipMgr.join(nodes);
 
                         if (msg != null) {
-                            if (log.isInfoEnabled()) {
-                                log.info("Sending cluster join request [seed-node={}].", msg.toAddress());
-                            }
-
                             sendAndDisconnect(msg);
                         }
                     })
@@ -1211,10 +1219,26 @@ public class DefaultClusterService implements ClusterService, ClusterServiceMana
         }
     }
 
-    private void sendAndDisconnect(GossipProtocol msg) {
-        if (msg != null) {
-            commMgr.sendAndDisconnect(msg);
+    private void sendAndDisconnect(JoinRequest join) {
+        if (join != null) {
+            if (log.isInfoEnabled()) {
+                log.info("Sending cluster join request [seed-node={}].", join.toAddress());
+            }
+
+            commMgr.sendAndDisconnect(join, () ->
+                guard.withReadLockIfInitialized(() ->
+                    runOnGossipThread(() ->
+                        onSendComplete(join)
+                    )
+                )
+            );
         }
+    }
+
+    private boolean onSendComplete(JoinRequest msg) {
+        return guard.withReadLockIfInitialized(() ->
+            gossipMgr.onSendComplete(msg)
+        );
     }
 
     private boolean isCoordinator(ClusterTopology topology) {

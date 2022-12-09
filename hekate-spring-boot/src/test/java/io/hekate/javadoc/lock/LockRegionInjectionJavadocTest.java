@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Hekate Project
+ * Copyright 2022 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -23,7 +23,6 @@ import io.hekate.lock.LockRegion;
 import io.hekate.network.NetworkServiceFactory;
 import io.hekate.spring.boot.HekateAutoConfigurerTestBase;
 import io.hekate.spring.boot.lock.InjectLockRegion;
-import java.net.InetAddress;
 import java.net.UnknownHostException;
 import org.junit.Test;
 import org.springframework.context.annotation.Bean;
@@ -49,7 +48,7 @@ public class LockRegionInjectionJavadocTest extends HekateAutoConfigurerTestBase
         @Bean
         public SeedNodeProvider seedNodeProvider() throws UnknownHostException {
             return new StaticSeedNodeProvider(new StaticSeedNodeProviderConfig()
-                .withAddress(InetAddress.getLocalHost().getHostAddress() + ':' + NetworkServiceFactory.DEFAULT_PORT)
+                .withAddress(localhost().getHostAddress() + ':' + NetworkServiceFactory.DEFAULT_PORT)
             );
         }
     }

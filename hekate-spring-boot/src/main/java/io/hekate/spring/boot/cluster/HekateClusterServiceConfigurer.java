@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Hekate Project
+ * Copyright 2022 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -105,6 +105,11 @@ import org.springframework.context.annotation.Lazy;
  * <li>{@link HekateCloudSeedNodeProviderConfigurer}</li>
  * <li>{@link HekateStaticSeedNodeProviderConfigurer}</li>
  * </ul>
+ *
+ * <p>
+ * Special configuration property {@link ClusterServiceFactory#setSeedNodeFailFast(boolean) 'hekate.cluster.seed-node-fail-fast'} controls
+ * network timeouts handling when contacting seed nodes.
+ * </p>
  *
  * @see ClusterService
  * @see HekateConfigurer

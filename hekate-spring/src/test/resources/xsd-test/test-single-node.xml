@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2021 The Hekate Project
+  ~ Copyright 2022 The Hekate Project
   ~
   ~ The Hekate Project licenses this file to you under the Apache License,
   ~ version 2.0 (the "License"); you may not use this file except in compliance
@@ -42,7 +42,7 @@
         </property-providers>
 
         <default-codec>
-            <s:bean class="io.hekate.codec.fst.FstCodecFactory"/>
+            <s:bean class="io.hekate.codec.JdkCodecFactory"/>
         </default-codec>
 
         <jmx domain="foo.bar">
@@ -51,7 +51,7 @@
             </server>
         </jmx>
 
-        <cluster id="cluster" namespace="test-cluster" gossip-interval-ms="1000" gossip-speedup-size="100">
+        <cluster id="cluster" namespace="test-cluster" gossip-interval-ms="1000" gossip-speedup-size="100" seed-node-fail-fast="false">
             <seed-node-provider>
                 <jdbc cleanup-interval-ms="60001"
                     query-timeout-sec="5"

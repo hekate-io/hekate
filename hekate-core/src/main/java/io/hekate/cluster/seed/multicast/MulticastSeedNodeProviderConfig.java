@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Hekate Project
+ * Copyright 2022 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -28,7 +28,7 @@ public class MulticastSeedNodeProviderConfig {
     public static final String DEFAULT_GROUP = "224.1.2.12";
 
     /** Default value (={@value}) for {@link #setPort(int)}. */
-    public static final int DEFAULT_PORT = 45454;
+    public static final int DEFAULT_PORT = 45_454;
 
     /** Default value (={@value}) for {@link #setTtl(int)}. */
     public static final int DEFAULT_TTL = 3;

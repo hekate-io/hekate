@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Hekate Project
+ * Copyright 2022 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -18,8 +18,6 @@ package io.hekate;
 
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.JdkCodecFactory;
-import io.hekate.codec.fst.FstCodecFactory;
-import io.hekate.codec.kryo.KryoCodecFactory;
 import java.util.Collection;
 import java.util.stream.Stream;
 import org.junit.runners.Parameterized.Parameters;
@@ -50,8 +48,6 @@ public abstract class HekateNodeMultiCodecTestBase extends HekateNodeParamTestBa
     @Parameters(name = "{index}: {0}")
     public static Collection<MultiCodecTestContext> getCodecTestContexts() {
         return mapTestContext(p -> Stream.of(
-            new MultiCodecTestContext(p, new KryoCodecFactory<>()),
-            new MultiCodecTestContext(p, new FstCodecFactory<>()),
             new MultiCodecTestContext(p, new JdkCodecFactory<>())
         ));
     }

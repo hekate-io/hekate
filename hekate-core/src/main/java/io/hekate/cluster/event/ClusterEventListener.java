@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Hekate Project
+ * Copyright 2022 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -48,8 +48,8 @@ import java.util.List;
  * topology information.</li>
  * <li>{@link ClusterChangeEvent} - fired every time when there are changes in the cluster topology. This event includes information about
  * new nodes that joined the cluster and old nodes that left the cluster.</li>
- * <li>{@link ClusterLeaveEvent} - fired when local node leaves the cluster. This event is fired even if the local node gets {@link
- * Hekate#terminate() forcibly terminated}.
+ * <li>{@link ClusterLeaveEvent} - fired when local node leaves the cluster. This event is fired even if the local node gets
+ * {@link Hekate#terminate() forcibly terminated}.
  * </li>
  * </ul>
  *

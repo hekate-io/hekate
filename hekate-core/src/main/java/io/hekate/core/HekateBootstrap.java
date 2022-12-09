@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Hekate Project
+ * Copyright 2022 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -22,10 +22,10 @@ import io.hekate.cluster.ClusterService;
 import io.hekate.cluster.ClusterServiceFactory;
 import io.hekate.cluster.ClusterTopology;
 import io.hekate.cluster.ClusterView;
-import io.hekate.codec.AutoSelectCodecFactory;
 import io.hekate.codec.Codec;
 import io.hekate.codec.CodecFactory;
 import io.hekate.codec.CodecService;
+import io.hekate.codec.JdkCodecFactory;
 import io.hekate.coordinate.CoordinationService;
 import io.hekate.coordinate.CoordinationServiceFactory;
 import io.hekate.core.internal.HekateNodeFactory;
@@ -116,7 +116,7 @@ public class HekateBootstrap {
     private List<ServiceFactory<? extends Service>> services;
 
     /** See {@link #setDefaultCodec(CodecFactory)}. */
-    private CodecFactory<Object> defaultCodec = new AutoSelectCodecFactory<>();
+    private CodecFactory<Object> defaultCodec = new JdkCodecFactory<>();
 
     /** See {@link #setPlugins(List)}. */
     private List<Plugin> plugins;
@@ -605,7 +605,7 @@ public class HekateBootstrap {
      * </p>
      *
      * <p>
-     * If not configured then {@link AutoSelectCodecFactory} will be used by default.
+     * If not configured then {@link JdkCodecFactory} will be used by default.
      * </p>
      *
      * @param defaultCodec Codec factory (must be stateless, see {@link Codec#isStateful()}) .

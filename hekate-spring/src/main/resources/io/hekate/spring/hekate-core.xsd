@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!--
-  ~ Copyright 2021 The Hekate Project
+  ~ Copyright 2022 The Hekate Project
   ~
   ~ The Hekate Project licenses this file to you under the Apache License,
   ~ version 2.0 (the "License"); you may not use this file except in compliance
@@ -448,6 +448,13 @@
             <xsd:annotation>
                 <xsd:documentation>
                     See javadoc of 'io.hekate.cluster.ClusterServiceFactory#setSpeedUpGossipSize(int)'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="seed-node-fail-fast" type="xsd:boolean">
+            <xsd:annotation>
+                <xsd:documentation>
+                    See javadoc of 'io.hekate.cluster.ClusterServiceFactory#setSeedNodeFailFast(boolean)'.
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>

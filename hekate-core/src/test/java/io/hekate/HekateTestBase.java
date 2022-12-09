@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Hekate Project
+ * Copyright 2022 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -44,8 +44,10 @@ import java.lang.management.ThreadMXBean;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.net.BindException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.net.UnknownHostException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -148,17 +150,33 @@ public abstract class HekateTestBase {
     /** Cache to prevent reentrancy in {@link #checkGhostThreads()}. */
     private static final Set<String> GHOST_THREAD_NAMES_CACHE = new HashSet<>();
 
-    /** Cache for {@link #selectLocalAddress()}. */
-    private static final AtomicReference<InetAddress> LOCAL_ADDRESS_CACHE = new AtomicReference<>();
-
     /** Prefixes for {@link Thread#getName() thread names} that should NOT be checked by {@link #checkGhostThreads()}. */
     private static final List<String> KNOWN_THREAD_PREFIXES = new ArrayList<>();
 
     /** Name of the currently running test case. */
     private static final AtomicReference<String> CURRENT_TEST_NAME = new AtomicReference<>();
 
+    /** Local host address. */
+    private static final InetAddress LOCAL_HOST;
+
     static {
-        // Fallback thread.
+        /////////////////////////////////////////////////////////////////////////////////////
+        // Resolve local host address.
+        /////////////////////////////////////////////////////////////////////////////////////
+        try {
+            LOCAL_HOST = new AddressPattern("any-ip4").select();
+
+            System.out.println("*******************************************************");
+            System.out.println("LOCAL HOST: " + LOCAL_HOST.getHostAddress());
+            System.out.println("*******************************************************");
+        } catch (Exception e) {
+            throw new AssertionError("Failed to resolve local host address.", e);
+        }
+
+        /////////////////////////////////////////////////////////////////////////////////////
+        // Known threads that can't be stopped.
+        /////////////////////////////////////////////////////////////////////////////////////
+        // Hekate fallback thread.
         KNOWN_THREAD_PREFIXES.add("HekateAsyncFallback".toLowerCase());
 
         // Core threads.
@@ -176,6 +194,7 @@ public abstract class HekateTestBase {
         KNOWN_THREAD_PREFIXES.add("JMX ".toLowerCase());
         KNOWN_THREAD_PREFIXES.add("main".toLowerCase());
         KNOWN_THREAD_PREFIXES.add("process reaper".toLowerCase());
+        KNOWN_THREAD_PREFIXES.add("Notification Thread".toLowerCase());
 
         // Maven surefire plugin threads.
         KNOWN_THREAD_PREFIXES.add("surefire-".toLowerCase());
@@ -407,6 +426,10 @@ public abstract class HekateTestBase {
         return ErrorUtils.stackTrace(error);
     }
 
+    protected static InetAddress localhost() {
+        return LOCAL_HOST;
+    }
+
     protected void ignoreGhostThreads() {
         ignoreGhostThreads = true;
     }
@@ -539,18 +562,33 @@ public abstract class HekateTestBase {
         return newNode(null, local, transform, addr);
     }
 
-    protected ClusterNode newNode(ClusterNodeId nodeId, boolean local, Consumer<DefaultClusterNodeBuilder> transform, ClusterAddress addr)
-        throws Exception {
+    protected ClusterNode newNode(
+        ClusterNodeId nodeId,
+        boolean local,
+        Consumer<DefaultClusterNodeBuilder> transform,
+        ClusterAddress addr
+    ) throws Exception {
         return newNode(nodeId, local, transform, addr, DefaultClusterNode.NON_JOINED_ORDER);
     }
 
-    protected ClusterNode newNode(ClusterNodeId nodeId, boolean local, Consumer<DefaultClusterNodeBuilder> transform, ClusterAddress addr,
-        int joinOrder) throws Exception {
+    protected ClusterNode newNode(
+        ClusterNodeId nodeId,
+        boolean local,
+        Consumer<DefaultClusterNodeBuilder> transform,
+        ClusterAddress addr,
+        int joinOrder
+    ) throws Exception {
         return newNode(nodeId, local, transform, addr, joinOrder, false);
     }
 
-    protected ClusterNode newNode(ClusterNodeId nodeId, boolean local, Consumer<DefaultClusterNodeBuilder> transform, ClusterAddress addr,
-        int joinOrder, boolean withSyntheticServices) throws Exception {
+    protected ClusterNode newNode(
+        ClusterNodeId nodeId,
+        boolean local,
+        Consumer<DefaultClusterNodeBuilder> transform,
+        ClusterAddress addr,
+        int joinOrder,
+        boolean withSyntheticServices
+    ) throws Exception {
         if (nodeId == null) {
             nodeId = newNodeId();
         }
@@ -618,16 +656,25 @@ public abstract class HekateTestBase {
         return newNode(true, null, null);
     }
 
-    protected ClusterNode newLocalNode(ClusterNodeId nodeId) throws Exception {
-        return newNode(nodeId, true, null, null);
-    }
-
     protected ClusterNode newLocalNode(Consumer<DefaultClusterNodeBuilder> transform) throws Exception {
         return newNode(true, transform, null);
     }
 
     protected int newTcpPort() {
-        return portSeq.incrementAndGet();
+        for (int i = 0; i < 100; i++) {
+            int port = portSeq.incrementAndGet();
+
+            try (ServerSocket ignored = new ServerSocket(port)) {
+                // Port is free.
+                return port;
+            } catch (BindException e) {
+                // Ignore. Port is busy.
+            } catch (IOException e) {
+                throw new AssertionError("Failed to check port availability [port=" + port + ']', e);
+            }
+        }
+
+        throw new AssertionError("Failed to select new TCP port.");
     }
 
     protected InetSocketAddress newSocketAddress() throws Exception {
@@ -635,9 +682,7 @@ public abstract class HekateTestBase {
     }
 
     protected InetSocketAddress newSocketAddress(int port) throws Exception {
-        InetAddress address = selectLocalAddress();
-
-        return newSocketAddress(address.getHostAddress(), port);
+        return newSocketAddress(localhost().getHostAddress(), port);
     }
 
     protected InetSocketAddress newSocketAddress(String host, int port) throws Exception {
@@ -813,18 +858,6 @@ public abstract class HekateTestBase {
         }
     }
 
-    private InetAddress selectLocalAddress() throws Exception {
-        InetAddress cached = LOCAL_ADDRESS_CACHE.get();
-
-        if (cached == null) {
-            cached = new AddressPattern("any-ip4").select();
-
-            LOCAL_ADDRESS_CACHE.set(cached);
-        }
-
-        return cached;
-    }
-
     private static String toString(ThreadInfo t) {
         StringBuilder sb = new StringBuilder("\"" + t.getThreadName() + "\" Id=" + t.getThreadId() + " " + t.getThreadState());
 
@@ -876,7 +909,7 @@ public abstract class HekateTestBase {
                         break;
                     }
                     case TIMED_WAITING: {
-                        sb.append("\t-  waiting on ").append(t.getLockInfo());
+                        sb.append("\t-  timed waiting on ").append(t.getLockInfo());
                         sb.append('\n');
 
                         break;

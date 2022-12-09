@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Hekate Project
+ * Copyright 2022 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -65,8 +65,8 @@ public @interface InjectLock {
     String name();
 
     /**
-     * Specifies the {@link LockRegionConfig#setName(String) name} of a {@link LockRegion} that should be used to get the lock (see {@link
-     * LockService#region(String)}).
+     * Specifies the {@link LockRegionConfig#setName(String) name} of a {@link LockRegion} that should be used to get the lock
+     * (see {@link LockService#region(String)}).
      *
      * @return Name of a {@link LockRegion}.
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Hekate Project
+ * Copyright 2022 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -252,6 +252,6 @@ public class SeedNodeManagerTest extends HekateTestBase {
     }
 
     private SeedNodeManager createManager(SeedNodeProvider provider) {
-        return new SeedNodeManager("test", provider);
+        return new SeedNodeManager("test", provider, false);
     }
 }

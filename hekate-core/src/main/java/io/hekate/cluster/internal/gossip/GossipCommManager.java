@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Hekate Project
+ * Copyright 2022 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -172,7 +172,7 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
         }
     }
 
-    public void sendAndDisconnect(GossipProtocol msg) {
+    public void sendAndDisconnect(GossipProtocol msg, Runnable onComplete) {
         Optional<Throwable> callbackErr = listener.onBeforeSend(msg);
 
         if (callbackErr.isPresent()) {
@@ -193,6 +193,8 @@ public class GossipCommManager implements NetworkServerHandler<GossipProtocol> {
 
                 @Override
                 public void onDisconnect(NetworkClient<GossipProtocol> client, Optional<Throwable> cause) {
+                    onComplete.run();
+
                     cause.ifPresent(err ->
                         listener.onSendFailure(msg, err)
                     );

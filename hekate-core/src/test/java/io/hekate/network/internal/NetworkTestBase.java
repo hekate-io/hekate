@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Hekate Project
+ * Copyright 2022 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -30,9 +30,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.ssl.SslContext;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -131,8 +129,8 @@ public abstract class NetworkTestBase extends HekateTestBase {
         }
     }
 
-    protected InetSocketAddress newServerAddress() throws UnknownHostException {
-        return new InetSocketAddress(InetAddress.getLocalHost(), 10001 + portsSeq.incrementAndGet());
+    protected InetSocketAddress newServerAddress() {
+        return new InetSocketAddress(localhost(), newTcpPort());
     }
 
     protected NetworkServer createAndConfigureServerHandler(HandlerConfigurer<String> handler) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Hekate Project
+ * Copyright 2022 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -507,16 +507,10 @@ public final class DefaultClusterTopology implements ClusterTopology, Serializab
 
     @Override
     public String toString() {
-        StringBuilder buf = new StringBuilder(ClusterTopology.class.getSimpleName())
-            .append("[size=").append(nodes.size())
-            .append(", version=").append(version);
-
-        if (!nodes.isEmpty()) {
-            buf.append(", nodes=").append(nodes);
-        }
-
-        buf.append(']');
-
-        return buf.toString();
+        return ClusterTopology.class.getSimpleName() + '['
+            + "size=" + nodes.size()
+            + ", version=" + version
+            + ", nodes=" + nodes
+            + ']';
     }
 }

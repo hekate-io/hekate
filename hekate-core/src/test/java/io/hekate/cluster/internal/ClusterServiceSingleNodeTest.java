@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Hekate Project
+ * Copyright 2022 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -299,7 +299,7 @@ public class ClusterServiceSingleNodeTest extends HekateNodeParamTestBase {
 
     @Test
     public void testJoinWithInvalidSeedNode() throws Exception {
-        InetAddress addr = InetAddress.getLocalHost();
+        InetAddress addr = localhost();
         String host = addr instanceof Inet6Address ? '[' + addr.getHostAddress() + ']' : addr.getHostAddress();
 
         int port = newTcpPort();

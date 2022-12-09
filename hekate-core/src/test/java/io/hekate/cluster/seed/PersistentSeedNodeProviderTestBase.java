@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Hekate Project
+ * Copyright 2022 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -219,7 +219,8 @@ public abstract class PersistentSeedNodeProviderTestBase<T extends SeedNodeProvi
         busyWait("address being " + (available ? "registered" : "unregistered") + " [address=" + node + ']', () -> {
             List<InetSocketAddress> nodes = provider.findSeedNodes(cluster);
 
-            return (available && nodes.contains(node)) || (!available && !nodes.contains(node));
+            return available && nodes.contains(node)
+                || !available && !nodes.contains(node);
         });
     }
 }

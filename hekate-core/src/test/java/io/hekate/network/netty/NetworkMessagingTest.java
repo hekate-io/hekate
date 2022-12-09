@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Hekate Project
+ * Copyright 2022 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -31,7 +31,6 @@ import io.hekate.network.internal.NetworkTestBase;
 import io.hekate.test.NetworkClientCallbackMock;
 import io.netty.channel.EventLoopGroup;
 import java.net.ConnectException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.util.Collection;
@@ -311,7 +310,7 @@ public class NetworkMessagingTest extends NetworkTestBase {
 
                 NetworkSendCallbackMock<String> callback = new NetworkSendCallbackMock<>();
 
-                NetworkFuture<String> connFuture = client.connect(new InetSocketAddress(InetAddress.getLocalHost(), port), clientCallback);
+                NetworkFuture<String> connFuture = client.connect(new InetSocketAddress(localhost(), port), clientCallback);
 
                 client.send("one", callback);
                 client.send("two", callback);

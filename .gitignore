@@ -9,3 +9,4 @@ target
 .DS_Store
 my_test.properties
 
+/docker-compose.override.yml

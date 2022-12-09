@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Hekate Project
+ * Copyright 2022 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -58,7 +58,7 @@ public class NetworkServerHandlerMock<T> implements NetworkServerHandler<T> {
         }
     }
 
-    private final Map<InetSocketAddress, ClientContext<T>> contexts = new ConcurrentHashMap<>();
+    private final Map<Integer, ClientContext<T>> contextsByPort = new ConcurrentHashMap<>();
 
     private final List<Reply<T>> sendOnConnect = new CopyOnWriteArrayList<>();
 
@@ -169,7 +169,7 @@ public class NetworkServerHandlerMock<T> implements NetworkServerHandler<T> {
     }
 
     public void reset() {
-        contexts.clear();
+        contextsByPort.clear();
         replyWith.clear();
         sendOnConnect.clear();
         disconnectOnMessages.clear();
@@ -216,13 +216,13 @@ public class NetworkServerHandlerMock<T> implements NetworkServerHandler<T> {
     }
 
     private ClientContext<T> getCtx(InetSocketAddress address, boolean register) {
-        ClientContext<T> ctx = contexts.get(address);
+        ClientContext<T> ctx = contextsByPort.get(address.getPort());
 
         if (ctx == null) {
             ctx = new ClientContext<>();
 
             if (register) {
-                ClientContext<T> oldCtx = contexts.putIfAbsent(address, ctx);
+                ClientContext<T> oldCtx = contextsByPort.putIfAbsent(address.getPort(), ctx);
 
                 if (oldCtx != null) {
                     ctx = oldCtx;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Hekate Project
+ * Copyright 2022 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -108,9 +108,7 @@ public class HostReachabilityDetector implements SplitBrainDetector, ConfigRepor
     @Override
     public boolean isValid(ClusterNode localNode) {
         try {
-            InetAddress address = InetAddress.getByName(host);
-
-            boolean reachable = address.isReachable(timeout);
+            boolean reachable = isReachable(InetAddress.getByName(host), timeout);
 
             if (reachable) {
                 if (DEBUG) {
@@ -130,6 +128,11 @@ public class HostReachabilityDetector implements SplitBrainDetector, ConfigRepor
         }
 
         return false;
+    }
+
+    // Package level for testing purposes.
+    boolean isReachable(InetAddress address, int timeout) throws IOException {
+        return address.isReachable(timeout);
     }
 
     @Override

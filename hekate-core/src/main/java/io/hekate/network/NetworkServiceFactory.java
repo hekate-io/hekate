@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Hekate Project
+ * Copyright 2022 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -47,7 +47,7 @@ import java.util.List;
  */
 public class NetworkServiceFactory implements ServiceFactory<NetworkService> {
     /** Default value (={@value}) for {@link #setPort(int)}. */
-    public static final int DEFAULT_PORT = 10012;
+    public static final int DEFAULT_PORT = 10_012;
 
     /** Default value (={@value}) for {@link #setPortRange(int)}. */
     public static final int DEFAULT_PORT_RANGE = 100;

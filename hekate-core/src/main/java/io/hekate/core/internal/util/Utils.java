@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Hekate Project
+ * Copyright 2022 The Hekate Project
  *
  * The Hekate Project licenses this file to you under the Apache License,
  * version 2.0 (the "License"); you may not use this file except in compliance
@@ -42,7 +42,7 @@ public final class Utils {
     public static final Charset UTF_8 = StandardCharsets.UTF_8;
 
     /** Magic bytes that should be appended to the first packet of a network connection. */
-    public static final int MAGIC_BYTES = 19800124;
+    public static final int MAGIC_BYTES = 19_800_124;
 
     private static final DecimalFormatSymbols NUMBER_FORMAT_SYMBOLS;
 
@@ -139,6 +139,12 @@ public final class Utils {
         return trimmed == null ? defaultVal : trimmed;
     }
 
+    public static boolean hasText(String str) {
+        return str != null
+            && !str.isEmpty()
+            && containsText(str);
+    }
+
     public static String camelCase(CharSequence str) {
         StringBuilder buf = new StringBuilder();
 
@@ -184,5 +190,15 @@ public final class Utils {
         } else {
             return unmodifiableList(source.stream().filter(Objects::nonNull).collect(toList()));
         }
+    }
+
+    private static boolean containsText(CharSequence str) {
+        for (int i = 0, len = str.length(); i < len; ++i) {
+            if (!Character.isWhitespace(str.charAt(i))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

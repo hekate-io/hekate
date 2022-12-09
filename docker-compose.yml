@@ -1,5 +1,5 @@
 #
-# Copyright 2021 The Hekate Project
+# Copyright 2022 The Hekate Project
 #
 # The Hekate Project licenses this file to you under the Apache License,
 # version 2.0 (the "License"); you may not use this file except in compliance
@@ -19,7 +19,7 @@ version: '2.1'
 services:
   mysql:
     container_name: hekate-test-mysql
-    image: "mysql:5.7.20"
+    image: "mysql:5.7.39"
     ports:
       - "3307:3306"
     environment:
@@ -27,23 +27,25 @@ services:
       MYSQL_DATABASE: hekate-test
       MYSQL_USER: hekate-test
       MYSQL_PASSWORD: hekate-test
-  postges:
+  postgres:
     container_name: hekate-test-postgres
-    image: "postgres:9.3.19-alpine"
+    image: "postgres:13.8-alpine"
     ports:
-      - "5433:5432"
+      - "5443:5432"
     environment:
       POSTGRES_DB: hekate-test
       POSTGRES_USER: hekate-test
       POSTGRES_PASSWORD: hekate-test
   etcd:
     container_name: hekate-test-etcd
-    image: quay.io/coreos/etcd:v3.3.9
+    image: bitnami/etcd:3.5.0
     ports:
       - "2479:2379"
-    command: etcd -name=hekate-etcd -advertise-client-urls http://etcd:2379 -listen-client-urls http://0.0.0.0:2379
+    environment:
+      ETCD_LISTEN_CLIENT_URLS: http://0.0.0.0:2379
+      ALLOW_NONE_AUTHENTICATION: 'yes'
   consul:
     container_name: hekate-test-consul
-    image: consul:1.7.2
+    image: consul:1.8.14
     ports:
       - "8501:8500"
