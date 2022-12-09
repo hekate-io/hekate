@@ -18,8 +18,6 @@ package io.hekate.lock.internal;
 
 import io.hekate.cluster.ClusterHash;
 import io.hekate.cluster.ClusterNodeId;
-import io.hekate.util.trace.Traceable;
-import io.hekate.util.trace.TraceInfo;
 import io.hekate.util.format.ToString;
 import io.hekate.util.format.ToStringIgnore;
 import io.hekate.util.trace.TraceInfo;

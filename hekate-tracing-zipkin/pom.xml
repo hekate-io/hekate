@@ -26,7 +26,7 @@
     <parent>
         <groupId>io.hekate</groupId>
         <artifactId>hekate-parent</artifactId>
-        <version>4.0.0</version>
+        <version>4.1.3</version>
         <relativePath>../hekate-parent</relativePath>
     </parent>
 
