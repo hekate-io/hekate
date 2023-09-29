@@ -3,7 +3,6 @@ package io.hekate.trace.zipkin;
 import brave.Span;
 import brave.Tracer;
 import brave.Tracing;
-import brave.propagation.Propagation;
 import brave.propagation.TraceContext.Extractor;
 import brave.propagation.TraceContext.Injector;
 import io.hekate.cluster.ClusterAddress;
@@ -40,20 +39,21 @@ class ZipkinMessageInterceptor implements AllMessageInterceptor<Object> {
     public ZipkinMessageInterceptor(Tracing tracing) {
         tracer = tracing.tracer();
 
-        // Propagate spans via messages' meta-data.
-        Propagation<MessageMetaData.Key<String>> propagation = tracing.propagationFactory().create(name ->
-            MessageMetaData.Key.of(name, MetaDataCodec.TEXT)
-        );
+        // Sender-side meta-data injector.
+        this.injector = tracing.propagation().injector((ctx, key, value) -> {
+            MessageMetaData.Key<String> metaKey = MessageMetaData.Key.of(key, MetaDataCodec.TEXT);
 
-        // Client-side meta-data injector.
-        this.injector = propagation.injector((ctx, key, value) ->
-            ctx.metaData().set(key, value)
-        );
+            ctx.metaData().set(metaKey, value);
+        });
 
-        // Server-side meta-data extractor.
-        this.extractor = propagation.extractor((ctx, key) ->
-            ctx.readMetaData().map(it -> it.get(key)).orElse(null)
-        );
+        // Receiver-side meta-data extractor.
+        this.extractor = tracing.propagation().extractor((ctx, key) -> {
+            MessageMetaData.Key<String> metaKey = MessageMetaData.Key.of(key, MetaDataCodec.TEXT);
+
+            return ctx.readMetaData()
+                .map(it -> it.get(metaKey))
+                .orElse(null);
+        });
     }
 
     @Override
@@ -107,7 +107,7 @@ class ZipkinMessageInterceptor implements AllMessageInterceptor<Object> {
     }
 
     @Override
-    public void interceptClientReceiveResponse(ClientReceiveContext ctx) {
+    public void interceptClientReceiveResponse(ClientReceiveContext<Object> ctx) {
         Span span = (Span)ctx.outboundContext().getAttribute(SPAN_ATTRIBUTE);
 
         if (span != null) {
@@ -135,7 +135,7 @@ class ZipkinMessageInterceptor implements AllMessageInterceptor<Object> {
     }
 
     @Override
-    public void interceptClientReceiveAck(ClientOutboundContext ctx) {
+    public void interceptClientReceiveAck(ClientOutboundContext<Object> ctx) {
         Span span = (Span)ctx.getAttribute(SPAN_ATTRIBUTE);
 
         if (span != null) {
@@ -144,7 +144,7 @@ class ZipkinMessageInterceptor implements AllMessageInterceptor<Object> {
     }
 
     @Override
-    public void interceptClientReceiveError(ClientOutboundContext ctx, Throwable err) {
+    public void interceptClientReceiveError(ClientOutboundContext<Object> ctx, Throwable err) {
         Span span = (Span)ctx.getAttribute(SPAN_ATTRIBUTE);
 
         if (span != null) {
@@ -153,7 +153,7 @@ class ZipkinMessageInterceptor implements AllMessageInterceptor<Object> {
     }
 
     @Override
-    public void interceptServerReceive(ServerReceiveContext ctx) {
+    public void interceptServerReceive(ServerReceiveContext<Object> ctx) {
         // Extract from the message's meta-data.
         Span span = tracer.nextSpan(extractor.extract(ctx));
 
@@ -199,7 +199,7 @@ class ZipkinMessageInterceptor implements AllMessageInterceptor<Object> {
     }
 
     @Override
-    public void interceptServerReceiveComplete(ServerInboundContext ctx) {
+    public void interceptServerReceiveComplete(ServerInboundContext<Object> ctx) {
         // Cleanup scope.
         Tracer.SpanInScope scope = (Tracer.SpanInScope)ctx.getAttribute(SCOPE_ATTRIBUTE);
 
@@ -216,7 +216,7 @@ class ZipkinMessageInterceptor implements AllMessageInterceptor<Object> {
     }
 
     @Override
-    public void interceptServerSend(ServerSendContext ctx) {
+    public void interceptServerSend(ServerSendContext<Object> ctx) {
         Span span = (Span)ctx.inboundContext().getAttribute(SPAN_ATTRIBUTE);
 
         if (span != null) {
